@@ -8,7 +8,7 @@ import type { OnboardingApi } from './api'
 import { Field, StepProgress } from './parts'
 import type { Progress } from './parts'
 
-export interface SobreAGenteProps {
+export interface CoupleStepProps {
   api: OnboardingApi
   progress: Progress
   notice: string | null
@@ -16,7 +16,7 @@ export interface SobreAGenteProps {
   onDone: () => void
 }
 
-export function SobreAGente({ api, progress, notice, onBack, onDone }: SobreAGenteProps) {
+export function CoupleStep({ api, progress, notice, onBack, onDone }: CoupleStepProps) {
   const today = api.today()
   const [startedOn, setStartedOn] = useState('')
   const [name, setName] = useState('')

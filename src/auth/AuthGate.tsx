@@ -23,7 +23,7 @@ import { Onboarding } from '../onboarding/Onboarding'
 import { clearPendingInvite, consumeInviteFromUrl, setPendingInvite } from '../onboarding/pendingInvite'
 import '../onboarding/onboarding.css'
 import { consumeAuthCallback } from './callback'
-import { CriarConta } from './CriarConta'
+import { SignUp } from './SignUp'
 import { Login } from './Login'
 import {
   enabledProviders,
@@ -184,7 +184,7 @@ export function AuthGate({ db, children, loadStage = loadAccountStage, providers
 
   function renderLogin() {
     return showSignUp ? (
-      <CriarConta
+      <SignUp
         onSignUp={(creds) => signUpWithPassword(db, creds)}
         onBack={() => setShowSignUp(false)}
       />

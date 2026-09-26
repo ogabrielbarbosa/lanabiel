@@ -21,7 +21,7 @@ import { ago, dayMonth } from './format'
 import { CodeBoxes, Field, StepProgress } from './parts'
 import type { Progress } from './parts'
 
-export interface AguardandoProps {
+export interface WaitingScreenProps {
   api: OnboardingApi
   /** Presente quando se chega pelo assistente de criação (passos 3 e 4). */
   wizard: { invite: Progress; sent: Progress } | null
@@ -68,7 +68,7 @@ function sendFailureMessage(result: Exclude<SendInviteResult, { status: 'sent' }
   }
 }
 
-export function Aguardando({ api, wizard, notice, onEnterApp, onSignOut }: AguardandoProps) {
+export function WaitingScreen({ api, wizard, notice, onEnterApp, onSignOut }: WaitingScreenProps) {
   const [view, setView] = useState<View>({ kind: 'loading' })
   const [send, setSend] = useState<SendState>({ kind: 'idle' })
   const [copied, setCopied] = useState(false)

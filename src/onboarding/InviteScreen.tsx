@@ -20,7 +20,7 @@ import type { OnboardingApi } from './api'
 import { dayMonth, dayMonthShort, shortDate } from './format'
 import { CodeBoxes } from './parts'
 
-export interface ConviteProps {
+export interface InviteScreenProps {
   api: OnboardingApi
   code: string
   /** Veio do link do e-mail (e não digitado)? Só muda a legenda. */
@@ -63,7 +63,7 @@ function toState(result: LookupResult | AcceptResult): State | null {
   }
 }
 
-export function Convite(props: ConviteProps) {
+export function InviteScreen(props: InviteScreenProps) {
   const { api, code, fromLink, needsProfile, onNeedProfile, onJoined } = props
   const [state, setState] = useState<State>({ kind: 'loading' })
   const [busy, setBusy] = useState(false)
@@ -164,7 +164,7 @@ export function Convite(props: ConviteProps) {
   )
 }
 
-function Refusal({ refusal, code, onRetype, onDismiss, onSignOut }: ConviteProps & { refusal: InviteRefusal }) {
+function Refusal({ refusal, code, onRetype, onDismiss, onSignOut }: InviteScreenProps & { refusal: InviteRefusal }) {
   const boxes = <CodeBoxes code={code} />
 
   switch (refusal.status) {

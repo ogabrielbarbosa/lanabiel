@@ -9,13 +9,13 @@
 
 import { AuthShell } from './AuthShell'
 
-export interface EscolhaProps {
+export interface StartChoiceProps {
   onCreate: () => void
   onHaveCode: () => void
   onSignOut: () => void
 }
 
-export function Escolha({ onCreate, onHaveCode, onSignOut }: EscolhaProps) {
+export function StartChoice({ onCreate, onHaveCode, onSignOut }: StartChoiceProps) {
   return (
     <AuthShell caption={{ title: 'Bem-vindo ao lanabiel.', subtitle: 'Como vocês vão começar?' }}>
       <div className="auth-heading">

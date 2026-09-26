@@ -14,7 +14,7 @@ import { initialsOf } from './format'
 import { AvatarPicker, CitySearch, Field, StepProgress } from './parts'
 import type { PickedAvatar, Progress } from './parts'
 
-export interface PerfilProps {
+export interface ProfileStepProps {
   api: OnboardingApi
   progress: Progress
   /** Quem convidou, quando se chega por convite. Muda a copy, não o formulário. */
@@ -23,7 +23,7 @@ export interface PerfilProps {
   onDone: (notice: string | null) => void
 }
 
-export function Perfil({ api, progress, inviterName, onDone }: PerfilProps) {
+export function ProfileStep({ api, progress, inviterName, onDone }: ProfileStepProps) {
   const [fullName, setFullName] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [city, setCity] = useState<City | null>(null)

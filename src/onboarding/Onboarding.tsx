@@ -10,28 +10,28 @@
 // editável na Fase 3.
 
 import { useState } from 'react'
-import { Escolha } from '../auth/Escolha'
+import { StartChoice } from '../auth/StartChoice'
 import type { AccountStage } from '../data/account'
 import type { CoupleView } from '../data/couple'
 import type { InvitePreview } from '../data/invites'
 import type { OnboardingApi } from './api'
-import { Aguardando } from './Aguardando'
-import { Codigo } from './Codigo'
-import { Confirmar, TudoPronto } from './Confirmar'
-import { Convite } from './Convite'
-import { Perfil } from './Perfil'
-import { SobreAGente } from './SobreAGente'
+import { WaitingScreen } from './WaitingScreen'
+import { CodeEntry } from './CodeEntry'
+import { ConfirmCouple, AllSet } from './ConfirmCouple'
+import { InviteScreen } from './InviteScreen'
+import { ProfileStep } from './ProfileStep'
+import { CoupleStep } from './CoupleStep'
 
 type Step =
-  | { name: 'escolha' }
-  | { name: 'perfil-criar' }
-  | { name: 'sobre' }
-  | { name: 'aguardando'; wizard: boolean }
-  | { name: 'codigo' }
-  | { name: 'convite'; code: string; fromLink: boolean }
-  | { name: 'perfil-entrar'; code: string; invite: InvitePreview }
-  | { name: 'confirmar' }
-  | { name: 'pronto'; couple: CoupleView | null }
+  | { name: 'choose' }
+  | { name: 'profile-create' }
+  | { name: 'couple' }
+  | { name: 'waiting'; wizard: boolean }
+  | { name: 'code' }
+  | { name: 'invite'; code: string; fromLink: boolean }
+  | { name: 'profile-join'; code: string; invite: InvitePreview }
+  | { name: 'confirm' }
+  | { name: 'done'; couple: CoupleView | null }
 
 export interface OnboardingProps {
   api: OnboardingApi
@@ -50,10 +50,10 @@ export interface OnboardingProps {
 }
 
 function initialStep(props: OnboardingProps): Step {
-  if (props.postJoin) return { name: 'confirmar' }
-  if (props.pendingCode) return { name: 'convite', code: props.pendingCode, fromLink: props.codeFromLink }
-  if (props.stage.stage === 'awaiting_partner') return { name: 'aguardando', wizard: false }
-  return { name: 'escolha' }
+  if (props.postJoin) return { name: 'confirm' }
+  if (props.pendingCode) return { name: 'invite', code: props.pendingCode, fromLink: props.codeFromLink }
+  if (props.stage.stage === 'awaiting_partner') return { name: 'waiting', wizard: false }
+  return { name: 'choose' }
 }
 
 export function Onboarding(props: OnboardingProps) {
@@ -72,7 +72,7 @@ export function Onboarding(props: OnboardingProps) {
 
   function leaveInvite() {
     onPendingCode(null)
-    setStep(stage.stage === 'awaiting_partner' ? { name: 'aguardando', wizard: false } : { name: 'escolha' })
+    setStep(stage.stage === 'awaiting_partner' ? { name: 'waiting', wizard: false } : { name: 'choose' })
     // Já tem casal e o código era de outro (ou o próprio): de volta ao app.
     if (stage.stage === 'ready') onEnterApp()
   }
@@ -83,59 +83,59 @@ export function Onboarding(props: OnboardingProps) {
     if (result.status === 'joined') {
       onPendingCode(null)
       onJoined()
-      setStep({ name: 'confirmar' })
+      setStep({ name: 'confirm' })
     } else {
       // Qualquer recusa: a tela do convite relê e mostra o estado atual.
-      setStep({ name: 'convite', code, fromLink: props.codeFromLink })
+      setStep({ name: 'invite', code, fromLink: props.codeFromLink })
     }
   }
 
   switch (step.name) {
-    case 'escolha':
+    case 'choose':
       return (
-        <Escolha
+        <StartChoice
           onCreate={() => {
             const needs = stage.stage === 'needs_profile'
             setCreateNeedsProfile(needs)
-            setStep(needs ? { name: 'perfil-criar' } : { name: 'sobre' })
+            setStep(needs ? { name: 'profile-create' } : { name: 'couple' })
           }}
-          onHaveCode={() => setStep({ name: 'codigo' })}
+          onHaveCode={() => setStep({ name: 'code' })}
           onSignOut={() => onSignOut(false)}
         />
       )
 
-    case 'perfil-criar':
+    case 'profile-create':
       return (
-        <Perfil
+        <ProfileStep
           api={api}
           progress={{ current: 1, total: createTotal, label: 'Meu perfil' }}
           inviterName={null}
           onDone={(n) => {
             setNotice(n)
             onRefreshStage()
-            setStep({ name: 'sobre' })
+            setStep({ name: 'couple' })
           }}
         />
       )
 
-    case 'sobre':
+    case 'couple':
       return (
-        <SobreAGente
+        <CoupleStep
           api={api}
           progress={{ current: 1 + createOffset, total: createTotal, label: 'Sobre a gente' }}
           notice={notice}
-          onBack={() => setStep({ name: 'escolha' })}
+          onBack={() => setStep({ name: 'choose' })}
           onDone={() => {
             setNotice(null)
             onRefreshStage()
-            setStep({ name: 'aguardando', wizard: true })
+            setStep({ name: 'waiting', wizard: true })
           }}
         />
       )
 
-    case 'aguardando':
+    case 'waiting':
       return (
-        <Aguardando
+        <WaitingScreen
           api={api}
           wizard={
             step.wizard
@@ -151,47 +151,47 @@ export function Onboarding(props: OnboardingProps) {
         />
       )
 
-    case 'codigo':
+    case 'code':
       return (
-        <Codigo
-          onBack={() => setStep({ name: 'escolha' })}
+        <CodeEntry
+          onBack={() => setStep({ name: 'choose' })}
           onSubmit={(code) => {
             onPendingCode(code)
-            setStep({ name: 'convite', code, fromLink: false })
+            setStep({ name: 'invite', code, fromLink: false })
           }}
         />
       )
 
-    case 'convite':
+    case 'invite':
       return (
-        <Convite
+        <InviteScreen
           api={api}
           code={step.code}
           fromLink={step.fromLink}
           needsProfile={stage.stage === 'needs_profile'}
           onNeedProfile={(invite) => {
             setJoinNeedsProfile(true)
-            setStep({ name: 'perfil-entrar', code: step.code, invite })
+            setStep({ name: 'profile-join', code: step.code, invite })
           }}
           onJoined={() => {
             setJoinNeedsProfile(false)
             onPendingCode(null)
             onRefreshStage()
             onJoined()
-            setStep({ name: 'confirmar' })
+            setStep({ name: 'confirm' })
           }}
           onDismiss={leaveInvite}
           onRetype={() => {
             onPendingCode(null)
-            setStep({ name: 'codigo' })
+            setStep({ name: 'code' })
           }}
           onSignOut={onSignOut}
         />
       )
 
-    case 'perfil-entrar':
+    case 'profile-join':
       return (
-        <Perfil
+        <ProfileStep
           api={api}
           progress={{ current: 1, total: joinTotal, label: 'Seu perfil' }}
           inviterName={step.invite.inviterName}
@@ -202,21 +202,21 @@ export function Onboarding(props: OnboardingProps) {
         />
       )
 
-    case 'confirmar':
+    case 'confirm':
       return (
-        <Confirmar
+        <ConfirmCouple
           api={api}
           progress={{ current: joinTotal, total: joinTotal, label: 'Confirmar' }}
           selfProfileId={selfProfileId}
           notice={notice}
           onDone={(couple) => {
             setNotice(null)
-            setStep({ name: 'pronto', couple })
+            setStep({ name: 'done', couple })
           }}
         />
       )
 
-    case 'pronto':
-      return <TudoPronto api={api} couple={step.couple} onEnter={onEnterApp} />
+    case 'done':
+      return <AllSet api={api} couple={step.couple} onEnter={onEnterApp} />
   }
 }

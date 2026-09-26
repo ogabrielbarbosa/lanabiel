@@ -9,13 +9,13 @@ import { Copy } from '../auth/icons'
 import { extractInviteCode, normalizeInviteCode } from '../domain/onboarding'
 import { CodeInput } from './parts'
 
-export interface CodigoProps {
+export interface CodeEntryProps {
   initial?: string
   onBack: () => void
   onSubmit: (code: string) => void
 }
 
-export function Codigo({ initial = '', onBack, onSubmit }: CodigoProps) {
+export function CodeEntry({ initial = '', onBack, onSubmit }: CodeEntryProps) {
   const [value, setValue] = useState(initial)
   const [pasteProblem, setPasteProblem] = useState<string | null>(null)
   const code = normalizeInviteCode(value)

@@ -33,12 +33,12 @@ function message(result: SignUpResult): string | null {
   }
 }
 
-export interface CriarContaProps {
+export interface SignUpProps {
   onSignUp: (creds: Credentials) => Promise<SignUpResult>
   onBack: () => void
 }
 
-export function CriarConta({ onSignUp, onBack }: CriarContaProps) {
+export function SignUp({ onSignUp, onBack }: SignUpProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)

@@ -48,7 +48,7 @@ function Loading({ load }: { load: Exclude<Load, { kind: 'ok' }> }) {
   )
 }
 
-export interface ConfirmarProps {
+export interface ConfirmCoupleProps {
   api: OnboardingApi
   progress: Progress
   /** O perfil de quem acabou de entrar — o "outro" é quem convidou. */
@@ -58,11 +58,11 @@ export interface ConfirmarProps {
   onDone: (couple: CoupleView) => void
 }
 
-export function Confirmar({ api, progress, selfProfileId, notice, onDone }: ConfirmarProps) {
+export function ConfirmCouple({ api, progress, selfProfileId, notice, onDone }: ConfirmCoupleProps) {
   const load = useCouple(api)
   if (load.kind !== 'ok') return <Loading load={load} />
   return (
-    <ConfirmarForm
+    <ConfirmCoupleForm
       api={api}
       progress={progress}
       couple={load.couple}
@@ -78,14 +78,14 @@ function otherMember(couple: CoupleView, selfProfileId: string | null): MemberVi
   return couple.members.find((m) => (selfProfileId ? m.profileId !== selfProfileId : m.slot === 1))
 }
 
-function ConfirmarForm({
+function ConfirmCoupleForm({
   api,
   progress,
   couple,
   selfProfileId,
   notice,
   onDone,
-}: ConfirmarProps & { couple: CoupleView }) {
+}: ConfirmCoupleProps & { couple: CoupleView }) {
   const today = api.today()
   const inviter = otherMember(couple, selfProfileId)
   const inviterName = inviter?.displayName ?? 'Seu amor'
@@ -183,7 +183,7 @@ function ConfirmarForm({
   )
 }
 
-export interface TudoProntoProps {
+export interface AllSetProps {
   api: OnboardingApi
   couple: CoupleView | null
   onEnter: () => void
@@ -195,7 +195,7 @@ function yearsLabel(together: string): string | null {
   return match ? match[1]! : null
 }
 
-export function TudoPronto({ api, couple: known, onEnter }: TudoProntoProps) {
+export function AllSet({ api, couple: known, onEnter }: AllSetProps) {
   const load = useCouple(api, known)
   if (load.kind !== 'ok') return <Loading load={load} />
 

@@ -1,42 +1,37 @@
 // Frame `Escolha [UEca1]`.
 //
-// Duas diferenças deliberadas em relação ao desenho, as duas registradas na
-// spec:
-//
-// 1. A linha "Não achamos convite pendente pra <e-mail>" NÃO é renderizada
-//    (R8). Não existe tabela de convites, então ninguém procurou — e a tela
-//    não afirma ter procurado. A frase do desenho sobre abrir o link do e-mail
-//    fica, porque ela cobre a lacuna sem mentir.
-// 2. Os dois caminhos estão desabilitados COM MOTIVO VISÍVEL. O fluxo atrás
-//    deles é a Fase 2. Botão que não faz nada em silêncio parece defeito.
+// Fase 2 (.agent/Tasks/fase-2-onboarding.md, R1 e R14): os dois caminhos
+// funcionam. A linha "Não achamos convite pendente pra <e-mail>" continua
+// FORA — agora não por falta de tabela, mas por decisão: o e-mail da sessão não
+// é verificado, e uma busca por ele entregaria o convite a quem se cadastrasse
+// primeiro com o endereço alheio (seção 9; ADR 0008). A frase do desenho sobre
+// abrir o link do e-mail fica, porque ela aponta o caminho que prova posse.
 
 import { AuthShell } from './AuthShell'
 
-const EM_BREVE = 'Chega na próxima etapa'
-
 export interface EscolhaProps {
+  onCreate: () => void
+  onHaveCode: () => void
   onSignOut: () => void
 }
 
-export function Escolha({ onSignOut }: EscolhaProps) {
+export function Escolha({ onCreate, onHaveCode, onSignOut }: EscolhaProps) {
   return (
-    <AuthShell>
+    <AuthShell caption={{ title: 'Bem-vindo ao lanabiel.', subtitle: 'Como vocês vão começar?' }}>
       <div className="auth-heading">
         <h1>Bem-vindo ao lanabiel.</h1>
         <p>Como vocês vão começar?</p>
       </div>
 
       <div className="auth-choices">
-        <button type="button" className="auth-choice" disabled>
+        <button type="button" className="auth-choice" onClick={onCreate}>
           <strong>Criar nosso espaço</strong>
           <span>Você monta o cantinho e convida seu amor por e-mail.</span>
-          <em>{EM_BREVE}</em>
         </button>
 
-        <button type="button" className="auth-choice" disabled>
+        <button type="button" className="auth-choice" onClick={onHaveCode}>
           <strong>Tenho um código</strong>
-          <span>Seu amor já criou o espaço e te passou um código de 6 dígitos.</span>
-          <em>{EM_BREVE}</em>
+          <span>Seu amor já criou o espaço e te passou um código de 6 caracteres.</span>
         </button>
       </div>
 

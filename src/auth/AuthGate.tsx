@@ -1,4 +1,5 @@
 // Spec: .agent/Tasks/fase-1-login.md, seção 5 e invariante I1.
+//       .agent/Tasks/fase-2-onboarding.md, seção 5 ("O portão").
 //
 // O portão. Decide, a cada carregamento, entre esqueleto, Login, Escolha e a
 // tela de domínio — e a ordem importa: NENHUMA tela de domínio renderiza antes
@@ -9,16 +10,20 @@
 // assinatura de sessão sem rede. O que o banco responde é provado à parte, em
 // `supabase/tests/auth.test.ts`.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { loadAccountStage } from '../data/account'
 import type { AccountStage } from '../data/account'
 import type { DataResult } from '../data/result'
 import type { Database } from '../lib/database.types'
+import { onboardingApi } from '../onboarding/api'
+import type { OnboardingApi } from '../onboarding/api'
+import { Onboarding } from '../onboarding/Onboarding'
+import { clearPendingInvite, consumeInviteFromUrl, setPendingInvite } from '../onboarding/pendingInvite'
+import '../onboarding/onboarding.css'
 import { consumeAuthCallback } from './callback'
 import { CriarConta } from './CriarConta'
-import { Escolha } from './Escolha'
 import { Login } from './Login'
 import {
   enabledProviders,
@@ -40,6 +45,8 @@ export interface AuthGateProps {
   children: ReactNode
   loadStage?: (db: Db) => Promise<DataResult<AccountStage>>
   providers?: readonly Provider[]
+  /** As chamadas do onboarding. Injetável para o teste de interface. */
+  api?: OnboardingApi
 }
 
 function Skeleton() {
@@ -53,8 +60,32 @@ function Skeleton() {
   )
 }
 
-export function AuthGate({ db, children, loadStage = loadAccountStage, providers }: AuthGateProps) {
+export function AuthGate({ db, children, loadStage = loadAccountStage, providers, api }: AuthGateProps) {
   const [auth, setAuth] = useState<AuthState>({ status: 'loading' })
+
+  // O código do link do e-mail (`#convite=`) é lido UMA vez, no primeiro
+  // render, e sai da barra de endereços na hora (R6). A ordem dos dois
+  // `useState` importa: "veio do link?" precisa ver o fragmento antes de ele
+  // ser consumido.
+  const [codeFromLink, setCodeFromLink] = useState(() => /(^#|&)convite=/.test(window.location.hash))
+  const [pendingCode, setPendingCode] = useState<string | null>(() =>
+    consumeInviteFromUrl(new URL(window.location.href), (href) =>
+      window.history.replaceState(window.history.state, '', href),
+    ),
+  )
+  // Acabou de entrar num casal: Confirmar e Tudo pronto vêm antes do app.
+  const [postJoin, setPostJoin] = useState(false)
+  // "Continuar pro app" na tela Aguardando: vale para esta sessão de uso.
+  const [skipWaiting, setSkipWaiting] = useState(false)
+  // Incrementar relê o estágio sem desmontar a tela (o par abaixo guarda o
+  // resultado anterior até o novo chegar).
+  const [stageVersion, setStageVersion] = useState(0)
+  // Incrementa só quando um código chega DE FORA com a tela aberta (link
+  // colado). É a única mudança de código que precisa recomeçar o assistente;
+  // as internas (digitar, aceitar, descartar) já definem o passo sozinhas — e
+  // remontar nelas perderia estado (aviso da foto, contagem de passos).
+  const [inviteArrivals, setInviteArrivals] = useState(0)
+  const onboarding = useMemo(() => api ?? onboardingApi(db), [api, db])
   const [showSignUp, setShowSignUp] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
 
@@ -85,6 +116,26 @@ export function AuthGate({ db, children, loadStage = loadAccountStage, providers
 
   useEffect(() => subscribeToAuth(db, setAuth), [db])
 
+  // O link colado numa aba em que o app já está aberto muda só o fragmento:
+  // não há recarga, e sem isto o código ficaria esquecido na barra.
+  useEffect(() => {
+    const onHashChange = () => {
+      // Só fragmento de convite. Outro `#…` devolveria o código já guardado e
+      // o marcaria, errado, como vindo do link.
+      if (!/(^#|&)convite=/.test(window.location.hash)) return
+      const code = consumeInviteFromUrl(new URL(window.location.href), (href) =>
+        window.history.replaceState(window.history.state, '', href),
+      )
+      if (code) {
+        setCodeFromLink(true)
+        setPendingCode(code)
+        setInviteArrivals((n) => n + 1)
+      }
+    }
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
+
   useEffect(() => {
     if (!userId) return
     // `cancelled` cobre o descarte da resposta em voo quando o efeito é
@@ -96,7 +147,40 @@ export function AuthGate({ db, children, loadStage = loadAccountStage, providers
     return () => {
       cancelled = true
     }
-  }, [db, userId, loadStage])
+  }, [db, userId, loadStage, stageVersion])
+
+  // Quem está sozinho no espaço percebe a entrada do outro ao voltar para a
+  // aba — sem realtime nesta fase (spec, seção 14; A27).
+  const waiting = stage?.status === 'ok' && stage.rows.stage === 'awaiting_partner'
+  useEffect(() => {
+    if (!waiting) return
+    const refresh = () => {
+      if (document.visibilityState === 'visible') setStageVersion((v) => v + 1)
+    }
+    window.addEventListener('focus', refresh)
+    document.addEventListener('visibilitychange', refresh)
+    return () => {
+      window.removeEventListener('focus', refresh)
+      document.removeEventListener('visibilitychange', refresh)
+    }
+  }, [waiting])
+
+  function rememberCode(code: string | null) {
+    if (code) setPendingInvite(code)
+    else clearPendingInvite()
+    // Código guardado por aqui foi digitado; o do link entra pelo fragmento.
+    setCodeFromLink(false)
+    setPendingCode(code)
+  }
+
+  function leave(keepInvite: boolean) {
+    // Trocar de conta apaga o código — exceto quando sair é justamente para
+    // aceitar o convite com a outra conta (`already_member`).
+    if (!keepInvite) rememberCode(null)
+    setPostJoin(false)
+    setSkipWaiting(false)
+    void signOut(db)
+  }
 
   function renderLogin() {
     return showSignUp ? (
@@ -110,6 +194,7 @@ export function AuthGate({ db, children, loadStage = loadAccountStage, providers
         onSignIn={(creds) => signInWithPassword(db, creds)}
         onProvider={(provider) => void signInWithProvider(db, provider, window.location.origin)}
         onCreateAccount={() => setShowSignUp(true)}
+        inviteContext={pendingCode !== null}
       />
     )
   }
@@ -146,8 +231,37 @@ export function AuthGate({ db, children, loadStage = loadAccountStage, providers
     )
   }
 
-  if (stage.rows.stage !== 'ready') {
-    return <Escolha onSignOut={() => void signOut(db)} />
+  const rows = stage.rows
+  const onboardingNeeded =
+    postJoin ||
+    pendingCode !== null ||
+    rows.stage === 'needs_profile' ||
+    rows.stage === 'needs_couple' ||
+    (rows.stage === 'awaiting_partner' && !skipWaiting)
+
+  if (onboardingNeeded) {
+    return (
+      <Onboarding
+        // Uma instância por pessoa e por chegada de link: trocar de conta
+        // recomeça o assistente, e um código que chega com a tela aberta
+        // também — o passo inicial é calculado ao montar.
+        key={`${userId}:${inviteArrivals}`}
+        api={onboarding}
+        stage={rows}
+        pendingCode={pendingCode}
+        codeFromLink={codeFromLink}
+        postJoin={postJoin}
+        onRefreshStage={() => setStageVersion((v) => v + 1)}
+        onPendingCode={rememberCode}
+        onJoined={() => setPostJoin(true)}
+        onEnterApp={() => {
+          setPostJoin(false)
+          setSkipWaiting(true)
+          setStageVersion((v) => v + 1)
+        }}
+        onSignOut={leave}
+      />
+    )
   }
 
   return <>{children}</>

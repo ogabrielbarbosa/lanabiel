@@ -6,7 +6,18 @@ import type { InputHTMLAttributes, ReactNode } from 'react'
 import globeUrl from './assets/globe.webp'
 import { HeartHandshake, Lock } from './icons'
 
-export function AuthShell({ children }: { children: ReactNode }) {
+export interface AuthShellProps {
+  children: ReactNode
+  /**
+   * A legenda grande sobre o globo. O Login usa a do desenho; cada tela de
+   * onboarding tem a sua ("Oi, Rafa. / Vamos montar o cantinho de vocês.").
+   */
+  caption?: { title: string; subtitle: string }
+}
+
+const DEFAULT_CAPTION = { title: 'Duas cidades.', subtitle: 'Um lugar só de vocês.' }
+
+export function AuthShell({ children, caption = DEFAULT_CAPTION }: AuthShellProps) {
   return (
     <div className="auth">
       {/* Decorativo: fora da árvore de acessibilidade. As camadas seguem a
@@ -21,8 +32,8 @@ export function AuthShell({ children }: { children: ReactNode }) {
       </div>
 
       <p className="auth-caption">
-        Duas cidades.
-        <span>Um lugar só de vocês.</span>
+        {caption.title}
+        <span>{caption.subtitle}</span>
       </p>
 
       <div className="auth-panel">

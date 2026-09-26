@@ -135,15 +135,16 @@ describe('A10 — sem casal vê a Escolha, e ela não afirma ter procurado convi
     expect(screen.queryByText(/não achamos/i)).toBeNull()
   })
 
-  it('os dois caminhos estão desabilitados COM motivo visível, não em silêncio', async () => {
+  // Fase 2, A21: o que era "desabilitado com motivo" agora funciona.
+  it('os dois caminhos estão habilitados, sem o aviso de "próxima etapa"', async () => {
     const { emit } = setup(stageOf({ stage: 'needs_profile' }))
     emit(SESSION)
 
     const criar = await screen.findByRole('button', { name: /Criar nosso espaço/ })
     const codigo = screen.getByRole('button', { name: /Tenho um código/ })
-    expect(criar).toBeDisabled()
-    expect(codigo).toBeDisabled()
-    expect(screen.getAllByText('Chega na próxima etapa')).toHaveLength(2)
+    expect(criar).toBeEnabled()
+    expect(codigo).toBeEnabled()
+    expect(screen.queryByText('Chega na próxima etapa')).toBeNull()
   })
 })
 

@@ -1,0 +1,410 @@
+/* Telas de onboarding — frames de `Cenário 1/2/3` e `Estados e erros` do .pen.
+   Moram dentro do mesmo `AuthShell` do Login, então herdam os tokens de
+   `.auth` (auth.css): vidro, texto, acento. Aqui só o que é novo. */
+
+/* `.auth` tem `overflow: hidden`, e o globo decorativo passa da borda (altura
+   rolável ~1175px numa janela de 820). `hidden` ainda deixa o navegador rolar
+   o elemento por programa: focar a busca de cidade rolou o `.auth` 75px para
+   dentro e cortou o topo da tela. `clip` corta sem criar área rolável.
+   Mora aqui, com seletor mais específico, porque auth.css tem mudanças da
+   Fase 1 não commitadas; mover para lá é dívida registrada no ledger (T8). */
+div.auth {
+  overflow: clip;
+}
+
+/* O Login empurra o título para o meio (`margin-top: auto`). No onboarding o
+   título vem logo abaixo do progresso, e quem vai para o pé é o botão.
+   Seletor composto de propósito: auth.css é importado DEPOIS deste arquivo, e
+   com a mesma especificidade a regra dele venceria — foi o que o navegador
+   mostrou na primeira renderização. */
+.auth-heading.onb-heading {
+  margin-top: 8px;
+}
+
+/* Tela sem barra de passos: o título seria o primeiro filho e colaria no logo. */
+.auth-heading.onb-heading:first-child {
+  margin-top: 28px;
+}
+
+.onb-heading h1 {
+  font-size: 28px;
+}
+
+.onb-bottom {
+  margin-top: auto;
+}
+
+.onb-signout {
+  justify-content: center;
+  margin-top: -12px;
+}
+
+.onb-center {
+  margin: auto 0;
+  text-align: center;
+}
+
+.onb-self-start {
+  align-self: flex-start;
+}
+
+.onb-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.onb-kicker {
+  align-self: flex-start;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--glass-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* --- progresso ------------------------------------------------------------ */
+
+.onb-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.onb-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.onb-progress-bar {
+  display: flex;
+  gap: 6px;
+}
+
+.onb-progress-bar span {
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--glass-stroke-soft);
+}
+
+.onb-progress-bar span.is-done {
+  background: var(--accent-gradient);
+}
+
+/* --- formulário ----------------------------------------------------------- */
+
+.onb-row {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 12px;
+}
+
+/* Sem isto, item de grade não encolhe abaixo da largura intrínseca do <input>
+   e a segunda coluna vaza do painel. */
+.onb-row > *,
+.onb-row .auth-input input {
+  min-width: 0;
+}
+
+.onb-field-hint {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.onb-note {
+  margin: -6px 0 0;
+  text-align: left;
+}
+
+.onb-invalid {
+  color: var(--danger);
+}
+
+.onb-together {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-2);
+  font-size: 13px;
+}
+
+.onb-notice {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--glass-soft);
+  color: var(--accent-3);
+  font-size: 13px;
+}
+
+.onb-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.onb-actions > .auth-btn {
+  flex: 1;
+  min-width: 0;
+}
+
+.onb-btn-small {
+  white-space: nowrap;
+  height: auto;
+  min-height: 36px;
+  padding: 8px 14px;
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.onb-readonly {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--glass-soft);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.onb-readonly strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* --- foto ----------------------------------------------------------------- */
+
+.onb-avatar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.onb-avatar-img {
+  width: 56px;
+  height: 56px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  background: var(--glass);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.onb-avatar-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.onb-avatar-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.onb-avatar-text strong {
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.onb-avatar-problem {
+  color: var(--danger);
+}
+
+/* --- cidade --------------------------------------------------------------- */
+
+.onb-city {
+  position: relative;
+}
+
+.onb-city-list {
+  position: absolute;
+  z-index: 2;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 6px 0 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: 14px;
+  border: 1px solid var(--glass-stroke-soft);
+  background: #0e1430f2;
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.onb-city-list li {
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.onb-city-list li:hover,
+.onb-city-list li:focus-visible,
+.onb-city-list li[aria-selected='true'] {
+  background: var(--glass-hover);
+  outline: none;
+}
+
+/* --- código --------------------------------------------------------------- */
+
+.onb-code {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.onb-code-box {
+  position: relative;
+  flex: 1;
+  max-width: 52px;
+  aspect-ratio: 5 / 6;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  border: 1px solid var(--glass-stroke-soft);
+  background: var(--glass-soft);
+  font-size: 26px;
+  font-weight: 600;
+}
+
+/* O hífen do meio: desenhado antes da quarta caixa, fora do fluxo de texto. */
+.onb-code-dash {
+  position: absolute;
+  left: -12px;
+  width: 8px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--text-tertiary);
+}
+
+.onb-code-box:nth-child(4) {
+  margin-left: 12px;
+}
+
+/* O <input> real fica por cima das caixas, invisível: teclado, colar e leitor
+   de tela funcionam como num campo comum. */
+.onb-code-input {
+  position: relative;
+}
+
+/* As caixas vêm DEPOIS do <input> no DOM e ficariam por cima dele: o toque
+   cairia nelas e o campo nunca ganharia foco. Visto no navegador — o teste de
+   jsdom não pega, porque lá não há layout nem teste de acerto. */
+.onb-code-input .onb-code {
+  pointer-events: none;
+}
+
+.onb-code-input input {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  font-size: 16px; /* abaixo disso o iOS dá zoom ao focar */
+  cursor: text;
+}
+
+.onb-code-input:focus-within .onb-code-box {
+  border-color: var(--accent);
+}
+
+.onb-code-input.is-invalid .onb-code-box {
+  border-color: var(--danger);
+}
+
+/* --- cartões -------------------------------------------------------------- */
+
+.onb-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid var(--glass-stroke-soft);
+  background: var(--glass-soft);
+}
+
+.onb-card-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.onb-card-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.onb-card-sub {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.onb-problem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--danger-soft);
+}
+
+.onb-problem h2 {
+  margin: 0;
+  color: var(--danger);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.onb-problem p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (max-width: 520px) {
+  .onb-row {
+    grid-template-columns: 1fr;
+  }
+
+  .onb-code {
+    gap: 6px;
+  }
+
+  .onb-code-box {
+    font-size: 22px;
+    border-radius: 12px;
+  }
+}

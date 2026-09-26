@@ -37,9 +37,15 @@ export interface LoginProps {
   onSignIn: (creds: Credentials) => Promise<SignInResult>
   onProvider: (provider: Provider) => void
   onCreateAccount: () => void
+  /**
+   * Há um código de convite guardado (link do e-mail). A tela diz para que se
+   * está entrando; os nomes do convite só aparecem DEPOIS do login — resolver
+   * código sem sessão abriria força bruta anônima (Fase 2, seção 9).
+   */
+  inviteContext?: boolean
 }
 
-export function Login({ providers, onSignIn, onProvider, onCreateAccount }: LoginProps) {
+export function Login({ providers, onSignIn, onProvider, onCreateAccount, inviteContext = false }: LoginProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
@@ -53,14 +59,24 @@ export function Login({ providers, onSignIn, onProvider, onCreateAccount }: Logi
   }
 
   return (
-    <AuthShell>
-      <div className="auth-heading">
-        <h1>Pra quem ama de longe.</h1>
-        <p>
-          O cantinho privado de vocês dois: lugares, viagens e os dias que faltam pro próximo
-          abraço.
-        </p>
-      </div>
+    <AuthShell caption={inviteContext ? { title: 'Oi!', subtitle: 'Entre pra aceitar o convite.' } : undefined}>
+      {inviteContext ? (
+        <div className="auth-heading">
+          <h1>Entre pra aceitar o convite</h1>
+          <p>
+            Use a conta com que você quer ficar no espaço de vocês. O código fica guardado — depois
+            de entrar, você vê o convite.
+          </p>
+        </div>
+      ) : (
+        <div className="auth-heading">
+          <h1>Pra quem ama de longe.</h1>
+          <p>
+            O cantinho privado de vocês dois: lugares, viagens e os dias que faltam pro próximo
+            abraço.
+          </p>
+        </div>
+      )}
 
       {providers.length > 0 && (
         <>

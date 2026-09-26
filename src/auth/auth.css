@@ -38,7 +38,10 @@
   display: flex;
   justify-content: flex-end;
   padding: 16px;
-  overflow: hidden;
+  /* `clip`, não `hidden`: o globo decorativo passa da borda, e `hidden` ainda
+     deixa o navegador rolar o elemento por programa — focar um campo perto do
+     pé rolava o `.auth` 75px para dentro e cortava o topo (visto na Fase 2). */
+  overflow: clip;
   background: var(--bg-deep);
   color: var(--text-primary);
   font-family: var(--font);

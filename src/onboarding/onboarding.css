@@ -2,16 +2,6 @@
    Moram dentro do mesmo `AuthShell` do Login, então herdam os tokens de
    `.auth` (auth.css): vidro, texto, acento. Aqui só o que é novo. */
 
-/* `.auth` tem `overflow: hidden`, e o globo decorativo passa da borda (altura
-   rolável ~1175px numa janela de 820). `hidden` ainda deixa o navegador rolar
-   o elemento por programa: focar a busca de cidade rolou o `.auth` 75px para
-   dentro e cortou o topo da tela. `clip` corta sem criar área rolável.
-   Mora aqui, com seletor mais específico, porque auth.css tem mudanças da
-   Fase 1 não commitadas; mover para lá é dívida registrada no ledger (T8). */
-div.auth {
-  overflow: clip;
-}
-
 /* O Login empurra o título para o meio (`margin-top: auto`). No onboarding o
    título vem logo abaixo do progresso, e quem vai para o pé é o botão.
    Seletor composto de propósito: auth.css é importado DEPOIS deste arquivo, e

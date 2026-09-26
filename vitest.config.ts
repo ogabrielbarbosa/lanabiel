@@ -1,11 +1,42 @@
+import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
-// Testes de domínio (`src`) são puros e rodam no gate a cada Stop.
-// Testes de integração (`supabase/tests`) exigem a stack local de pé e rodam
-// no Gate 3 — ver `.devkit/profile.sh`.
+// Três projetos, dois ambientes. O recorte é por PADRÃO DE ARQUIVO, não global
+// — ADR 0005: só `.test.tsx` paga o custo de DOM. Ambiente jsdom global
+// deixaria a suíte de domínio (que roda no gate a cada Stop) mais lenta sem
+// ganhar nada, e gate lento é gate que alguém desliga.
+//
+// `test.projects` e não `environmentMatchGlobs`: o segundo foi removido no
+// Vitest 4, que é o que este projeto usa.
 export default defineConfig({
   test: {
-    environment: 'node',
-    include: ['src/**/*.test.ts', 'supabase/tests/**/*.test.ts'],
+    projects: [
+      {
+        // Domínio puro. Sem DOM, sem rede, sem plugin de React.
+        test: {
+          name: 'domain',
+          environment: 'node',
+          include: ['src/**/*.test.ts'],
+        },
+      },
+      {
+        // Comportamento de tela. Precisa do plugin de React para o JSX.
+        plugins: [react()],
+        test: {
+          name: 'ui',
+          environment: 'jsdom',
+          include: ['src/**/*.test.tsx'],
+          setupFiles: ['./src/test/setup.ts'],
+        },
+      },
+      {
+        // Integração: RLS, restrições e auth. Exige a stack local de pé.
+        test: {
+          name: 'db',
+          environment: 'node',
+          include: ['supabase/tests/**/*.test.ts'],
+        },
+      },
+    ],
   },
 })

@@ -165,7 +165,7 @@ export type RenewInviteResult =
 
 /** Mesmo código, mais 7 dias. Vale para pendente e para expirado. */
 export async function renewInvite(db: Db): Promise<RenewInviteResult> {
-  const result = await callRpc(db, 'renew_invite', {})
+  const result = await callRpc(db, 'renew_invite')
   if (result.status !== 'ok') return result
   const raw = result.data
   if (raw.status === 'renewed') return { status: 'renewed', ...toIssued(raw) }

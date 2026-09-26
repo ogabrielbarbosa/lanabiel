@@ -18,7 +18,9 @@ export type Failure = { status: 'unauthenticated' } | { status: 'error'; cause: 
 export async function callRpc<Name extends keyof Functions>(
   db: Db,
   fn: Name,
-  args: Functions[Name]['Args'],
+  // Opcional: função sem parâmetro tem `Args` = `never` nos tipos gerados do
+  // projeto online (o gerador local dava `{}`), e aí não se passa nada.
+  args?: Functions[Name]['Args'],
 ): Promise<{ status: 'ok'; data: Record<string, unknown> } | Failure> {
   const { data, error } = await (
     db.rpc as (f: string, a: unknown) => PromiseLike<{ data: unknown; error: { code?: string; message: string } | null }>

@@ -22,17 +22,38 @@ const FORBIDDEN = [
   'period_state',
 ]
 
+/**
+ * Um campo `nome` no arquivo gerado, com ou sem aspas e com ou sem `?`. O
+ * gerador local escreve `"ends_on": string | null,` numa linha só; o do projeto
+ * online (`--linked`), `ends_on: string | null` em linhas separadas. Afirmar
+ * sobre o texto exato de um dos dois tornaria o teste de coluna proibida
+ * VAZIO no outro formato — ele nunca acharia `"location_type"` sem aspas.
+ */
+function field(name: string, type: string): RegExp {
+  const escaped = type.replace(/[|]/g, '\\|')
+  return new RegExp(`"?\\b${name}\\b"?\\??:\\s*${escaped}(?=\\s*[,\\n}])`)
+}
+
 describe('tipos gerados do schema', () => {
   it.each(FORBIDDEN)('não existe coluna `%s` em nenhuma tabela', (column) => {
-    expect(generated).not.toContain(`"${column}"`)
+    expect(generated).not.toMatch(new RegExp(`"?\\b${column}\\b"?\\??:`))
   })
 
   it('`stays.ends_on` é anulável — em aberto é um estado do tipo, não convenção', () => {
-    expect(generated).toContain('"ends_on": string | null')
+    expect(generated).toMatch(field('ends_on', 'string | null'))
   })
 
   it('`profiles.home_city_id` NÃO é anulável — sem ela a derivação mente', () => {
-    expect(generated).toContain('"home_city_id": string,')
-    expect(generated).not.toContain('"home_city_id": string | null')
+    expect(generated).toMatch(field('home_city_id', 'string'))
+    expect(generated).not.toMatch(field('home_city_id', 'string | null'))
+  })
+
+  it('o detector de campo funciona nos DOIS formatos do gerador', () => {
+    for (const text of ['"ends_on": string | null,', 'ends_on: string | null\n']) {
+      expect(text).toMatch(field('ends_on', 'string | null'))
+    }
+    expect('home_city_id: string | null\n').not.toMatch(field('home_city_id', 'string'))
+    expect('"location_type": string').toMatch(/"?\blocation_type\b"?\??:/)
+    expect('location_type?: string').toMatch(/"?\blocation_type\b"?\??:/)
   })
 })

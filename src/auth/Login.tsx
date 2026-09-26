@@ -2,12 +2,18 @@
 // saiu no ADR 0004 — ver seção 13 da spec para os pontos de divergência.
 
 import { useState } from 'react'
-import { AuthShell } from './AuthShell'
+import { AuthField, AuthShell } from './AuthShell'
+import { Apple, GoogleG, KeyRound, LogIn, Mail } from './icons'
 import type { Credentials, Provider, SignInResult } from './signIn'
 
 const PROVIDER_LABEL: Record<Provider, string> = {
   google: 'Continuar com Google',
   apple: 'Continuar com Apple',
+}
+
+const PROVIDER_ICON: Record<Provider, React.ReactNode> = {
+  google: <GoogleG />,
+  apple: <Apple />,
 }
 
 function message(result: SignInResult): string | null {
@@ -66,6 +72,7 @@ export function Login({ providers, onSignIn, onProvider, onCreateAccount }: Logi
                 className="auth-btn"
                 onClick={() => onProvider(provider)}
               >
+                {PROVIDER_ICON[provider]}
                 {PROVIDER_LABEL[provider]}
               </button>
             ))}
@@ -75,29 +82,28 @@ export function Login({ providers, onSignIn, onProvider, onCreateAccount }: Logi
       )}
 
       <form className="auth-form" onSubmit={handleSubmit}>
-        <div className="auth-field">
-          <label htmlFor="login-email">E-mail</label>
-          <input
-            id="login-email"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
+        <AuthField
+          id="login-email"
+          label="E-mail"
+          icon={<Mail />}
+          type="email"
+          autoComplete="email"
+          placeholder="voce@email.com"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
-        <div className="auth-field">
-          <label htmlFor="login-password">Senha</label>
-          <input
-            id="login-password"
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
+        <AuthField
+          id="login-password"
+          label="Senha"
+          icon={<KeyRound />}
+          type="password"
+          autoComplete="current-password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
         {/* `role="alert"` para o erro ser anunciado, não só pintado de vermelho. */}
         {error && (
@@ -107,6 +113,7 @@ export function Login({ providers, onSignIn, onProvider, onCreateAccount }: Logi
         )}
 
         <button type="submit" className="auth-btn auth-btn-primary" disabled={busy}>
+          <LogIn />
           {busy ? 'Entrando…' : 'Entrar'}
         </button>
       </form>
@@ -118,7 +125,7 @@ export function Login({ providers, onSignIn, onProvider, onCreateAccount }: Logi
             Criar conta
           </button>
         </div>
-        Ao continuar você concorda com os Termos e a Privacidade
+        <p className="auth-legal">Ao continuar você concorda com os Termos e a Privacidade</p>
       </div>
     </AuthShell>
   )

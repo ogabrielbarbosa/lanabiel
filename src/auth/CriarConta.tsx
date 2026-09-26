@@ -4,7 +4,8 @@
 // spec: é um dos três pontos a ajustar no Pencil.
 
 import { useState } from 'react'
-import { AuthShell } from './AuthShell'
+import { AuthField, AuthShell } from './AuthShell'
+import { KeyRound, Mail } from './icons'
 import type { Credentials, SignUpResult } from './signIn'
 
 /** Espelha `minimum_password_length` do config.toml. Feedback instantâneo na
@@ -60,34 +61,34 @@ export function CriarConta({ onSignUp, onBack }: CriarContaProps) {
       </div>
 
       <form className="auth-form" onSubmit={handleSubmit}>
-        <div className="auth-field">
-          <label htmlFor="signup-email">E-mail</label>
-          <input
-            id="signup-email"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
+        <AuthField
+          id="signup-email"
+          label="E-mail"
+          icon={<Mail />}
+          type="email"
+          autoComplete="email"
+          placeholder="voce@email.com"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
-        <div className="auth-field">
-          <label htmlFor="signup-password">Senha</label>
-          <input
-            id="signup-password"
-            type="password"
-            autoComplete="new-password"
-            required
-            minLength={MIN_PASSWORD}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+        <AuthField
+          id="signup-password"
+          label="Senha"
+          icon={<KeyRound />}
+          type="password"
+          autoComplete="new-password"
+          required
+          minLength={MIN_PASSWORD}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        >
           <p className="auth-hint">
             Pelo menos {MIN_PASSWORD} caracteres. Uma frase que só vocês dois sabem vale mais que
             símbolo no meio da palavra.
           </p>
-        </div>
+        </AuthField>
 
         {error && (
           <p className="auth-error" role="alert">
@@ -111,7 +112,7 @@ export function CriarConta({ onSignUp, onBack }: CriarContaProps) {
             Entrar
           </button>
         </div>
-        Ao continuar você concorda com os Termos e a Privacidade
+        <p className="auth-legal">Ao continuar você concorda com os Termos e a Privacidade</p>
       </div>
     </AuthShell>
   )

@@ -1,0 +1,541 @@
+/* Telas de autenticação, fiéis ao frame `Login [LMpij]` do .pen (lido em
+   2026-09-26 com resolveVariables). O design só desenha essa tela no escuro,
+   então ela não troca de tema: o globo é uma foto noturna e um painel claro
+   por cima dele não existe em lugar nenhum do Pencil.
+
+   Ângulos de gradiente: o Pencil gira no sentido oposto ao CSS, então
+   `rotation: R` do .pen vira `calc(360deg - R)` aqui — 135 → 225deg etc. */
+
+.auth {
+  --bg-deep: #060a1c;
+  --glass: #ffffff12;
+  --glass-soft: #ffffff0a;
+  --glass-hover: #ffffff1f;
+  --glass-stroke-soft: #ffffff14;
+  --glass-dark: #0a1030b8;
+  --glass-shadow: #02051480;
+  --glass-edge: linear-gradient(180deg, #ffffff40 0%, #ffffff14 45%, #ffffff38 100%);
+  --text-primary: #f4f6fb;
+  --text-secondary: #f4f6fbb3;
+  --text-tertiary: #f4f6fb73;
+  --divider: #ffffff14;
+  --accent: #7fd8c4;
+  --accent-2: #f4a3b4;
+  --accent-3: #f6e3a1;
+  --accent-glow: #7fd8c466;
+  --accent-gradient: linear-gradient(225deg, var(--accent), var(--accent-2));
+  --on-accent: #08102a;
+  --danger: #f48a8a;
+  --danger-soft: #f48a8a1f;
+  --font: 'Geist', ui-sans-serif, system-ui, sans-serif;
+
+  /* O desenho é 1440×900. `--s` é "um pixel do design" e acompanha a altura,
+     para o globo manter a composição em qualquer janela. */
+  --s: calc(max(100dvh, 640px) / 900);
+
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px;
+  /* `clip`, não `hidden`: o globo decorativo passa da borda, e `hidden` ainda
+     deixa o navegador rolar o elemento por programa — focar um campo perto do
+     pé rolava o `.auth` 75px para dentro e cortava o topo (visto na Fase 2). */
+  overflow: clip;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font);
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Vidro com borda em gradiente: o CSS não pinta `border` com gradiente e raio
+   ao mesmo tempo, então painel e botões usam um ::before mascarado no anel. */
+
+/* --- o globo ------------------------------------------------------------- */
+
+.auth-stage {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.auth-stage > * {
+  position: absolute;
+  border-radius: 50%;
+}
+
+/* `Halo Outer`: elipse 1380 em (-330,-90), radial sólido até 55%, blur 60. */
+.auth-halo {
+  left: calc(-330 * var(--s));
+  top: calc(-90 * var(--s));
+  width: calc(1380 * var(--s));
+  height: calc(1380 * var(--s));
+  background: radial-gradient(closest-side, #7fd8c455 55%, #7fd8c400 100%);
+  filter: blur(calc(60 * var(--s)));
+}
+
+/* `Atmosphere`: só o traço de 22px, em gradiente teal → rosa → amarelo, blur 28. */
+.auth-atmosphere {
+  left: calc(-125 * var(--s));
+  top: calc(118 * var(--s));
+  width: calc(970 * var(--s));
+  height: calc(970 * var(--s));
+  padding: calc(22 * var(--s));
+  background: linear-gradient(160deg, var(--accent), var(--accent-2) 50%, var(--accent-3));
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  filter: blur(calc(28 * var(--s)));
+}
+
+.auth-globe {
+  left: calc(-163 * var(--s));
+  top: calc(77 * var(--s));
+  width: calc(1046 * var(--s));
+  height: calc(1046 * var(--s));
+  object-fit: contain;
+  border-radius: 0;
+}
+
+/* `Globe Shading`: o lado noturno. Centro em (62%, 30%), raio 1.3 × metade. */
+.auth-shading {
+  left: calc(-103 * var(--s));
+  top: calc(140 * var(--s));
+  width: calc(926 * var(--s));
+  height: calc(926 * var(--s));
+  background: radial-gradient(65% 65% at 62% 30%, #060a1c00 35%, #060a1ce6 100%);
+}
+
+/* `Rim Light`: traço de 2px, branco 60% sumindo até a metade. */
+.auth-rim {
+  left: calc(-105 * var(--s));
+  top: calc(138 * var(--s));
+  width: calc(930 * var(--s));
+  height: calc(930 * var(--s));
+  padding: 2px;
+  background: linear-gradient(135deg, #ffffff99 0%, #ffffff00 50%);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+.auth-caption {
+  position: absolute;
+  left: calc(48 * var(--s));
+  top: calc(40 * var(--s));
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(6 * var(--s));
+  font-size: calc(44 * var(--s));
+  line-height: 1.05;
+  font-weight: 600;
+  letter-spacing: calc(-1.8 * var(--s));
+}
+
+.auth-caption span {
+  color: var(--text-secondary);
+}
+
+/* --- painel -------------------------------------------------------------- */
+
+.auth-panel {
+  position: relative;
+  width: 480px;
+  min-height: calc(100dvh - 32px);
+  display: flex;
+  flex-direction: column;
+  padding: 40px;
+  border-radius: 36px;
+  background: linear-gradient(var(--glass), var(--glass)), var(--glass-dark);
+  backdrop-filter: blur(60px);
+  -webkit-backdrop-filter: blur(60px);
+  box-shadow:
+    inset 0 1px 1px #ffffff40,
+    0 30px 80px var(--glass-shadow);
+}
+
+.auth-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--glass-edge);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.auth-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.auth-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -1px;
+}
+
+.auth-mark {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--accent-gradient);
+  color: var(--on-accent);
+  box-shadow:
+    0 6px 18px var(--accent-glow),
+    inset 0 1px 1px #ffffff80;
+}
+
+.auth-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: var(--glass-soft);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* O `Main` do design fica entre o topo e o rodapé com `space_between`: as duas
+   margens automáticas dividem a sobra igualmente, que é o mesmo efeito. */
+.auth-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.auth-heading {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auth-heading h1 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.1;
+  letter-spacing: -1.2px;
+  font-weight: 600;
+}
+
+.auth-heading p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.auth-providers {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--divider);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth-field label {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.auth-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--glass-stroke-soft);
+  background: var(--glass);
+  color: var(--text-secondary);
+}
+
+.auth-input:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.auth-input svg {
+  flex: none;
+}
+
+.auth-input input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  outline: none;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.auth-input input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.auth-hint {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.auth-btn {
+  position: relative;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 999px;
+  background: var(--glass);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: inset 0 1px 1px #ffffff40;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--glass-edge);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.auth-btn:hover:not(:disabled) {
+  background: var(--glass-hover);
+}
+
+.auth-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.auth-btn-primary {
+  padding: 0 18px 0 14px;
+  background: var(--accent-gradient);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow:
+    0 8px 24px var(--accent-glow),
+    inset 0 1px 1px #ffffff80;
+  color: var(--on-accent);
+}
+
+.auth-btn-primary::before {
+  display: none;
+}
+
+.auth-btn-primary:hover:not(:disabled) {
+  background: var(--accent-gradient);
+  filter: brightness(1.06);
+}
+
+.auth-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.auth-google-g {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #4285f4;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.auth-btn-link {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-btn-link:hover {
+  text-decoration: underline;
+}
+
+.auth-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.auth-footer-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.auth-legal {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+
+/* Erro é anunciado, não só colorido: a cor sozinha não chega a quem usa
+   leitor de tela nem a quem não distingue o vermelho. */
+.auth-error {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+/* --- Escolha ------------------------------------------------------------- */
+
+.auth-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid var(--glass-stroke-soft);
+  background: var(--glass);
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.auth-choice:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.auth-choice strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.auth-choice span {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.auth-choice em {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+/* --- esqueleto ----------------------------------------------------------- */
+
+/* `loading` não renderiza nem Login nem app (I8). Um esqueleto neutro é o que
+   impede o Login de piscar a cada recarga de quem já está logado. */
+.auth-skeleton {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: #060a1c;
+}
+
+.auth-skeleton-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: linear-gradient(225deg, #7fd8c4, #f4a3b4);
+  opacity: 0.35;
+}
+
+/* --- telas estreitas ----------------------------------------------------- */
+
+/* Sem espaço para o globo ao lado, ele fica atrás do vidro e a legenda sai. */
+@media (max-width: 900px) {
+  .auth-caption {
+    display: none;
+  }
+
+  .auth-panel {
+    width: 100%;
+    padding: 32px 24px;
+    border-radius: 28px;
+  }
+}

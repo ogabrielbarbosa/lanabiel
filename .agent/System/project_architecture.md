@@ -23,24 +23,36 @@ construído em oito fases — ver `../Tasks/`.
 | Autorização | RLS por casal | a única porta — ver [ADR 0001](../Decisions/0001-supabase-com-rls-por-casal.md) |
 | Tipos do banco | `supabase gen types` → `src/lib/database.types.ts` | versionado; coluna renomeada quebra o typecheck |
 | Lint | oxlint | verificação estática |
+| Autenticação | Supabase Auth: senha + OAuth | [ADR 0004](../Decisions/0004-login-com-senha-e-oauth.md) — sem link mágico |
 | Tipos | tsc, três project refs | `tsconfig.app.json` (navegador), `.node.json` (configs), `.tests.json` (integração) |
-| Testes | vitest | domínio em `src`, integração em `supabase/tests` |
+| Testes | vitest, três projetos | `domain` (node) · `ui` (jsdom, [ADR 0005](../Decisions/0005-interface-se-prova-em-jsdom.md)) · `db` (node, exige stack local) |
 
 ## Estrutura
 
 ```text
 src/
-├── main.tsx, App.tsx       # entrypoint e raiz
+├── main.tsx                # entrypoint
+├── App.tsx                 # só o portão de sessão; nada mais mora aqui
+├── auth/
+│   ├── AuthGate.tsx        # decide: esqueleto / Login / Escolha / domínio
+│   ├── session.ts          # AuthState, com `loading` distinto de `signed_out`
+│   ├── signIn.ts           # senha e OAuth; traduz erro do GoTrue em causa nomeada
+│   ├── callback.ts         # volta do OAuth, e limpeza da URL
+│   ├── Login.tsx · CriarConta.tsx · Escolha.tsx · AuthShell.tsx
+│   └── auth.css            # tokens lidos do .pen; escuro é o padrão
 ├── domain/
 │   └── coupleState.ts      # derivação: estadias → juntos/separados/viajando
 ├── data/
 │   ├── result.ts           # DataResult / WriteResult discriminados
+│   ├── account.ts          # estágio da conta: needs_profile / needs_couple / ready
 │   └── stays.ts            # leitura e escrita de estadias, fronteira snake→camel
 ├── lib/
-│   ├── supabase.ts         # cliente único
+│   ├── supabase.ts         # cliente ÚNICO, com as opções de auth explícitas
 │   ├── database.types.ts   # GERADO — não editar à mão
 │   └── date.ts             # datas ISO em horário local, grade do mês, rótulos pt-BR
+├── test/setup.ts           # só o projeto `ui` do vitest carrega
 └── timeline/               # a tela antiga, sobre localStorage — substituída na Fase 5
+    └── TimelineScreen.tsx  # saiu de App.tsx na Fase 1, sem mudar de conteúdo
 
 supabase/
 ├── config.toml             # portas em 553xx: outro projeto local ocupa a faixa padrão
@@ -90,6 +102,24 @@ existe no caso `ok`. Isso existe porque, com RLS, sessão ausente devolve **zero
 linhas, não erro** — e o projeto no free tier pausa por inatividade, devolvendo
 falha de rede. Uma função que devolvesse `[]` nos dois casos ruins faria o app
 abrir com um calendário limpo e o casal concluir que perdeu a história.
+
+## Entrada: sessão antes de qualquer dado
+
+Autenticação é **senha ou OAuth**, nunca link mágico — ver
+[ADR 0004](../Decisions/0004-login-com-senha-e-oauth.md) para o porquê, que é
+de infraestrutura e não de gosto.
+
+`AuthGate` resolve duas perguntas em ordem, e a ordem é a regra: primeiro
+`AuthState` (`loading` | `signed_out` | `signed_in`), depois `AccountStage`
+(`needs_profile` | `needs_couple` | `ready`). **Nenhuma tela de domínio
+renderiza antes de `ready`** — não é zelo: `listStays` para quem não tem casal
+devolve `ok` com zero linhas, indistinguível de "o casal não tem estadias".
+
+`loading` é um estado de verdade, separado de `signed_out`. Colapsar os dois faz
+o Login piscar em toda recarga de quem já está logado.
+
+`getSession()` lê armazenamento local e **não valida contra o servidor**. Quem
+valida é a primeira leitura, e é o resultado dela que governa a tela.
 
 ## Fronteiras
 

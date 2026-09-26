@@ -27,8 +27,14 @@ A Fase 0 (Fundação) está pronta — ver `.agent/Tasks/fase-0-fundacao.md`.
 | `npm run db:reset`  | derruba e reaplica todas as migrations no Postgres local    |
 | `npm run types:gen` | regenera `src/lib/database.types.ts` do schema local        |
 
-**O runner é vitest, e são duas suítes.** `npm run test` (domínio, em `src`) é
-puro e entra no hook `Stop` via `DEVKIT_CMD_TEST`. `npm run test:db`
+**O runner é vitest, com três projetos** (`vitest.config.ts`): `domain`
+(`src/**/*.test.ts`, node), `ui` (`src/**/*.test.tsx`, jsdom) e `db`
+(`supabase/tests`, node). `npm run test` roda os dois primeiros e entra no hook
+`Stop` via `DEVKIT_CMD_TEST`; o recorte de ambiente é por padrão de arquivo para
+a suíte de domínio não pagar o custo de DOM — ver
+[ADR 0005](.agent/Decisions/0005-interface-se-prova-em-jsdom.md).
+**Comportamento de tela se prova renderizando**, não lendo o código.
+`npm run test:db`
 (`supabase/tests`) exige `npx supabase start` de pé e é cobrado no Gate 3 pela
 skill `verify` — mesmo raciocínio que mantém o build fora do gate: comando lento
 e dependente de ambiente falha quando o Docker está parado, e gate que acusa o
@@ -50,6 +56,22 @@ O gate aceita `DEVKIT_SKIP_TEST=1`, `DEVKIT_RUN_BUILD=1` e `DEVKIT_FORCE=1`
 (ignora o stamp de conteúdo em `.git/devkit-verify-stamp`). O build fica **fora**
 do gate de propósito: leva minutos, não prova nada além do typecheck, e estourar
 o timeout do hook é indistinguível de sucesso.
+
+**Mas rode `npm run build` antes de dizer "pronto" sempre que mover ou renomear
+arquivo.** Não é zelo: na Fase 1 um import de CSS quebrou num arquivo movido, e
+`typecheck` e `lint` passaram limpos — TS não resolve caminho de CSS e o oxlint
+não olha import de asset. Só o build pegou; o app abriria sem estilo nenhum com
+70 testes verdes.
+
+## O design
+
+Fonte da verdade:
+`~/.pencil/documents/6b52fae9-2ad1-40df-9cbc-425f5b02100c/pencil-new.pen`. É
+encriptado — **só se lê pelo MCP do Pencil**, nunca com `Read` ou `grep`, e o
+arquivo precisa estar aberto no editor. Tokens saem de `GetVariables()`; copy de
+um frame sai de
+`Get("<id>", (n) => n?.type === "text" ? n.content : undefined, {resolveInstances: true})`.
+O export JSON da raiz está velho e mente sobre as cores.
 
 ## Arquitetura
 
@@ -143,17 +165,17 @@ por feature (`timeline/timeline.css`), sem framework nem CSS-in-JS.
 
 ## Estado atual do repositório
 
-Três commits. `src/timeline/`, `src/lib/date.ts`, `App.tsx` e `index.css` já
-estão rastreados. **Tudo da Fase 0 ainda não está commitado**: os três ADRs, a
-spec e o ledger em `.agent/Tasks/`, `supabase/`, `src/domain/`, `src/data/`,
-`src/lib/supabase.ts`, `src/lib/database.types.ts`, os tsconfigs, o
-`vitest.config.ts` e este arquivo. Commitar é o próximo passo natural.
+Fase 0 e Fase 1 commitadas. A Fase 1 entregou `src/auth/` (portão de sessão,
+login por senha e OAuth) e `src/data/account.ts`; a tela antiga saiu de
+`App.tsx` para `src/timeline/TimelineScreen.tsx` sem mudar de conteúdo, e
+`App.tsx` hoje é só o portão.
 
-`.agent/System/project_architecture.md` foi reescrito ao fim da Fase 0 e está
-atualizado.
+`.agent/System/project_architecture.md` está atualizado ao fim da Fase 1.
 
-Há um arquivo `lanabiel` (sem extensão) na raiz: export JSON do design feito no
-Pen, fonte da verdade visual. Não é código e não está no `.gitignore`.
+**O arquivo `lanabiel` (sem extensão) na raiz é um export JSON ANTIGO do design,
+e não é fonte da verdade.** Ele tem 4 telas e um conjunto de tokens
+(`bg-primary`, `accent-green`, `font-serif`) que o design já não usa. A fonte da
+verdade é o `.pen` — ver a próxima seção.
 
 ## Processo de desenvolvimento
 

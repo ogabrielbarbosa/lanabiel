@@ -6,11 +6,9 @@
 import { useState } from 'react'
 import { AuthField, AuthShell } from './AuthShell'
 import { KeyRound, Mail } from './icons'
+import { MIN_PASSWORD } from './signIn'
 import type { Credentials, SignUpResult } from './signIn'
 
-/** Espelha `minimum_password_length` do config.toml. Feedback instantâneo na
- *  tela; a autoridade continua sendo o servidor, que recusa de novo. */
-const MIN_PASSWORD = 12
 
 function message(result: SignUpResult): string | null {
   switch (result.status) {

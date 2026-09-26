@@ -17,10 +17,11 @@ export type AccountStage =
   /** Perfil existe, mas nenhuma linha em `couple_members`. */
   | { stage: 'needs_couple'; profileId: string }
   /**
-   * Criou o espaço e está sozinho nele: a tela Aguardando. Sempre slot 1 —
-   * quem entra por convite entra como slot 2, num casal que já tem o 1.
+   * Sozinho no espaço: a tela Aguardando. Slot 1 para quem criou e ainda não
+   * foi acompanhado; slot 2 para quem ficou depois que o slot 1 saiu do casal
+   * (Fase 3, `leave_couple`) — o próximo aceite ocupa a vaga livre.
    */
-  | { stage: 'awaiting_partner'; profileId: string; coupleId: string; slot: 1 }
+  | { stage: 'awaiting_partner'; profileId: string; coupleId: string; slot: 1 | 2 }
   | { stage: 'ready'; profileId: string; coupleId: string; slot: 1 | 2 }
 
 /**
@@ -77,15 +78,9 @@ export async function loadAccountStage(db: Db): Promise<DataResult<AccountStage>
 
   const together = memberships.filter((m) => m.couple_id === own.couple_id).length
   if (together < 2) {
-    if (own.slot !== 1) {
-      // Slot 2 sozinho: o slot 1 saiu do casal. Não há fluxo que produza isto
-      // nesta fase (sair do casal é da Fase 3); falhar alto em vez de mostrar
-      // "Aguardando" para quem entrou por convite.
-      return { status: 'error', cause: 'slot 2 sem slot 1 no casal' }
-    }
     return {
       status: 'ok',
-      rows: { stage: 'awaiting_partner', profileId, coupleId: own.couple_id, slot: 1 },
+      rows: { stage: 'awaiting_partner', profileId, coupleId: own.couple_id, slot: own.slot },
     }
   }
 

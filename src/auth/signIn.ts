@@ -39,6 +39,18 @@ export type SignUpResult =
   | { status: 'rate_limited'; retryAfterSeconds: number | null }
   | { status: 'error'; cause: string }
 
+/** Espelha `minimum_password_length` do config.toml. Feedback instantâneo na
+ *  tela; a autoridade continua sendo o servidor, que recusa de novo. */
+export const MIN_PASSWORD = 12
+
+export type ChangePasswordResult =
+  | { status: 'changed' }
+  | { status: 'weak_password'; reason: 'too_short' | 'leaked' }
+  /** A senha nova é igual à atual. */
+  | { status: 'same_password' }
+  | { status: 'unauthenticated' }
+  | { status: 'error'; cause: string }
+
 export type RedirectResult = { status: 'redirecting' } | { status: 'error'; cause: string }
 
 /** `Retry-After` chega em segundos quando o GoTrue o envia; nem sempre envia. */
@@ -120,8 +132,14 @@ export async function signInWithProvider(
   return error ? { status: 'error', cause: error.message } : { status: 'redirecting' }
 }
 
+/**
+ * Sai DESTE aparelho. O padrão do supabase-js v2 é `scope: 'global'`, que
+ * derrubaria todas as sessões da conta — "Sair desta conta" e "Encerrar" na
+ * sessão atual (Fase 3, R21) prometem só esta. Encerrar outra sessão é
+ * `end_my_session`.
+ */
 export async function signOut(db: Db): Promise<void> {
-  await db.auth.signOut()
+  await db.auth.signOut({ scope: 'local' })
 }
 
 const KNOWN_PROVIDERS: readonly Provider[] = ['google', 'apple']
@@ -135,4 +153,22 @@ export function enabledProviders(raw: string | undefined): readonly Provider[] {
   if (!raw) return []
   const wanted = raw.split(',').map((p) => p.trim().toLowerCase())
   return KNOWN_PROVIDERS.filter((p) => wanted.includes(p))
+}
+
+/**
+ * Configurações › Meu perfil (Fase 3). Com `secure_password_change = false`
+ * não pede a senha atual — trade-off registrado na seção 9 da spec. Para quem
+ * entrou só com Google, esta vira a primeira senha da conta.
+ */
+export async function changePassword(db: Db, password: string): Promise<ChangePasswordResult> {
+  const { error } = await db.auth.updateUser({ password })
+  if (!error) return { status: 'changed' }
+  if (isAuthWeakPasswordError(error)) {
+    if (error.reasons.includes('pwned')) return { status: 'weak_password', reason: 'leaked' }
+    if (error.reasons.includes('length')) return { status: 'weak_password', reason: 'too_short' }
+    return { status: 'error', cause: `senha recusada por ${error.reasons.join(', ')}` }
+  }
+  if (error.code === 'same_password') return { status: 'same_password' }
+  if (error.code === 'session_not_found' || error.status === 401) return { status: 'unauthenticated' }
+  return { status: 'error', cause: error.message }
 }

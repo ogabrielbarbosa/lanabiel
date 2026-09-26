@@ -1,0 +1,123 @@
+// Dados e API falsos das Configurações, para os testes de interface e do
+// export. Gabriel (slot 1, SJC) e Lana (slot 2, Marau).
+
+import { vi } from 'vitest'
+import type { City } from '../../data/cities'
+import type { SettingsData } from '../../data/settings'
+import type { SettingsApi } from '../api'
+
+export const SJC: City = { id: 'c-sjc', name: 'São José dos Campos', stateCode: 'SP', lat: -23.1791, lng: -45.8872 }
+export const MARAU: City = { id: 'c-marau', name: 'Marau', stateCode: 'RS', lat: -28.4498, lng: -52.2 }
+export const PARATY: City = { id: 'c-paraty', name: 'Paraty', stateCode: 'RJ', lat: -23.2178, lng: -44.7131 }
+export const PASSO_FUNDO: City = { id: 'c-pf', name: 'Passo Fundo', stateCode: 'RS', lat: -28.26, lng: -52.41 }
+
+const notify = {} as SettingsData['profileSettings']['notify']
+for (const event of ['partner_list_item', 'partner_done', 'partner_event', 'anniversary', 'trip_eve', 'own_reminders']) {
+  for (const channel of ['app', 'email', 'push']) {
+    ;(notify as Record<string, boolean>)[`notify_${event}_${channel}`] = channel !== 'email'
+  }
+}
+
+export function settingsData(overrides: Partial<SettingsData> = {}): SettingsData {
+  return {
+    me: { profileId: 'u-gabriel', email: 'gabriel@test.local' },
+    couple: {
+      id: 'couple-1',
+      name: 'Gabi & Lana',
+      startedOn: '2024-09-17',
+      coverPath: null,
+      createdAt: '2024-09-17T12:00:00Z',
+      members: [
+        {
+          profileId: 'u-gabriel',
+          slot: 1,
+          displayName: 'Gabriel',
+          fullName: 'Gabriel Barbosa',
+          avatarPath: null,
+          color: '#7FD8C4',
+          joinedAt: '2024-09-17T12:00:00Z',
+          homeCity: SJC,
+        },
+        {
+          profileId: 'u-lana',
+          slot: 2,
+          displayName: 'Lana',
+          fullName: 'Lana Martins',
+          avatarPath: null,
+          color: '#F4A3B4',
+          joinedAt: '2024-09-18T12:00:00Z',
+          homeCity: MARAU,
+        },
+      ],
+    },
+    coupleSettings: {
+      remindAnniversary: true,
+      showHomeCounter: true,
+      useCoupleCover: false,
+      calendarDefaultView: 'month',
+      weekStartsOn: 'sun',
+      showAdjacentDays: true,
+      showDayMarkers: true,
+      colorTogetherHome1: '#7FD8C4',
+      colorTogetherHome2: '#9CCBF2',
+      colorTogetherAway: '#F6E3A1',
+      colorApart: '#8E97BD',
+      listDefaultSort: 'recent',
+      showCategoryProgress: true,
+      hiddenCategories: [],
+      showDailySuggestion: true,
+    },
+    profileSettings: { notifyPartnerByDefault: true, notify },
+    savedCities: [{ ...PARATY, countryCode: 'BR', addedAt: '2026-01-01T00:00:00Z' }],
+    stays: [
+      { id: 's1', profileId: 'u-gabriel', cityId: SJC.id, startsOn: '2026-09-20', endsOn: null },
+      { id: 's2', profileId: 'u-lana', cityId: SJC.id, startsOn: '2026-09-20', endsOn: '2026-09-22' },
+      { id: 's3', profileId: 'u-lana', cityId: MARAU.id, startsOn: '2026-09-23', endsOn: null },
+    ],
+    ...overrides,
+  }
+}
+
+export function fakeApi(data: SettingsData = settingsData(), overrides: Partial<SettingsApi> = {}): SettingsApi {
+  return {
+    today: () => '2026-09-25',
+    now: () => Date.UTC(2026, 8, 25, 15),
+    loadSettings: vi.fn(async () => ({ status: 'ok' as const, rows: data })),
+    updateCoupleSettings: vi.fn(async (patch) => ({
+      status: 'ok' as const,
+      value: { ...data.coupleSettings, ...patch },
+    })),
+    updateProfileSettings: vi.fn(async (patch) => ({
+      status: 'ok' as const,
+      value:
+        'column' in patch
+          ? { ...data.profileSettings, notify: { ...data.profileSettings.notify, [patch.column]: patch.value } }
+          : { ...data.profileSettings, notifyPartnerByDefault: patch.notifyPartnerByDefault },
+    })),
+    updateCouple: vi.fn(async () => ({ status: 'ok' as const })),
+    updateProfile: vi.fn(async () => ({ status: 'ok' as const })),
+    searchCities: vi.fn(async () => ({ status: 'ok' as const, rows: [PASSO_FUNDO, MARAU, PARATY] })),
+    loadCitiesByIds: vi.fn(async () => ({ status: 'ok' as const, rows: new Map([[SJC.id, SJC], [MARAU.id, MARAU]]) })),
+    saveCity: vi.fn(async () => ({ status: 'ok' as const })),
+    removeSavedCity: vi.fn(async () => ({ status: 'ok' as const })),
+    prepareAvatar: vi.fn(async () => ({ status: 'not_image' as const })),
+    uploadAvatar: vi.fn(async () => ({ status: 'ok' as const, path: 'u-gabriel/x.webp' })),
+    avatarUrl: vi.fn(async () => null),
+    prepareCover: vi.fn(async () => ({ status: 'not_image' as const })),
+    replaceCover: vi.fn(async () => ({ status: 'ok' as const, path: 'couple-1/cover/x.webp' })),
+    coverUrl: vi.fn(async () => null),
+    changePassword: vi.fn(async () => ({ status: 'changed' as const })),
+    signOut: vi.fn(async () => undefined),
+    listSessions: vi.fn(async () => ({ status: 'ok' as const, rows: [] })),
+    endSession: vi.fn(async () => ({ status: 'ended' as const })),
+    loadPhotoStats: vi.fn(async () => ({ status: 'ok' as const, rows: { count: 2, bytes: 200_000, truncated: false } })),
+    loadOpenInvite: vi.fn(async () => ({ status: 'ok' as const, rows: null })),
+    createInvite: vi.fn(async () => ({ status: 'created' as const, inviteId: 'inv-2', code: 'ABC123', expiresAt: '2026-10-02T00:00:00Z' })),
+    sendInvite: vi.fn(async () => ({ status: 'send_failed' as const, cause: 'sem Resend' })),
+    cancelInvite: vi.fn(async () => ({ status: 'cancelled' as const })),
+    leaveCouple: vi.fn(async () => ({ status: 'left' as const, coupleDeleted: false })),
+    deleteCouple: vi.fn(async () => ({ status: 'deleted' as const })),
+    download: vi.fn(),
+    ...overrides,
+  }
+}

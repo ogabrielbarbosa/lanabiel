@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -11,6 +11,18 @@
       href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap"
     />
     <title>lanabiel</title>
+    <script>
+      // Tema antes do primeiro paint: sem isto, quem escolheu "Claro" vê o
+      // escuro piscar até o bundle carregar. A regra é a de
+      // src/app/appearance.ts (resolveTheme); a chave, APPEARANCE_KEY.
+      try {
+        var a = JSON.parse(localStorage.getItem('lanabiel:appearance') || '{}')
+        var dark = matchMedia('(prefers-color-scheme: dark)').matches
+        var t = a.theme === 'light' ? 'light' : a.theme === 'system' ? (dark ? 'dark' : 'light') : 'dark'
+        document.documentElement.dataset.theme = t
+        if (a.density === 'compact') document.documentElement.dataset.density = 'compact'
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

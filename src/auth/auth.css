@@ -1,0 +1,374 @@
+/* Telas de autenticação. Tokens lidos do .pen em 2026-09-26 via GetVariables().
+   O modo escuro é o padrão do design (`themes.mode` lista "dark" primeiro, e o
+   frame Login usa $bg-deep escuro); o claro é a variação. */
+
+.auth {
+  --bg-deep: #060a1c;
+  --bg-mid: #0e1636;
+  --glass: #ffffff12;
+  --glass-strong: #ffffff1f;
+  --glass-hover: #ffffff29;
+  --glass-soft: #ffffff0a;
+  --glass-stroke: #ffffff38;
+  --glass-stroke-soft: #ffffff14;
+  --glass-dark: #0a1030b8;
+  --glass-shadow: #02051480;
+  --text-primary: #f4f6fb;
+  --text-secondary: #f4f6fbb3;
+  --text-tertiary: #f4f6fb73;
+  --divider: #ffffff14;
+  --accent: #7fd8c4;
+  --accent-2: #f4a3b4;
+  --accent-glow: #7fd8c466;
+  --on-accent: #08102a;
+  --danger: #f48a8a;
+  --danger-soft: #f48a8a1f;
+  --globe-halo: #7fd8c455;
+  --globe-shade: #060a1ce6;
+  --font: 'Geist', ui-sans-serif, system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: light) {
+  .auth {
+    --bg-deep: #e8eef7;
+    --bg-mid: #f5f2ec;
+    --glass: #ffffff80;
+    --glass-strong: #ffffffb3;
+    --glass-hover: #ffffffd9;
+    --glass-soft: #ffffff59;
+    --glass-stroke: #ffffffe6;
+    --glass-stroke-soft: #0e143014;
+    --glass-dark: #ffffffcc;
+    --glass-shadow: #5b6b9a33;
+    --text-primary: #0e1430;
+    --text-secondary: #0e1430b3;
+    --text-tertiary: #0e143080;
+    --divider: #0e143014;
+    --accent: #1fa184;
+    --accent-2: #d9546f;
+    --accent-glow: #1fa18440;
+    --on-accent: #ffffff;
+    --danger: #d64545;
+    --danger-soft: #d645451f;
+    --globe-shade: #1b2550b3;
+  }
+}
+
+.auth {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr minmax(360px, 480px);
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font);
+}
+
+/* --- lado do globo ------------------------------------------------------- */
+
+.auth-stage {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  padding: 56px;
+  overflow: hidden;
+  background: radial-gradient(120% 90% at 30% 20%, var(--bg-mid), var(--bg-deep) 70%);
+}
+
+/* O globo do design é um IMAGEFILL que não foi exportado. Isto é uma
+   aproximação em gradiente — ver o ledger. Decorativo, então fica fora da
+   árvore de acessibilidade. */
+.auth-globe {
+  position: absolute;
+  inset: auto auto 18% 8%;
+  width: 460px;
+  height: 460px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 62% 30%, #00000000 35%, var(--globe-shade) 100%),
+    radial-gradient(circle at 35% 30%, #1c3a74, #0e1636 70%);
+  box-shadow: 0 0 140px 60px var(--globe-halo);
+}
+
+.auth-caption {
+  position: relative;
+  font-size: 34px;
+  line-height: 1.25;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.auth-caption span {
+  display: block;
+  color: var(--text-secondary);
+}
+
+/* --- painel -------------------------------------------------------------- */
+
+.auth-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  justify-content: center;
+  padding: 48px 44px;
+  background: var(--glass-dark);
+  border-left: 1px solid var(--glass-stroke-soft);
+  backdrop-filter: blur(40px);
+}
+
+.auth-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.auth-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.auth-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+
+.auth-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--glass-soft);
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.auth-heading h1 {
+  margin: 0 0 8px;
+  font-size: 30px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+.auth-heading p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.auth-providers {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--divider);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth-field label {
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.auth-field input {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--glass-stroke-soft);
+  background: var(--glass);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+}
+
+.auth-field input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.auth-hint {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  margin: 0;
+}
+
+.auth-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-stroke-soft);
+  background: var(--glass);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.auth-btn:hover:not(:disabled) {
+  background: var(--glass-hover);
+}
+
+.auth-btn-primary {
+  border: none;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.auth-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.auth-btn-link {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.auth-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.auth-footer-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* Erro é anunciado, não só colorido: a cor sozinha não chega a quem usa
+   leitor de tela nem a quem não distingue o vermelho. */
+.auth-error {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+/* --- Escolha ------------------------------------------------------------- */
+
+.auth-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid var(--glass-stroke-soft);
+  background: var(--glass);
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.auth-choice:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.auth-choice strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.auth-choice span {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.auth-choice em {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+/* --- esqueleto ----------------------------------------------------------- */
+
+/* `loading` não renderiza nem Login nem app (I8). Um esqueleto neutro é o que
+   impede o Login de piscar a cada recarga de quem já está logado. */
+.auth-skeleton {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: var(--bg-deep, #060a1c);
+}
+
+.auth-skeleton-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #7fd8c4, #f4a3b4);
+  opacity: 0.35;
+}
+
+@media (max-width: 900px) {
+  .auth {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-stage {
+    display: none;
+  }
+
+  .auth-panel {
+    border-left: none;
+  }
+}

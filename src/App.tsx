@@ -1,121 +1,149 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useCallback, useMemo, useState } from 'react'
+import { monthLabel, todayISO } from './lib/date'
+import { Calendar } from './timeline/Calendar'
+import { PEOPLE } from './timeline/people'
+import { Sidebar } from './timeline/Sidebar'
+import { StayDialog } from './timeline/StayDialog'
+import { computeTogetherPeriods } from './timeline/together'
+import { computeStats } from './timeline/timelineStats'
+import { useBarDrag } from './timeline/useBarDrag'
+import { useTimeline } from './timeline/useTimeline'
+import type { Stay } from './timeline/types'
+import './timeline/timeline.css'
+
+type Editing = { mode: 'create'; date: string } | { mode: 'edit'; stay: Stay }
 
 function App() {
-  const [count, setCount] = useState(0)
+  const { entries: stays, addEntry, updateEntry, removeEntry } = useTimeline()
+  const now = new Date()
+  const [cursor, setCursor] = useState({ year: now.getFullYear(), month: now.getMonth() })
+  const [editing, setEditing] = useState<Editing | null>(null)
+
+  const commitDrag = useCallback(
+    (id: string, patch: { start: string; end?: string }) => updateEntry(id, patch),
+    [updateEntry],
+  )
+  const { preview, dragging, beginDrag, consumeClick } = useBarDrag(commitDrag)
+
+  const displayStays = useMemo(
+    () => (preview ? stays.map((stay) => (stay.id === preview.id ? preview : stay)) : stays),
+    [stays, preview],
+  )
+
+  const together = useMemo(() => computeTogetherPeriods(stays), [stays])
+  const stats = useMemo(() => computeStats(stays), [stays])
+  const cityOptions = useMemo(
+    () => [...new Set(stays.map((stay) => stay.city))].sort((a, b) => a.localeCompare(b, 'pt-BR')),
+    [stays],
+  )
+
+  const next =
+    cursor.month === 11
+      ? { year: cursor.year + 1, month: 0 }
+      : { year: cursor.year, month: cursor.month + 1 }
+
+  function shiftMonth(delta: number) {
+    setCursor(({ year, month }) => {
+      const shifted = month + delta
+      if (shifted < 0) return { year: year - 1, month: 11 }
+      if (shifted > 11) return { year: year + 1, month: 0 }
+      return { year, month: shifted }
+    })
+  }
+
+  function goToToday() {
+    const today = new Date()
+    setCursor({ year: today.getFullYear(), month: today.getMonth() })
+  }
+
+  function handleSave(values: Omit<Stay, 'id'>) {
+    if (editing?.mode === 'edit') updateEntry(editing.stay.id, values)
+    else addEntry(values)
+    setEditing(null)
+  }
+
+  const calendarProps = {
+    stays: displayStays,
+    onDayClick: (iso: string) => setEditing({ mode: 'create', date: iso }),
+    onStayClick: (stay: Stay) => setEditing({ mode: 'edit', stay }),
+    onBarPointerDown: beginDrag,
+    consumeClick,
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className={`app${dragging ? ' app-dragging' : ''}`}>
+      <main className="app-main">
+        <header className="app-header">
+          <div className="brand">
+            <span className="brand-marks">
+              {PEOPLE.map((person) => (
+                <span key={person.id} className="dot" style={{ background: person.color }} />
+              ))}
+            </span>
+            lanabiel
+          </div>
 
-      <div className="ticks"></div>
+          <div className="month-nav">
+            <button
+              type="button"
+              className="btn btn-outline btn-icon"
+              onClick={() => shiftMonth(-1)}
+              aria-label="Mês anterior"
+            >
+              ‹
+            </button>
+            <span className="month-range">
+              {monthLabel(cursor.year, cursor.month)} — {monthLabel(next.year, next.month)}
+            </span>
+            <button
+              type="button"
+              className="btn btn-outline btn-icon"
+              onClick={() => shiftMonth(1)}
+              aria-label="Próximo mês"
+            >
+              ›
+            </button>
+            <button type="button" className="btn btn-ghost" onClick={goToToday}>
+              Hoje
+            </button>
+          </div>
+        </header>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+        <div className="calendar-scroll">
+          <div className="months">
+            <Calendar year={cursor.year} month={cursor.month} {...calendarProps} />
+            <Calendar year={next.year} month={next.month} {...calendarProps} />
+          </div>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      </main>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      <Sidebar
+        stats={stats}
+        together={together}
+        stays={stays}
+        onNew={() => setEditing({ mode: 'create', date: todayISO() })}
+        onEdit={(stay) => setEditing({ mode: 'edit', stay })}
+      />
+
+      {editing && (
+        <StayDialog
+          key={editing.mode === 'edit' ? editing.stay.id : editing.date}
+          stay={editing.mode === 'edit' ? editing.stay : undefined}
+          date={editing.mode === 'create' ? editing.date : undefined}
+          cityOptions={cityOptions}
+          onSave={handleSave}
+          onDelete={
+            editing.mode === 'edit'
+              ? () => {
+                  removeEntry(editing.stay.id)
+                  setEditing(null)
+                }
+              : undefined
+          }
+          onClose={() => setEditing(null)}
+        />
+      )}
+    </div>
   )
 }
 

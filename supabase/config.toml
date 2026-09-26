@@ -393,8 +393,20 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
-# [edge_runtime.secrets]
-# secret_key = "env(SECRET_VALUE)"
+# Segredos LOCAIS da edge function `send-invite` (ADR 0006). Nenhum é segredo
+# de verdade: o transporte local é o Mailpit da própria stack, que não entrega
+# nada para fora. No remoto os valores reais vão por `supabase secrets set`, e
+# INVITE_EMAIL_TRANSPORT fica 'resend' (o default da função).
+[edge_runtime.secrets]
+INVITE_EMAIL_TRANSPORT = "mailpit"
+MAILPIT_URL = "http://supabase_inbucket_lanabiel:8025"
+INVITE_FROM = "lanabiel <convite@lanabiel.test>"
+APP_URL = "http://127.0.0.1:5173"
+
+# Sem JWT válido o gateway recusa antes da função rodar. A autorização fina
+# (quem manda convite de quem) continua em `begin_invite_send`.
+[functions.send-invite]
+verify_jwt = true
 
 [analytics]
 enabled = true

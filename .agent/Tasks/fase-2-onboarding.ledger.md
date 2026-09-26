@@ -277,5 +277,18 @@ Renomear as duas fases juntas, num commit só de renome.
 - **A30** (manual): no celular, abrir o link do convite, entrar pelo Google e
   conferir que volta à mesma aba com o código preservado e chega ao preview.
   Exige `VITE_AUTH_PROVIDERS=google` com credencial real.
-- Mover `div.auth { overflow: clip }` de `onboarding.css` para `auth.css` quando
-  as mudanças não commitadas da Fase 1 naquele arquivo entrarem.
+- ~~Mover `div.auth { overflow: clip }` para `auth.css`~~ — feito depois do
+  merge do redesenho: `.auth` agora é `overflow: clip` no próprio `auth.css`.
+
+## Depois do PR · dívidas pagas
+
+- **Renome para inglês**, Fases 1 e 2 juntas, como a regra do CLAUDE.md pede:
+  `Escolha` → `StartChoice`, `CriarConta` → `SignUp`, `Perfil` → `ProfileStep`,
+  `SobreAGente` → `CoupleStep`, `Aguardando` → `WaitingScreen`, `Codigo` →
+  `CodeEntry`, `Convite` → `InviteScreen`, `Confirmar` → `ConfirmCouple`,
+  `TudoPronto` → `AllSet`; e os passos do assistente (`'perfil-criar'` →
+  `'profile-create'` etc.). O fragmento `#convite=` fica: é parte do link que já
+  sai no e-mail, não identificador de código.
+- `overflow: clip` movido para `auth.css`.
+- A29, A30, avisos e agendador: adiados para o fim do roadmap por decisão do
+  Gabriel (2026-09-26).

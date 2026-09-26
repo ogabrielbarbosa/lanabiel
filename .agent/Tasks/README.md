@@ -7,7 +7,7 @@ gosto: ela segue dependência de dados, e está justificada em cada linha.
 | --- | --- | --- | --- |
 | 0 | [Fundação](./fase-0-fundacao.md) | — | 🟢 Done (2026-09-25) |
 | 1 | [Login](./fase-1-login.md) | 2 | 🟡 Reviewed (2026-09-26) |
-| 2 | Onboarding | 6 frames / 23 telas | 🔴 sem spec |
+| 2 | [Onboarding](./fase-2-onboarding.md) | 6 frames / 23 telas | 🟡 Implementada e na `main` (2026-09-26) — A29/A30 adiados, ver abaixo |
 | 3 | Configurações | 1 (de 8 abas) | 🔴 sem spec |
 | 4 | Lista | 7 | 🔴 sem spec |
 | 5 | Calendário | 5 | 🔴 sem spec |
@@ -107,6 +107,11 @@ projeto. É o único aviso de segurança que sobrou e é toggle no painel
 ---
 
 ## Fase 2 — Onboarding
+
+> **Estado (2026-09-26):** implementada, verificada e mergeada (PR #1). Falta
+> só o que depende de serviço externo: **A29** (e-mail real pelo Resend) e
+> **A30** (Google no celular). Decidido: ficam para o fim do roadmap, junto com
+> os **avisos ao outro** e o **agendador** — que a Fase 2 deixou fora de escopo.
 
 **Frames (23 telas, as internas ficam num filho `Screens`):**
 `Cenário 1 — Criar o espaço [rjqp1]` (5) · `Cenário 2 — Convidado pelo link do

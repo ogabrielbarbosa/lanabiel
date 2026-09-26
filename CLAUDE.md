@@ -82,9 +82,13 @@ todo turno está abaixo.
 
 ```
 src/domain/coupleState.ts  # derivação: estadias → juntos/separados/viajando
-src/data/                  # result.ts (discriminado) + stays.ts (fronteira do banco)
+src/domain/onboarding.ts   # LIMITS (paridade com os CHECK), código de convite
+src/data/                  # result.ts (discriminado), stays, account, invites, couple…
+src/auth/                  # portão de sessão, Login, SignUp, StartChoice
+src/onboarding/            # assistente de criar/entrar no espaço, recebe OnboardingApi
 src/lib/                   # supabase.ts, database.types.ts (GERADO), date.ts
 src/timeline/              # a tela antiga, sobre localStorage — cai na Fase 5
+supabase/functions/        # edge functions (send-invite)
 supabase/migrations/       # o schema, append-only
 supabase/tests/            # integração: RLS e restrições
 ```
@@ -165,12 +169,22 @@ por feature (`timeline/timeline.css`), sem framework nem CSS-in-JS.
 
 ## Estado atual do repositório
 
-Fase 0 e Fase 1 commitadas. A Fase 1 entregou `src/auth/` (portão de sessão,
-login por senha e OAuth) e `src/data/account.ts`; a tela antiga saiu de
-`App.tsx` para `src/timeline/TimelineScreen.tsx` sem mudar de conteúdo, e
-`App.tsx` hoje é só o portão.
+Fases 0, 1 e 2 na `main`. A Fase 1 entregou `src/auth/` (portão de sessão,
+login por senha e OAuth); a Fase 2, o onboarding (`src/onboarding/`), o convite
+(`couple_invites`, edge function `supabase/functions/send-invite`), os
+municípios do IBGE e as fotos em bucket privado. `App.tsx` continua sendo só o
+portão; com `ready`, ele ainda renderiza a timeline antiga sobre `localStorage`
+— até a Fase 5, **nenhum casal de fora deve usar o app**.
 
-`.agent/System/project_architecture.md` está atualizado ao fim da Fase 1.
+Adiado de propósito para o fim do roadmap: e-mail real pelo Resend (A29), Google
+no celular (A30), avisos ao outro e o agendador. Localmente o e-mail vai para o
+Mailpit da stack (`http://127.0.0.1:55324`).
+
+**Uma edge function editada pode não recarregar** na stack local
+(`policy = "per_worker"`): se o teste falhar com o comportamento antigo,
+`docker restart supabase_edge_runtime_lanabiel`.
+
+`.agent/System/project_architecture.md` está atualizado ao fim da Fase 2.
 
 **O arquivo `lanabiel` (sem extensão) na raiz é um export JSON ANTIGO do design,
 e não é fonte da verdade.** Ele tem 4 telas e um conjunto de tokens

@@ -38,7 +38,7 @@ src/
 │   ├── session.ts          # AuthState, com `loading` distinto de `signed_out`
 │   ├── signIn.ts           # senha e OAuth; traduz erro do GoTrue em causa nomeada
 │   ├── callback.ts         # volta do OAuth, e limpeza da URL
-│   ├── Login.tsx · CriarConta.tsx · Escolha.tsx · AuthShell.tsx
+│   ├── Login.tsx · SignUp.tsx · StartChoice.tsx · AuthShell.tsx
 │   └── auth.css            # tokens lidos do .pen; escuro é o padrão
 ├── domain/
 │   ├── coupleState.ts      # derivação: estadias → juntos/separados/viajando
@@ -52,7 +52,7 @@ src/
 ├── onboarding/             # Fase 2: o assistente e as telas; recebe `OnboardingApi` injetada
 │   ├── Onboarding.tsx      # a máquina de passos; o banco é a verdade, o passo é local
 │   ├── pendingInvite.ts    # código pendente em sessionStorage (sobrevive ao OAuth)
-│   ├── Perfil · SobreAGente · Aguardando · Codigo · Convite · Confirmar (+TudoPronto)
+│   ├── ProfileStep · CoupleStep · WaitingScreen · CodeEntry · InviteScreen · ConfirmCouple (+AllSet)
 │   └── onboarding.css
 ├── lib/
 │   ├── supabase.ts         # cliente ÚNICO, com as opções de auth explícitas

@@ -29,6 +29,7 @@ subagente passa a carregar centenas de linhas de catálogo que não usa.
 
 <!-- Mantenha esta lista atualizada. `/update-doc` faz isso no fim de cada rodada. -->
 
+- `Tasks/README.md` — o roadmap das oito fases, e o que cada spec tem de decidir
 - `System/project_architecture.md` — stack, camadas, fluxo de dados
 - `System/ai-development-workflow.md` — o processo: gates, comandos, skills
 - `Decisions/README.md` — índice dos ADRs

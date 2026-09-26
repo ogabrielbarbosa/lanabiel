@@ -15,7 +15,7 @@ DEVKIT_CMD_LINT="npm run lint"
 # (`supabase/tests`, onde a RLS se prova) estão DORMENTES: não há banco de
 # teste, e eles não podem rodar contra produção (ADR 0010).
 DEVKIT_CMD_TEST="npm run test"
-DEVKIT_CMD_TEST_DB=""   # dormente: sem banco de teste (ADR 0010)
+DEVKIT_CMD_TEST_DB="npm run test:db"   # contra o online (ADR 0014); fora do Stop — roda no verify
 DEVKIT_CMD_BUILD="npm run build"   # fora do gate por padrão; DEVKIT_RUN_BUILD=1 inclui
 
 # --- Formatação de um arquivo ----------------------------------------------

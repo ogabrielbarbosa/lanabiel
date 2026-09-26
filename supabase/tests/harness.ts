@@ -13,26 +13,43 @@ import ws from 'ws'
 globalThis.WebSocket ??= ws as unknown as typeof globalThis.WebSocket
 import type { Database } from '../../src/lib/database.types'
 
-// Chaves de DESENVOLVIMENTO LOCAL. São as mesmas em toda instalação do Supabase
-// CLI — estão na documentação e não protegem nada. Nunca use isto contra o
-// projeto remoto; para lá, passe por variável de ambiente.
-const LOCAL_ANON =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
-const LOCAL_SERVICE =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU'
+// Os testes rodam contra o projeto ONLINE — o único banco que existe (ADR
+// 0010) — enquanto o app não estiver aberto a outros casais (ADR 0014). As
+// chaves vêm de `.env.local` (URL e chave publicável, as mesmas do app) e de
+// `.env.test.local` (a `service_role`, que NUNCA entra no `.env.local`: o Vite
+// não a exporia, mas um arquivo a menos com ela é um vazamento a menos).
+for (const file of ['.env.local', '.env.test.local']) {
+  try {
+    process.loadEnvFile(file)
+  } catch {
+    // Ausente é permitido aqui; a checagem abaixo diz o que faltou.
+  }
+}
 
-export const URL = process.env.SUPABASE_URL ?? 'http://127.0.0.1:55321'
+export const URL = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL ?? ''
 
 // Trava de segurança: estes testes criam e APAGAM usuários com a chave de
-// administrador. O app usa o projeto online; os testes, jamais. Qualquer URL
-// que não seja local aborta antes do primeiro request. Hoje eles estão
-// dormentes (ADR 0010); religar = apontar para um banco SÓ de teste e
-// ajustar esta trava para aceitar aquele host, e nenhum outro.
-if (!/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(URL)) {
-  throw new Error(`supabase/tests só roda contra a stack local, e SUPABASE_URL é ${URL}`)
+// administrador. Só usuários deles (`…@test.local`, limpos por id), mas ainda
+// assim contra produção — então é opt-in explícito, e só para o host do
+// projeto `lanabiel`. Qualquer outro host aborta antes do primeiro request.
+const PROD_HOST = 'https://smdtcznadmnrdubeidyz.supabase.co'
+if (URL !== PROD_HOST) {
+  throw new Error(`supabase/tests só roda contra ${PROD_HOST}, e a URL é "${URL}"`)
 }
-export const ANON_KEY = process.env.SUPABASE_ANON_KEY ?? LOCAL_ANON
-const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? LOCAL_SERVICE
+if (process.env.LANABIEL_DB_TESTS_ON_PROD !== '1') {
+  throw new Error(
+    'supabase/tests roda contra PRODUÇÃO (ADR 0014): exporte LANABIEL_DB_TESTS_ON_PROD=1 ' +
+      '(o `npm run test:db` já faz). Só enquanto o app não estiver aberto a outros casais.',
+  )
+}
+export const ANON_KEY = process.env.SUPABASE_ANON_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? ''
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
+if (!ANON_KEY || !SERVICE_KEY) {
+  throw new Error(
+    'faltam chaves: VITE_SUPABASE_PUBLISHABLE_KEY em .env.local e ' +
+      'SUPABASE_SERVICE_ROLE_KEY em .env.test.local (painel → Project Settings → API)',
+  )
+}
 
 export type Db = SupabaseClient<Database>
 
@@ -41,11 +58,33 @@ export const admin: Db = createClient<Database>(URL, SERVICE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
 })
 
+/**
+ * O Auth do projeto online aceita 30 logins a cada 5 min por IP
+ * (`sign_in_sign_ups`), e a suíte faz mais de 100. Decisão do Gabriel
+ * (2026-09-26): não afrouxar o limite de produção — os arquivos rodam em série
+ * (vitest.config.ts) e o login espera a janela e tenta de novo.
+ */
+const RATE_LIMIT_WAIT_MS = 30_000
+const RATE_LIMIT_TRIES = 12
+
+function isRateLimited(error: { code?: string; message: string } | null): boolean {
+  return error?.code === 'over_request_rate_limit' || /rate limit/i.test(error?.message ?? '')
+}
+
 /** Cliente anônimo, novo e sem sessão. É o que o navegador teria. */
 export function anonClient(): Db {
-  return createClient<Database>(URL, ANON_KEY, {
+  const client = createClient<Database>(URL, ANON_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
+  const signIn = client.auth.signInWithPassword.bind(client.auth)
+  client.auth.signInWithPassword = async (credentials) => {
+    for (let attempt = 1; ; attempt++) {
+      const result = await signIn(credentials)
+      if (!isRateLimited(result.error) || attempt >= RATE_LIMIT_TRIES) return result
+      await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_WAIT_MS))
+    }
+  }
+  return client
 }
 
 // Cidades do seed (UUID fixo na migration 20260925120300).
@@ -86,18 +125,35 @@ export async function deleteUserAndCouple(userId: string): Promise<void> {
 }
 
 /**
- * SQL direto no Postgres local, para o que a API não expõe (o catálogo, em
- * A20). Só local: roda `psql` dentro do container da stack.
+ * SQL direto no Postgres, para o que a API não expõe (o catálogo, em A20). Vai
+ * pela Management API (`supabase db query --linked`), com a sessão da CLI —
+ * sem senha de banco no repositório. Devolve no formato do `psql -tA`: uma
+ * linha por registro, colunas separadas por `|`, booleanos como `t`/`f`.
+ *
+ * As colunas PRECISAM ter nomes distintos (use `as`): a resposta vem como
+ * objeto JSON por linha, e dois `count(*)` viram uma chave só — em silêncio.
  */
 export function sql(query: string): string {
-  return execFileSync(
-    'docker',
-    ['exec', 'supabase_db_lanabiel', 'psql', '-U', 'postgres', '-tA', '-c', query],
-    { encoding: 'utf8' },
-  ).trim()
+  // A Management API devolve cada linha como objeto JSON com as chaves em
+  // ordem ALFABÉTICA. Para manter a ordem das colunas, o próprio Postgres
+  // serializa cada linha (`row_to_json` preserva a ordem) numa coluna de texto.
+  const wrapped = `select coalesce(json_agg(row_to_json(q))::text, '[]') as rows from (${query}) q`
+  const out = execFileSync('npx', ['supabase', 'db', 'query', '--linked', '-o', 'json', wrapped], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore'],
+  })
+  const { rows } = JSON.parse(out) as { rows: { rows: string }[] }
+  const records = JSON.parse(rows[0]!.rows) as Record<string, unknown>[]
+  const cell = (v: unknown) => (v === true ? 't' : v === false ? 'f' : v === null ? '' : String(v))
+  return records.map((r) => Object.values(r).map(cell).join('|')).join('\n')
 }
 
-async function recreateUser(email: string, homeCityId: string, name: string): Promise<TestUser> {
+async function recreateUser(
+  email: string,
+  homeCityId: string,
+  name: string,
+  color: string = '#7FD8C4',
+): Promise<TestUser> {
   const { data: existing } = await admin.auth.admin.listUsers({ perPage: 1000 })
   for (const user of existing.users) {
     if (user.email === email) await deleteUserAndCouple(user.id)
@@ -116,7 +172,7 @@ async function recreateUser(email: string, homeCityId: string, name: string): Pr
   // onboarding (Fase 2) que sabe a cidade, então é ele que cria o perfil.
   const { error: profileError } = await admin
     .from('profiles')
-    .insert({ id: data.user.id, display_name: name, full_name: `${name} de Teste`, color: '#000000', home_city_id: homeCityId })
+    .insert({ id: data.user.id, display_name: name, full_name: `${name} de Teste`, color, home_city_id: homeCityId })
   if (profileError) throw new Error(`perfil de ${email}: ${profileError.message}`)
 
   return { id: data.user.id, email }
@@ -133,7 +189,7 @@ async function recreateUser(email: string, homeCityId: string, name: string): Pr
  */
 export async function buildScenario(prefix: string): Promise<Scenario> {
   const gabriel = await recreateUser(`${prefix}-gabriel@test.local`, CITY.sjc, 'Gabriel')
-  const lana = await recreateUser(`${prefix}-lana@test.local`, CITY.marau, 'Lana')
+  const lana = await recreateUser(`${prefix}-lana@test.local`, CITY.marau, 'Lana', '#F4A3B4')
   const outsider = await recreateUser(`${prefix}-outro@test.local`, CITY.londrina, 'Outro')
 
   // Casais antigos deste prefixo já saíram junto com os usuários
@@ -165,4 +221,75 @@ export async function signIn(email: string): Promise<Db> {
   const { error } = await db.auth.signInWithPassword({ email, password: PASSWORD })
   if (error) throw new Error(`login de ${email}: ${error.message}`)
   return db
+}
+
+export interface SignedUser {
+  id: string
+  email: string
+  db: Db
+}
+
+/**
+ * Fábrica de usuários descartáveis de um arquivo de teste (Fase 3). Cada
+ * arquivo tem o seu `prefix` — o vitest roda arquivos em paralelo, e
+ * `auth.users` é global. `sweep()` apaga restos de rodadas anteriores do
+ * prefixo; `cleanup()`, o que esta rodada criou. Só `…@test.local`, por id.
+ */
+export function userFactory(prefix: string) {
+  const created: string[] = []
+
+  async function newUser(tag: string, homeCityId: string | null = CITY.sjc): Promise<SignedUser> {
+    const email = `${prefix}-${tag}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@test.local`
+    const { data, error } = await admin.auth.admin.createUser({ email, password: PASSWORD, email_confirm: true })
+    if (error || !data.user) throw new Error(`criar ${email}: ${error?.message}`)
+    created.push(data.user.id)
+
+    const db = anonClient()
+    const { error: signInError } = await db.auth.signInWithPassword({ email, password: PASSWORD })
+    if (signInError) throw new Error(`login ${email}: ${signInError.message}`)
+
+    if (homeCityId) {
+      const { error: profileError } = await db
+        .from('profiles')
+        .insert({ id: data.user.id, full_name: `${tag} Silva`, display_name: tag, home_city_id: homeCityId })
+      if (profileError) throw new Error(`perfil ${email}: ${profileError.message}`)
+    }
+    return { id: data.user.id, email, db }
+  }
+
+  async function sweep() {
+    const { data } = await admin.auth.admin.listUsers({ perPage: 1000 })
+    for (const user of data.users) {
+      if (user.email?.startsWith(`${prefix}-`) && user.email.endsWith('@test.local')) {
+        await deleteUserAndCouple(user.id)
+      }
+    }
+  }
+
+  async function cleanup() {
+    for (const id of created) await deleteUserAndCouple(id)
+  }
+
+  return { newUser, sweep, cleanup }
+}
+
+/** RPC com nome variável; o tipo gerado exige literal. Lança no erro. */
+export async function rpc(db: Db, fn: string, args: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
+  const { data, error } = await (db.rpc as (f: string, a: object) => ReturnType<Db['rpc']>)(fn, args)
+  if (error) throw new Error(`${fn}: ${error.message}`)
+  return data as Record<string, unknown>
+}
+
+/** Casal completo de dois, pelo caminho real: create_couple → create_invite → accept_invite. */
+export async function coupleOfTwo(
+  factory: ReturnType<typeof userFactory>,
+  tag: string,
+): Promise<{ a: SignedUser; b: SignedUser; coupleId: string }> {
+  const a = await factory.newUser(`${tag}-a`)
+  const b = await factory.newUser(`${tag}-b`, CITY.marau)
+  const couple = await rpc(a.db, 'create_couple', { p_started_on: '2024-09-17', p_name: `Casal ${tag}` })
+  const invite = await rpc(a.db, 'create_invite', { p_email: `${tag}-b@exemplo.com` })
+  const joined = await rpc(b.db, 'accept_invite', { p_code: invite.code })
+  if (joined.status !== 'joined') throw new Error(`accept_invite: ${JSON.stringify(joined)}`)
+  return { a, b, coupleId: couple.couple_id as string }
 }

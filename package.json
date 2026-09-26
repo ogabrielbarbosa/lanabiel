@@ -9,12 +9,14 @@
     "typecheck": "tsc -b --noEmit",
     "lint": "oxlint",
     "test": "vitest run src",
+    "test:db": "LANABIEL_DB_TESTS_ON_PROD=1 vitest run --project db",
     "types:gen": "supabase gen types typescript --linked > src/lib/database.types.ts",
     "preview": "vite preview",
     "db:push": "supabase db push"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.109.0",
+    "lucide-react": "^1.48.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

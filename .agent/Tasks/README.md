@@ -8,7 +8,7 @@ gosto: ela segue dependência de dados, e está justificada em cada linha.
 | 0 | [Fundação](./fase-0-fundacao.md) | — | 🟢 Done (2026-09-25) |
 | 1 | [Login](./fase-1-login.md) | 2 | 🟡 Reviewed (2026-09-26) |
 | 2 | [Onboarding](./fase-2-onboarding.md) | 6 frames / 23 telas | 🟡 Implementada e na `main` (2026-09-26) — A29/A30 adiados, ver abaixo |
-| 3 | Configurações | 1 (de 8 abas) | 🔴 sem spec |
+| 3 | [Configurações](./fase-3-configuracoes.md) | 9 abas | 🟡 Implementada (2026-09-26) — A24 manual pendente, contraste como dívida |
 | 4 | Lista | 7 | 🔴 sem spec |
 | 5 | Calendário | 5 | 🔴 sem spec |
 | 6 | Viagens | 7 | 🔴 sem spec |

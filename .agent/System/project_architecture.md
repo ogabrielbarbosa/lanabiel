@@ -1,6 +1,6 @@
 # Arquitetura do projeto
 
-> Atualizado ao fim da Fase 2 (Onboarding), 2026-09-26. O _como_ mora aqui e é
+> Atualizado ao fim da Fase 3 (Configurações), 2026-09-26. O _como_ mora aqui e é
 > reescrito sempre que o código muda; o _porquê_ mora em `../Decisions/`.
 
 ## O que é
@@ -25,14 +25,23 @@ construído em oito fases — ver `../Tasks/`.
 | Lint | oxlint | verificação estática |
 | Autenticação | Supabase Auth: senha + OAuth | [ADR 0004](../Decisions/0004-login-com-senha-e-oauth.md) — sem link mágico |
 | Tipos | tsc, três project refs | `tsconfig.app.json` (navegador), `.node.json` (configs), `.tests.json` (integração) |
-| Testes | vitest, três projetos | `domain` (node) · `ui` (jsdom, [ADR 0005](../Decisions/0005-interface-se-prova-em-jsdom.md)) · `db` (node) — **dormente**, sem banco de teste ([ADR 0010](../Decisions/0010-banco-so-online-sem-stack-local.md)) |
+| Testes | vitest, três projetos | `domain` (node) · `ui` (jsdom, [ADR 0005](../Decisions/0005-interface-se-prova-em-jsdom.md)) · `db` (node) — contra o projeto online, em série, fora do hook `Stop` ([ADR 0014](../Decisions/0014-testes-de-integracao-no-projeto-online.md)) |
 
 ## Estrutura
 
 ```text
 src/
 ├── main.tsx                # entrypoint
-├── App.tsx                 # só o portão de sessão; nada mais mora aqui
+├── App.tsx                 # portão de sessão + casca; nada mais mora aqui
+├── app/                    # Fase 3: a casca
+│   ├── Shell.tsx           # barra lateral (só destinos que existem) + rota
+│   ├── router.ts           # caminho na barra, sem biblioteca (ADR 0013)
+│   ├── appearance.ts · useAppearance.ts   # tema/densidade/animações, por aparelho
+│   └── app.css             # tokens claro/escuro do .pen, em data-theme
+├── settings/               # Fase 3: as nove abas; recebe `SettingsApi` injetada
+│   ├── SettingsScreen.tsx · RightPanel.tsx · context.ts · parts.tsx · exportAll.ts
+│   ├── tabs/               # uma por aba do Pencil
+│   └── settings.css
 ├── auth/
 │   ├── AuthGate.tsx        # decide: esqueleto / Login / onboarding / domínio; lê `#convite=`
 │   ├── session.ts          # AuthState, com `loading` distinto de `signed_out`
@@ -146,7 +155,7 @@ link leva o código no **fragmento** (`#convite=`), que o portão guarda em
 O e-mail sai pela edge function `send-invite`, que repassa o JWT de quem chamou
 — a autorização fica em `begin_invite_send`, sob RLS — e só marca `last_sent_at`
 depois de o provedor aceitar ([ADR 0006](../Decisions/0006-email-transacional-por-resend-em-edge-function.md)).
-Os segredos do Resend ainda não estão no online (fim do roadmap): hoje a função responde erro e a tela mostra o código. O transporte `mailpit` do código é da antiga bancada local e está dormente com os testes.
+Os segredos do Resend ainda não estão no online (fim do roadmap): hoje a função responde erro e a tela mostra o código. O transporte `mailpit` do código é da antiga bancada local; A17/A18 só rodam com `MAILPIT_URL`.
 
 Cidades são os municípios do IBGE, por migration; o cliente não insere cidade
 ([ADR 0007](../Decisions/0007-cidades-brasileiras-por-seed-do-ibge.md)). Fotos
@@ -157,8 +166,27 @@ em bucket privado `avatars/<uid>/…`, legíveis pelo casal
 
 Não há stack local. O app, inclusive em `localhost`, usa o projeto online
 `lanabiel` (`.env.local`); migrations sobem por `npm run db:push`, tipos vêm de
-`npm run types:gen --linked`. Os testes de integração estão dormentes até existir
-um banco só de teste — ver [ADR 0010](../Decisions/0010-banco-so-online-sem-stack-local.md).
+`npm run types:gen --linked`. Os testes de integração rodam contra esse mesmo
+projeto, com `npm run test:db`, enquanto o app não abrir a outros casais — ver
+[ADR 0014](../Decisions/0014-testes-de-integracao-no-projeto-online.md), que
+supersede essa parte do [0010](../Decisions/0010-banco-so-online-sem-stack-local.md).
+
+## Preferências e Configurações (Fase 3)
+
+Três escopos, um dono cada ([ADR 0011](../Decisions/0011-preferencias-em-tres-escopos.md)):
+**casal** em `couple_settings` (os dois editam), **pessoa** em `profile_settings`
+(só a própria lê), **aparelho** em `localStorage` (`lanabiel:appearance`). Os
+padrões moram no `default` das colunas; as linhas nascem por trigger junto com
+o casal e o perfil. As listas dos `CHECK` (paletas, categorias) são as de
+`src/domain/settings.ts`, com paridade testada. As Fases 4–7 leem essas colunas.
+
+A tela mostra sempre o valor GRAVADO: cada escrita manda um patch de uma coluna
+e aplica a linha que o banco devolve; falha volta o controle e mostra a causa.
+
+Sair do casal (`leave_couple`) deixa o acervo com quem fica e revoga o convite
+aberto — convite é da pessoa convidada. Quem fica volta a `awaiting_partner`
+(slot 1 ou 2), e o próximo aceite ocupa a vaga livre. Apagar o espaço apaga a
+pasta `couple-media/<couple_id>/` pelo cliente e depois chama `delete_couple`.
 
 ## Fronteiras
 
@@ -171,9 +199,11 @@ um banco só de teste — ver [ADR 0010](../Decisions/0010-banco-so-online-sem-s
 
 ## Schema
 
-Seis tabelas, todas com RLS: `cities`, `couples`, `profiles`, `couple_members`,
-`couple_invites`, `stays`; mais dois contadores de abuso em `private`, fora da
-API. Detalhes nas specs da Fase 0 (seção 5) e da Fase 2 (seção 5). Dois pontos que não são óbvios lendo o
+Nove tabelas, todas com RLS: `cities`, `couples`, `profiles`, `couple_members`,
+`couple_invites`, `stays`, `couple_settings`, `profile_settings`,
+`couple_saved_cities`; mais dois contadores de abuso em `private`, fora da API.
+Dois buckets privados: `avatars` (por pessoa, ADR 0009) e `couple-media` (por
+casal, ADR 0012). Detalhes nas specs das Fases 0, 2 e 3 (seção 5). Dois pontos que não são óbvios lendo o
 DDL:
 
 - `stays_no_overlap` é um `EXCLUDE USING gist` sobre
@@ -186,11 +216,14 @@ DDL:
 - `couple_members` tem `unique (profile_id)`: uma pessoa em no máximo um casal,
   por construção.
 - `couples` tem trigger que recusa `started_on` futuro em qualquer caminho.
+- `profiles.color` está na paleta do design (`CHECK`) e um trigger recusa a cor
+  da outra pessoa do casal (`profiles_color_taken`).
 
 `private.my_couple_ids()` é `security definer` em `private`, fora da API. Em
-`public` há **exatamente sete** `security definer` — as RPCs do convite, listadas
-no ADR 0008 — e `supabase/tests/onboarding.test.ts` (A20) falha se aparecer uma
-oitava. Todas têm `revoke execute ... from public, anon`, porque o Postgres
+`public` há **exatamente doze** `security definer` — as sete RPCs do convite
+(ADR 0008), mais `leave_couple`, `delete_couple`, `cancel_invite`,
+`list_my_sessions` e `end_my_session` (Fase 3) — e
+`supabase/tests/onboarding.test.ts` (A20) falha se aparecer uma décima terceira. Todas têm `revoke execute ... from public, anon`, porque o Postgres
 concede `EXECUTE` a `PUBLIC` por padrão. O `service_role` tem `USAGE` em
 `private` para o trigger de `couples` funcionar em escrita administrativa.
 

@@ -72,3 +72,22 @@ export function buildMonthGrid(year: number, month: number): GridDay[][] {
 
   return weeks
 }
+
+const WEEKDAYS_LONG_PT = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+
+/** `'Sexta, 25 de setembro'` — o cabeçalho do painel das Configurações. */
+export function weekdayDayMonthLabel(iso: string): string {
+  const date = parseISODate(iso)
+  return `${WEEKDAYS_LONG_PT[date.getDay()]}, ${date.getDate()} de ${MONTHS_PT[date.getMonth()].toLowerCase()}`
+}
+
+/** Dia do mês de uma data ISO, sem passar por `Date`. */
+export function dayOfMonth(iso: string): number {
+  return Number(iso.slice(8, 10))
+}
+
+/** `'17 de setembro de 2024'`. */
+export function longDateBR(iso: string): string {
+  const date = parseISODate(iso)
+  return `${date.getDate()} de ${MONTHS_PT[date.getMonth()].toLowerCase()} de ${date.getFullYear()}`
+}

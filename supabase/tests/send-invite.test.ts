@@ -18,6 +18,11 @@ import type { Db } from './harness'
 
 const PREFIX = 'snd'
 const MAILPIT = process.env.MAILPIT_URL ?? 'http://127.0.0.1:55324'
+// A17 e A18 leem a caixa do Mailpit da antiga stack local, que deixou de
+// existir (ADR 0010). Contra o projeto online eles só rodam com um Mailpit
+// apontado por MAILPIT_URL — e o envio real (Resend) está no fim do roadmap.
+// A19 chama o handler direto e roda sempre.
+const WITH_MAILPIT = Boolean(process.env.MAILPIT_URL)
 const created: string[] = []
 
 interface Mail {
@@ -33,6 +38,8 @@ async function mailsTo(address: string): Promise<Mail[]> {
 }
 
 async function clearMailsTo(address: string): Promise<void> {
+  // Sem Mailpit não há caixa a limpar — e A19 não lê caixa nenhuma.
+  if (!WITH_MAILPIT) return
   const query = encodeURIComponent(`to:"${address}"`)
   await fetch(`${MAILPIT}/api/v1/search?query=${query}`, { method: 'DELETE' })
 }
@@ -80,7 +87,7 @@ afterAll(async () => {
   for (const id of created) await deleteUserAndCouple(id)
 }, 60_000)
 
-describe('A17 — o e-mail sai, com o código e o link', () => {
+describe.skipIf(!WITH_MAILPIT)('A17 — o e-mail sai, com o código e o link', () => {
   it('uma mensagem para o convidado, e last_sent_at preenchido', async () => {
     const { owner, recipient, invite } = await setup('a17')
 
@@ -104,7 +111,7 @@ describe('A17 — o e-mail sai, com o código e o link', () => {
   })
 })
 
-describe('A18 — só membro manda, e não em rajada', () => {
+describe.skipIf(!WITH_MAILPIT)('A18 — só membro manda, e não em rajada', () => {
   it('quem é de fora recebe `not_member` e nada sai', async () => {
     const { recipient, invite } = await setup('a18-fora')
     const stranger = await newMember('a18-estranho')

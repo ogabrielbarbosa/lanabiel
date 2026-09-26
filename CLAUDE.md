@@ -33,14 +33,16 @@ a suíte de domínio não pagar o custo de DOM — ver
 [ADR 0005](.agent/Decisions/0005-interface-se-prova-em-jsdom.md).
 **Comportamento de tela se prova renderizando**, não lendo o código.
 
-**Os testes de integração em `supabase/tests` (RLS, restrições, convite, envio)
-estão dormentes** desde que não há banco de teste — ver
-[ADR 0010](.agent/Decisions/0010-banco-so-online-sem-stack-local.md). Eles
-criam e apagam usuários com a chave de administrador e **jamais** rodam contra
-produção: o harness recusa qualquer URL que não seja de teste. Mudança em
-policy, RPC ou migration hoje **não tem prova automática** — diga isso no
-relatório em vez de afirmar que a RLS continua certa. O caminho de volta está
-no ADR: um projeto Supabase só de teste.
+**Os testes de integração em `supabase/tests` (RLS, restrições, convite,
+Configurações) rodam contra o projeto ONLINE**, com `npm run test:db` — só
+enquanto o app não estiver aberto a outros casais
+([ADR 0014](.agent/Decisions/0014-testes-de-integracao-no-projeto-online.md),
+que supersede essa parte do 0010). Eles criam e apagam usuários `…@test.local`
+com a `service_role`, que mora em `.env.test.local` (nunca no `.env.local`). Os
+arquivos rodam em série e o login espera o limite do Auth (30 a cada 5 min por
+IP), então a suíte leva minutos — está **fora** do hook `Stop`: rode-a no
+verify sempre que mexer em policy, RPC ou migration. A17/A18 (Mailpit) só rodam
+com `MAILPIT_URL`.
 
 Formatter continua ausente (`DEVKIT_CMD_FORMAT_FILE` vazio ⇒ o hook `format.sh`
 sai sem fazer nada).
@@ -95,14 +97,17 @@ todo turno está abaixo.
 ```
 src/domain/coupleState.ts  # derivação: estadias → juntos/separados/viajando
 src/domain/onboarding.ts   # LIMITS (paridade com os CHECK), código de convite
-src/data/                  # result.ts (discriminado), stays, account, invites, couple…
+src/domain/settings.ts     # paletas, categorias, abas (paridade com os CHECK)
+src/data/                  # result.ts (discriminado), stays, account, invites, couple, settings…
+src/app/                   # casca: barra lateral, roteador por caminho, aparência (tema)
 src/auth/                  # portão de sessão, Login, SignUp, StartChoice
 src/onboarding/            # assistente de criar/entrar no espaço, recebe OnboardingApi
+src/settings/              # as nove abas das Configurações, recebe SettingsApi
 src/lib/                   # supabase.ts, database.types.ts (GERADO), date.ts
 src/timeline/              # a tela antiga, sobre localStorage — cai na Fase 5
 supabase/functions/        # edge functions (send-invite)
 supabase/migrations/       # o schema, append-only
-supabase/tests/            # integração: RLS e restrições
+supabase/tests/            # integração contra o online (ADR 0014): RLS, RPCs, Storage
 ```
 
 ### O modelo: `stays`, e "juntos" como derivação
@@ -181,17 +186,25 @@ por feature (`timeline/timeline.css`), sem framework nem CSS-in-JS.
 
 ## Estado atual do repositório
 
-Fases 0, 1 e 2 na `main`. A Fase 1 entregou `src/auth/` (portão de sessão,
-login por senha e OAuth); a Fase 2, o onboarding (`src/onboarding/`), o convite
-(`couple_invites`, edge function `supabase/functions/send-invite`), os
-municípios do IBGE e as fotos em bucket privado. `App.tsx` continua sendo só o
-portão; com `ready`, ele ainda renderiza a timeline antiga sobre `localStorage`
-— até a Fase 5, **nenhum casal de fora deve usar o app**.
+Fases 0, 1 e 2 na `main`; Fase 3 na branch `fase-3-configuracoes`. A Fase 1
+entregou `src/auth/` (portão de sessão, login por senha e OAuth); a Fase 2, o
+onboarding (`src/onboarding/`), o convite (`couple_invites`, edge function
+`supabase/functions/send-invite`), os municípios do IBGE e as fotos em bucket
+privado. A Fase 3 entregou a casca (`src/app/`: barra lateral e navegação por
+caminho, ADR 0013), as Configurações (`src/settings/`), as preferências em três
+escopos (`couple_settings`, `profile_settings`, `localStorage` — ADR 0011), a
+mídia do casal (`couple-media`, ADR 0012) e sair/apagar o espaço. Com `ready`,
+o Calendário ainda é a timeline antiga sobre `localStorage` — até a Fase 5,
+**nenhum casal de fora deve usar o app**.
+
+As preferências de telas que ainda não existem (Calendário, Lista, Home,
+Notificações) já estão gravadas: **cada fase lê a coluna que a Fase 3 criou** e
+a refina, em vez de inventar a sua.
 
 Adiado de propósito para o fim do roadmap: e-mail real pelo Resend (A29), Google
 no celular (A30), avisos ao outro e o agendador.
 
-`.agent/System/project_architecture.md` está atualizado ao fim da Fase 2.
+`.agent/System/project_architecture.md` está atualizado ao fim da Fase 3.
 
 **O arquivo `lanabiel` (sem extensão) na raiz é um export JSON ANTIGO do design,
 e não é fonte da verdade.** Ele tem 4 telas e um conjunto de tokens

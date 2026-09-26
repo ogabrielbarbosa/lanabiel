@@ -36,3 +36,15 @@ export async function searchCities(db: Db, query: string): Promise<DataResult<Ci
     rows: data.map((c) => ({ id: c.id, name: c.name, stateCode: c.state_code, lat: c.lat, lng: c.lng })),
   }
 }
+
+/** Cidades por id — para o export resolver as das estadias. Global, legível por qualquer sessão. */
+export async function loadCitiesByIds(db: Db, ids: readonly string[]): Promise<DataResult<Map<string, City>>> {
+  const unique = [...new Set(ids)]
+  if (unique.length === 0) return { status: 'ok', rows: new Map() }
+  const { data, error } = await db.from('cities').select('id, name, state_code, lat, lng').in('id', unique)
+  if (error) return { status: 'error', cause: error.message }
+  return {
+    status: 'ok',
+    rows: new Map(data.map((c) => [c.id, { id: c.id, name: c.name, stateCode: c.state_code, lat: c.lat, lng: c.lng }])),
+  }
+}

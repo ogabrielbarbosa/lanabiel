@@ -129,7 +129,7 @@ describe('A4/A5 — os três estágios da conta', () => {
 
     await admin
       .from('profiles')
-      .insert({ id: userId, display_name: 'Sozinho', full_name: 'Sozinho de Teste', color: '#000000', home_city_id: CITY.sjc })
+      .insert({ id: userId, display_name: 'Sozinho', full_name: 'Sozinho de Teste', color: '#7FD8C4', home_city_id: CITY.sjc })
 
     expect(await loadAccountStage(db)).toEqual({
       status: 'ok',

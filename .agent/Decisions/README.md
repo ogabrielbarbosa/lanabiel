@@ -44,6 +44,10 @@ Use `/adr <título>`. Template: [`0000-template.md`](./0000-template.md).
 | [0007](./0007-cidades-brasileiras-por-seed-do-ibge.md) | Cidades brasileiras por seed do IBGE, com escrita em `cities` fechada ao cliente | schema (`cities`), onboarding | 2026-09-26 |
 | [0008](./0008-convite-portador-e-um-casal-por-pessoa.md) | Convite como entidade com código portador; uma pessoa em no máximo um casal | schema, segurança do convite (Fase 2) | 2026-09-26 |
 | [0009](./0009-fotos-em-bucket-privado-por-casal.md) | Fotos de perfil em bucket privado, com leitura por casal | Storage, autorização (Fase 2) | 2026-09-26 |
+| [0011](./0011-preferencias-em-tres-escopos.md) | Preferências em três escopos: casal, pessoa e aparelho | schema, Configurações (Fase 3) | 2026-09-26 |
+| [0012](./0012-midia-do-casal-em-bucket-por-casal.md) | Mídia do casal em bucket próprio, com pasta por casal | Storage, autorização (Fase 3) | 2026-09-26 |
+| [0013](./0013-casca-e-navegacao-por-caminho.md) | Casca do app e navegação por caminho, sem biblioteca de rotas | cliente, navegação (Fase 3) | 2026-09-26 |
+| [0014](./0014-testes-de-integracao-no-projeto-online.md) | Testes de integração contra o projeto online, enquanto o app não abre (supersede em parte o 0010) | verificação (Fase 3) | 2026-09-26 |
 
 ## Backlog — discutido, sem código
 

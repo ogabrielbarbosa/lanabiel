@@ -1,0 +1,245 @@
+/* A casca do app (Fase 3): tokens de tema e a barra de navegação.
+
+   Tokens lidos do .pen com GetVariables() em 2026-09-26 — cada variável tem um
+   valor para `mode: dark` e outro para `mode: light`. O `data-theme` do <html>
+   é posto por src/app/appearance.ts (e, antes do bundle, pelo script inline do
+   index.html). Nenhuma cor de tema é escrita fora deste bloco: o resto do CSS
+   da casca e das Configurações só lê `var(--…)` (A23).
+
+   Login e onboarding NÃO trocam de tema: o design só os desenha no escuro, e
+   `.auth` redefine os próprios tokens (ver auth.css). */
+
+:root,
+:root[data-theme='dark'] {
+  --bg-deep: #060a1c;
+  --bg-mid: #0e1636;
+  --glow-pink: #6a3560;
+  --glow-aqua: #15525a;
+  --glass: #ffffff12;
+  --glass-soft: #ffffff0a;
+  --glass-strong: #ffffff1f;
+  --glass-hover: #ffffff29;
+  --glass-stroke: #ffffff38;
+  --glass-stroke-soft: #ffffff14;
+  --glass-shine: #ffffff40;
+  --glass-shadow: #02051480;
+  --glass-dark: #0a1030b8;
+  --text-primary: #f4f6fb;
+  --text-secondary: #f4f6fbb3;
+  --text-tertiary: #f4f6fb73;
+  --divider: #ffffff14;
+  --track: #ffffff1a;
+  --accent: #7fd8c4;
+  --accent-2: #f4a3b4;
+  --accent-glow: #7fd8c466;
+  --on-accent: #08102a;
+  --emphasis: #f6e3a1;
+  --heart: #ff7a9a;
+  --danger: #f48a8a;
+  --danger-soft: #f48a8a1f;
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --bg-deep: #e8eef7;
+  --bg-mid: #f5f2ec;
+  --glow-pink: #f8d3dc;
+  --glow-aqua: #cdefe5;
+  --glass: #ffffff80;
+  --glass-soft: #ffffff59;
+  --glass-strong: #ffffffb3;
+  --glass-hover: #ffffffd9;
+  --glass-stroke: #ffffffe6;
+  --glass-stroke-soft: #0e143014;
+  --glass-shine: #ffffffff;
+  --glass-shadow: #5b6b9a33;
+  --glass-dark: #ffffffcc;
+  --text-primary: #0e1430;
+  --text-secondary: #0e1430b3;
+  --text-tertiary: #0e143080;
+  --divider: #0e143014;
+  --track: #0e14301a;
+  --accent: #1fa184;
+  --accent-2: #d9546f;
+  --accent-glow: #1fa18440;
+  --on-accent: #ffffff;
+  --emphasis: #c9951c;
+  --heart: #e0476b;
+  --danger: #d64545;
+  --danger-soft: #d645451f;
+  color-scheme: light;
+}
+
+:root {
+  --font: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  --accent-gradient: linear-gradient(225deg, var(--accent), var(--accent-2));
+  /* Densidade: um só multiplicador de espaçamento vertical. */
+  --density: 1;
+}
+
+:root[data-density='compact'] {
+  --density: 0.72;
+}
+
+/* "Reduzir animações": transições viram cortes. `prefers-reduced-motion` já
+   é o padrão da preferência na primeira vez (useAppearance). */
+:root[data-reduce-motion='true'] *,
+:root[data-reduce-motion='true'] *::before,
+:root[data-reduce-motion='true'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* --- a casca ------------------------------------------------------------- */
+
+.shell {
+  position: relative;
+  display: flex;
+  gap: 16px;
+  min-height: 100dvh;
+  padding: 16px;
+  overflow: clip;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Os dois brilhos do frame (Glow Pink e Glow Aqua), atrás de tudo. */
+.shell::before,
+.shell::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  width: 720px;
+  height: 720px;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.shell::before {
+  top: -260px;
+  left: -200px;
+  background: var(--glow-pink);
+}
+
+.shell::after {
+  right: -160px;
+  bottom: -300px;
+  background: var(--glow-aqua);
+}
+
+.shell-main {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+}
+
+/* A timeline antiga tem layout e tema próprios (index.css + timeline.css) até
+   a Fase 5. Dentro da casca ela só ocupa o espaço. */
+.shell-main--legacy {
+  border-radius: 24px;
+  overflow: auto;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* --- a barra de navegação (`Navbar`, PajKz) ------------------------------- */
+
+.shell-nav {
+  position: sticky;
+  top: 16px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  width: 64px;
+  height: calc(100dvh - 32px);
+  padding: 20px 10px;
+  border-radius: 32px;
+  background: var(--glass);
+  border: 1px solid var(--glass-stroke-soft);
+  box-shadow: 0 30px 80px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
+  backdrop-filter: blur(60px);
+  -webkit-backdrop-filter: blur(60px);
+  order: 2;
+}
+
+.shell-nav-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shell-nav-button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.shell-nav-button:hover {
+  background: var(--glass-soft);
+  color: var(--text-primary);
+}
+
+.shell-nav-button[aria-current='page'] {
+  background: var(--glass-hover);
+  border-color: var(--glass-stroke);
+  color: var(--accent);
+}
+
+.shell-nav-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Celular: a barra vai para o rodapé, na horizontal. */
+@media (max-width: 759px) {
+  .shell {
+    flex-direction: column;
+    padding: 12px 12px 88px;
+  }
+
+  .shell-nav {
+    position: fixed;
+    top: auto;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    flex-direction: row;
+    width: auto;
+    height: 64px;
+    padding: 10px 20px;
+    gap: 24px;
+  }
+
+  .shell-nav-group {
+    flex-direction: row;
+  }
+}

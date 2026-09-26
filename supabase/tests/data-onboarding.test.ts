@@ -87,15 +87,24 @@ describe('o cenário da seção 2, pela fronteira de dados', () => {
     if (created.status !== 'created') return
     code = created.code
 
-    expect(await sendInvite(rafa.db, created.inviteId)).toEqual({ status: 'sent' })
-    // Segunda vez em menos de 60 s: o nome do status sobrevive ao caminho HTTP.
-    expect((await sendInvite(rafa.db, created.inviteId)).status).toBe('rate_limited')
+    const open = async () => {
+      const r = await loadOpenInvite(rafa.db)
+      expect(r.status).toBe('ok')
+      return r.status === 'ok' ? r.rows : null
+    }
 
-    const open = await loadOpenInvite(rafa.db)
-    expect(open.status).toBe('ok')
-    if (open.status !== 'ok') return
-    expect(open.rows).toMatchObject({ code, inviteeName: 'Duda' })
-    expect(open.rows?.lastSentAt).not.toBeNull()
+    if (process.env.MAILPIT_URL) {
+      expect(await sendInvite(rafa.db, created.inviteId)).toEqual({ status: 'sent' })
+      // Segunda vez em menos de 60 s: o nome do status sobrevive ao caminho HTTP.
+      expect((await sendInvite(rafa.db, created.inviteId)).status).toBe('rate_limited')
+      expect((await open())?.lastSentAt).not.toBeNull()
+    } else {
+      // Projeto online sem os segredos do Resend (fim do roadmap): a função
+      // responde erro, e o convite continua pendente, sem last_sent_at (R5).
+      expect((await sendInvite(rafa.db, created.inviteId)).status).not.toBe('sent')
+      expect((await open())?.lastSentAt).toBeNull()
+    }
+    expect(await open()).toMatchObject({ code, inviteeName: 'Duda' })
 
     expect((await renewInvite(rafa.db)).status).toBe('renewed')
   })

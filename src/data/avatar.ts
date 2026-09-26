@@ -27,7 +27,22 @@ function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number):
 }
 
 /** Recorta ao centro, reduz e reencoda. Nada sai do aparelho aqui. */
-export async function prepareAvatar(file: File): Promise<PrepareResult> {
+export function prepareAvatar(file: File): Promise<PrepareResult> {
+  return prepareImage(file, { kind: 'square', side: AVATAR_SIZE, maxBytes: MAX_STORED_BYTES })
+}
+
+/** A foto do casal (Fase 3): sem recorte, lado maior até 1600 px. */
+export const COVER_MAX_SIDE = 1600
+/** O bucket `couple-media` recusa acima disso. */
+export const COVER_MAX_BYTES = 5 * 1024 * 1024
+
+export function prepareCover(file: File): Promise<PrepareResult> {
+  return prepareImage(file, { kind: 'fit', maxSide: COVER_MAX_SIDE, maxBytes: COVER_MAX_BYTES })
+}
+
+type Shape = { kind: 'square'; side: number; maxBytes: number } | { kind: 'fit'; maxSide: number; maxBytes: number }
+
+async function prepareImage(file: File, shape: Shape): Promise<PrepareResult> {
   if (!file.type.startsWith('image/')) return { status: 'not_image' }
   if (file.size > MAX_INPUT_BYTES) return { status: 'too_large' }
 
@@ -38,33 +53,40 @@ export async function prepareAvatar(file: File): Promise<PrepareResult> {
     return { status: 'not_image' }
   }
 
-  const side = Math.min(bitmap.width, bitmap.height)
   const canvas = document.createElement('canvas')
-  canvas.width = AVATAR_SIZE
-  canvas.height = AVATAR_SIZE
   const context = canvas.getContext('2d')
   if (!context) return { status: 'not_image' }
-  context.drawImage(
-    bitmap,
-    (bitmap.width - side) / 2,
-    (bitmap.height - side) / 2,
-    side,
-    side,
-    0,
-    0,
-    AVATAR_SIZE,
-    AVATAR_SIZE,
-  )
+  if (shape.kind === 'square') {
+    const side = Math.min(bitmap.width, bitmap.height)
+    canvas.width = shape.side
+    canvas.height = shape.side
+    context.drawImage(
+      bitmap,
+      (bitmap.width - side) / 2,
+      (bitmap.height - side) / 2,
+      side,
+      side,
+      0,
+      0,
+      shape.side,
+      shape.side,
+    )
+  } else {
+    const scale = Math.min(1, shape.maxSide / Math.max(bitmap.width, bitmap.height))
+    canvas.width = Math.round(bitmap.width * scale)
+    canvas.height = Math.round(bitmap.height * scale)
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+  }
   bitmap.close()
 
   // Navegador que não codifica WebP devolve PNG em silêncio — que o bucket
   // recusaria. Nesse caso, JPEG.
   const webp = await canvasToBlob(canvas, 'image/webp', 0.85)
-  if (webp && webp.type === 'image/webp' && webp.size <= MAX_STORED_BYTES) {
+  if (webp && webp.type === 'image/webp' && webp.size <= shape.maxBytes) {
     return { status: 'ok', blob: webp, extension: 'webp' }
   }
   const jpeg = await canvasToBlob(canvas, 'image/jpeg', 0.85)
-  if (jpeg && jpeg.size <= MAX_STORED_BYTES) return { status: 'ok', blob: jpeg, extension: 'jpg' }
+  if (jpeg && jpeg.size <= shape.maxBytes) return { status: 'ok', blob: jpeg, extension: 'jpg' }
   return { status: 'too_large' }
 }
 

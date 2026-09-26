@@ -186,7 +186,7 @@ por feature (`timeline/timeline.css`), sem framework nem CSS-in-JS.
 
 ## Estado atual do repositório
 
-Fases 0, 1 e 2 na `main`; Fase 3 na branch `fase-3-configuracoes`. A Fase 1
+Fases 0 a 3 na `main`. A Fase 1
 entregou `src/auth/` (portão de sessão, login por senha e OAuth); a Fase 2, o
 onboarding (`src/onboarding/`), o convite (`couple_invites`, edge function
 `supabase/functions/send-invite`), os municípios do IBGE e as fotos em bucket

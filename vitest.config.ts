@@ -30,7 +30,8 @@ export default defineConfig({
         },
       },
       {
-        // Integração: RLS, restrições e auth. Exige a stack local de pé.
+        // Integração: RLS, restrições e auth. DORMENTE — não há banco de teste
+        // (ADR 0010). O harness recusa rodar contra o projeto de produção.
         test: {
           name: 'db',
           environment: 'node',

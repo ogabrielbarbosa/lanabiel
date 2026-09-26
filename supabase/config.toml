@@ -1,3 +1,8 @@
+# lanabiel — declaração do projeto ONLINE (smdtcznadmnrdubeidyz). Não há stack
+# local (ADR 0010): as seções de portas e serviços locais abaixo são o esqueleto
+# que o CLI exige, e não rodam. O que vale é o que sobe com
+# `npx supabase config push` — hoje, `[auth]` — e `[functions.*]` no deploy.
+#
 # For detailed configuration reference documentation, visit:
 # https://supabase.com/docs/guides/local-development/cli/config
 # A string used to distinguish different Supabase projects on the same host. Defaults to the
@@ -144,7 +149,8 @@ max_catalogs = 2
 
 # Store vector embeddings in S3 for large and durable datasets
 [storage.vector]
-enabled = true
+# Desligado no projeto online; o app não usa.
+enabled = false
 max_buckets = 10
 max_indexes = 5
 
@@ -238,9 +244,11 @@ enable_confirmations = false
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
-max_frequency = "1s"
-# Number of characters used in the email OTP.
-otp_length = 6
+# Espelha o projeto online (o local era "1s"): este arquivo é a declaração do
+# remoto desde que o app passou a usar só ele — `supabase config push`.
+max_frequency = "1m"
+# Number of characters used in the email OTP. Espelha o online.
+otp_length = 8
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
@@ -311,8 +319,10 @@ max_enrolled_factors = 10
 
 # Control MFA via App Authenticator (TOTP)
 [auth.mfa.totp]
-enroll_enabled = false
-verify_enabled = false
+# Ligado no projeto online; o app não usa, mas desligar MFA não é decisão para
+# vir de carona num `config push`.
+enroll_enabled = true
+verify_enabled = true
 
 # Configure MFA via Phone Messaging
 [auth.mfa.phone]
@@ -392,16 +402,6 @@ policy = "per_worker"
 inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
-
-# Segredos LOCAIS da edge function `send-invite` (ADR 0006). Nenhum é segredo
-# de verdade: o transporte local é o Mailpit da própria stack, que não entrega
-# nada para fora. No remoto os valores reais vão por `supabase secrets set`, e
-# INVITE_EMAIL_TRANSPORT fica 'resend' (o default da função).
-[edge_runtime.secrets]
-INVITE_EMAIL_TRANSPORT = "mailpit"
-MAILPIT_URL = "http://supabase_inbucket_lanabiel:8025"
-INVITE_FROM = "lanabiel <convite@lanabiel.test>"
-APP_URL = "http://127.0.0.1:5173"
 
 # Sem JWT válido o gateway recusa antes da função rodar. A autorização fina
 # (quem manda convite de quem) continua em `begin_invite_send`.

@@ -25,7 +25,7 @@ construído em oito fases — ver `../Tasks/`.
 | Lint | oxlint | verificação estática |
 | Autenticação | Supabase Auth: senha + OAuth | [ADR 0004](../Decisions/0004-login-com-senha-e-oauth.md) — sem link mágico |
 | Tipos | tsc, três project refs | `tsconfig.app.json` (navegador), `.node.json` (configs), `.tests.json` (integração) |
-| Testes | vitest, três projetos | `domain` (node) · `ui` (jsdom, [ADR 0005](../Decisions/0005-interface-se-prova-em-jsdom.md)) · `db` (node, exige stack local) |
+| Testes | vitest, três projetos | `domain` (node) · `ui` (jsdom, [ADR 0005](../Decisions/0005-interface-se-prova-em-jsdom.md)) · `db` (node) — **dormente**, sem banco de teste ([ADR 0010](../Decisions/0010-banco-so-online-sem-stack-local.md)) |
 
 ## Estrutura
 
@@ -63,11 +63,11 @@ src/
     └── TimelineScreen.tsx  # saiu de App.tsx na Fase 1, sem mudar de conteúdo
 
 supabase/
-├── config.toml             # portas em 553xx; segredos LOCAIS da função (transporte mailpit)
+├── config.toml             # declaração do projeto ONLINE (auth, functions); não há stack local
 ├── functions/send-invite/  # edge function do convite: handler.ts (regra) · email.ts · index.ts (Deno)
 ├── migrations/             # o schema, append-only (a das cidades é GERADA por scripts/gen-cities-seed.mjs)
 ├── baseline/README.md      # onde está o schema anterior e o que se aproveitou dele
-└── tests/                  # integração: RLS e restrições, com dois casais reais
+└── tests/                  # integração com dois casais reais — DORMENTE (ADR 0010)
 ```
 
 ## O modelo: `stays`, e "juntos" como derivação
@@ -146,12 +146,19 @@ link leva o código no **fragmento** (`#convite=`), que o portão guarda em
 O e-mail sai pela edge function `send-invite`, que repassa o JWT de quem chamou
 — a autorização fica em `begin_invite_send`, sob RLS — e só marca `last_sent_at`
 depois de o provedor aceitar ([ADR 0006](../Decisions/0006-email-transacional-por-resend-em-edge-function.md)).
-Local: transporte `mailpit`; o teste lê a mensagem pela API do Mailpit.
+Os segredos do Resend ainda não estão no online (fim do roadmap): hoje a função responde erro e a tela mostra o código. O transporte `mailpit` do código é da antiga bancada local e está dormente com os testes.
 
 Cidades são os municípios do IBGE, por migration; o cliente não insere cidade
 ([ADR 0007](../Decisions/0007-cidades-brasileiras-por-seed-do-ibge.md)). Fotos
 em bucket privado `avatars/<uid>/…`, legíveis pelo casal
 ([ADR 0009](../Decisions/0009-fotos-em-bucket-privado-por-casal.md)).
+
+## Banco: só o online
+
+Não há stack local. O app, inclusive em `localhost`, usa o projeto online
+`lanabiel` (`.env.local`); migrations sobem por `npm run db:push`, tipos vêm de
+`npm run types:gen --linked`. Os testes de integração estão dormentes até existir
+um banco só de teste — ver [ADR 0010](../Decisions/0010-banco-so-online-sem-stack-local.md).
 
 ## Fronteiras
 

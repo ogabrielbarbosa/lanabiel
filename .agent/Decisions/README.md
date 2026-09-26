@@ -29,7 +29,7 @@ Use `/adr <título>`. Template: [`0000-template.md`](./0000-template.md).
 
 | #   | Título | Área | Data |
 | --- | ------ | ---- | ---- |
-|     |        |      |      |
+| [0010](./0010-banco-so-online-sem-stack-local.md) | Banco só online, sem stack local | infraestrutura de dados, verificação | 2026-09-26 |
 
 ## Índice — Proposed
 

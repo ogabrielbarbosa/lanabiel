@@ -22,6 +22,15 @@ const LOCAL_SERVICE =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU'
 
 export const URL = process.env.SUPABASE_URL ?? 'http://127.0.0.1:55321'
+
+// Trava de segurança: estes testes criam e APAGAM usuários com a chave de
+// administrador. O app usa o projeto online; os testes, jamais. Qualquer URL
+// que não seja local aborta antes do primeiro request. Hoje eles estão
+// dormentes (ADR 0010); religar = apontar para um banco SÓ de teste e
+// ajustar esta trava para aceitar aquele host, e nenhum outro.
+if (!/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(URL)) {
+  throw new Error(`supabase/tests só roda contra a stack local, e SUPABASE_URL é ${URL}`)
+}
 export const ANON_KEY = process.env.SUPABASE_ANON_KEY ?? LOCAL_ANON
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? LOCAL_SERVICE
 

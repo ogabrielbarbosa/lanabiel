@@ -9,10 +9,9 @@
     "typecheck": "tsc -b --noEmit",
     "lint": "oxlint",
     "test": "vitest run src",
-    "test:db": "vitest run supabase/tests",
-    "db:reset": "supabase db reset",
-    "types:gen": "supabase gen types typescript --local > src/lib/database.types.ts",
-    "preview": "vite preview"
+    "types:gen": "supabase gen types typescript --linked > src/lib/database.types.ts",
+    "preview": "vite preview",
+    "db:push": "supabase db push"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.109.0",

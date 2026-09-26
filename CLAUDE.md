@@ -23,34 +23,46 @@ A Fase 0 (Fundação) está pronta — ver `.agent/Tasks/fase-0-fundacao.md`.
 | `npm run build`     | `tsc -b && vite build`                                     |
 | `npm run preview`   | Serve o `dist/` já construído                              |
 | `npm run test`      | vitest sobre `src` — domínio, puro, sem rede                |
-| `npm run test:db`   | vitest sobre `supabase/tests` — RLS e restrições, exige stack local |
-| `npm run db:reset`  | derruba e reaplica todas as migrations no Postgres local    |
-| `npm run types:gen` | regenera `src/lib/database.types.ts` do schema local        |
+| `npm run db:push`   | aplica as migrations pendentes no projeto online (pede confirmação) |
+| `npm run types:gen` | regenera `src/lib/database.types.ts` do projeto online (`--linked`) |
 
-**O runner é vitest, com três projetos** (`vitest.config.ts`): `domain`
-(`src/**/*.test.ts`, node), `ui` (`src/**/*.test.tsx`, jsdom) e `db`
-(`supabase/tests`, node). `npm run test` roda os dois primeiros e entra no hook
+**O runner é vitest** (`vitest.config.ts`): `domain` (`src/**/*.test.ts`, node)
+e `ui` (`src/**/*.test.tsx`, jsdom). `npm run test` roda os dois e entra no hook
 `Stop` via `DEVKIT_CMD_TEST`; o recorte de ambiente é por padrão de arquivo para
 a suíte de domínio não pagar o custo de DOM — ver
 [ADR 0005](.agent/Decisions/0005-interface-se-prova-em-jsdom.md).
 **Comportamento de tela se prova renderizando**, não lendo o código.
-`npm run test:db`
-(`supabase/tests`) exige `npx supabase start` de pé e é cobrado no Gate 3 pela
-skill `verify` — mesmo raciocínio que mantém o build fora do gate: comando lento
-e dependente de ambiente falha quando o Docker está parado, e gate que acusa o
-ambiente errado é gate que se aprende a ignorar. **RLS só se prova ali**, com
-dois casais de verdade, então rodar `test:db` antes de dizer "pronto" não é
-opcional.
 
-`DEVKIT_CMD_MIGRATE_CHECK="npm run db:reset"` dispara só quando um arquivo em
-`supabase/migrations/` muda. Se o Docker estiver parado ele **falha** em vez de
-passar — "não consegui provar" não é "está ok".
+**Os testes de integração em `supabase/tests` (RLS, restrições, convite, envio)
+estão dormentes** desde que não há banco de teste — ver
+[ADR 0010](.agent/Decisions/0010-banco-so-online-sem-stack-local.md). Eles
+criam e apagam usuários com a chave de administrador e **jamais** rodam contra
+produção: o harness recusa qualquer URL que não seja de teste. Mudança em
+policy, RPC ou migration hoje **não tem prova automática** — diga isso no
+relatório em vez de afirmar que a RLS continua certa. O caminho de volta está
+no ADR: um projeto Supabase só de teste.
 
 Formatter continua ausente (`DEVKIT_CMD_FORMAT_FILE` vazio ⇒ o hook `format.sh`
 sai sem fazer nada).
 
-**As portas locais são 553xx**, não a faixa padrão 543xx: outro projeto Supabase
-local já ocupa aquela. Está em `supabase/config.toml`.
+### O banco: só o projeto online
+
+Não existe banco local. O app — inclusive o `localhost` — fala **sempre** com o
+projeto online `lanabiel` (`smdtcznadmnrdubeidyz`), via `.env.local`
+([ADR 0010](.agent/Decisions/0010-banco-so-online-sem-stack-local.md)). O
+repositório está linkado a ele (`supabase link`), e `supabase/config.toml` é a
+declaração do remoto: mudou `[auth]`, sobe com `npx supabase config push` (ele
+mostra o diff e pergunta por serviço — recuse o que não for decisão sua).
+
+Migration nova: escreva o arquivo em `supabase/migrations/`, confira com
+`npx supabase db push --dry-run`, aplique com `npm run db:push`, regenere com
+`npm run types:gen` e rode o typecheck. **Ela vai direto para produção**, sem
+ensaio — por isso: pequena, reversível quando der, e nunca destrutiva sem olhar
+os dados antes (`select count(*)` na tabela afetada).
+
+Edge function: `npx supabase functions deploy <nome>`. Segredos com
+`npx supabase secrets set` — os do Resend ficaram para o fim do roadmap, então
+`send-invite` hoje responde erro e a tela mostra o código para o WhatsApp.
 
 O gate aceita `DEVKIT_SKIP_TEST=1`, `DEVKIT_RUN_BUILD=1` e `DEVKIT_FORCE=1`
 (ignora o stamp de conteúdo em `.git/devkit-verify-stamp`). O build fica **fora**
@@ -177,12 +189,7 @@ portão; com `ready`, ele ainda renderiza a timeline antiga sobre `localStorage`
 — até a Fase 5, **nenhum casal de fora deve usar o app**.
 
 Adiado de propósito para o fim do roadmap: e-mail real pelo Resend (A29), Google
-no celular (A30), avisos ao outro e o agendador. Localmente o e-mail vai para o
-Mailpit da stack (`http://127.0.0.1:55324`).
-
-**Uma edge function editada pode não recarregar** na stack local
-(`policy = "per_worker"`): se o teste falhar com o comportamento antigo,
-`docker restart supabase_edge_runtime_lanabiel`.
+no celular (A30), avisos ao outro e o agendador.
 
 `.agent/System/project_architecture.md` está atualizado ao fim da Fase 2.
 

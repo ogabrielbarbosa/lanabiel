@@ -86,9 +86,11 @@ aqui em 2026-09-25: cinco arquivos `20260925120*` viraram versões
 divergência é só na contabilidade, e só aparece na primeira vez que alguém usa a
 CLI.
 
-**Sem check ainda.** `DEVKIT_CMD_MIGRATE_CHECK` roda `npm run db:reset`, que
-prova que os arquivos aplicam **no banco local** e não vê o remoto. O check de
-verdade é `supabase migration list`, que mostra as colunas Local e Remote lado a
-lado — e exige a CLI linkada ao projeto, o que precisa de token de acesso. Até
-lá: **ao aplicar migration por MCP, confira
-`select version, name from supabase_migrations.schema_migrations` depois.**
+**Sem check automático, mas com procedimento.** Desde 2026-09-26 a CLI está
+linkada ao projeto e não há banco local ([ADR 0010](../Decisions/0010-banco-so-online-sem-stack-local.md)).
+Migration sobe **só** por `npm run db:push` (CLI), nunca por MCP — é o que grava
+a versão igual ao nome do arquivo. `npx supabase migration list` mostra Local e
+Remote lado a lado. Aconteceu de verdade: o histórico remoto ainda listava as 4
+migrations do schema anterior (`00001`–`00004`), inexistentes no repositório, e
+o `db push` recusou até `supabase migration repair --status reverted` nelas —
+que mexe só na tabela de histórico, não no schema.

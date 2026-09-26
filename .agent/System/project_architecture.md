@@ -1,6 +1,6 @@
 # Arquitetura do projeto
 
-> Atualizado ao fim da Fase 0 (Fundação), 2026-09-25. O _como_ mora aqui e é
+> Atualizado ao fim da Fase 2 (Onboarding), 2026-09-26. O _como_ mora aqui e é
 > reescrito sempre que o código muda; o _porquê_ mora em `../Decisions/`.
 
 ## O que é
@@ -34,18 +34,26 @@ src/
 ├── main.tsx                # entrypoint
 ├── App.tsx                 # só o portão de sessão; nada mais mora aqui
 ├── auth/
-│   ├── AuthGate.tsx        # decide: esqueleto / Login / Escolha / domínio
+│   ├── AuthGate.tsx        # decide: esqueleto / Login / onboarding / domínio; lê `#convite=`
 │   ├── session.ts          # AuthState, com `loading` distinto de `signed_out`
 │   ├── signIn.ts           # senha e OAuth; traduz erro do GoTrue em causa nomeada
 │   ├── callback.ts         # volta do OAuth, e limpeza da URL
 │   ├── Login.tsx · CriarConta.tsx · Escolha.tsx · AuthShell.tsx
 │   └── auth.css            # tokens lidos do .pen; escuro é o padrão
 ├── domain/
-│   └── coupleState.ts      # derivação: estadias → juntos/separados/viajando
+│   ├── coupleState.ts      # derivação: estadias → juntos/separados/viajando
+│   └── onboarding.ts       # LIMITS (paridade com os CHECK), código Crockford, "juntos há", distância
 ├── data/
 │   ├── result.ts           # DataResult / WriteResult discriminados
-│   ├── account.ts          # estágio da conta: needs_profile / needs_couple / ready
+│   ├── rpc.ts              # chamada de RPC: 42501 → unauthenticated, resto → error
+│   ├── account.ts          # estágio: needs_profile / needs_couple / awaiting_partner / ready
+│   ├── profile.ts · couple.ts · invites.ts · cities.ts · avatar.ts   # Fase 2
 │   └── stays.ts            # leitura e escrita de estadias, fronteira snake→camel
+├── onboarding/             # Fase 2: o assistente e as telas; recebe `OnboardingApi` injetada
+│   ├── Onboarding.tsx      # a máquina de passos; o banco é a verdade, o passo é local
+│   ├── pendingInvite.ts    # código pendente em sessionStorage (sobrevive ao OAuth)
+│   ├── Perfil · SobreAGente · Aguardando · Codigo · Convite · Confirmar (+TudoPronto)
+│   └── onboarding.css
 ├── lib/
 │   ├── supabase.ts         # cliente ÚNICO, com as opções de auth explícitas
 │   ├── database.types.ts   # GERADO — não editar à mão
@@ -55,8 +63,9 @@ src/
     └── TimelineScreen.tsx  # saiu de App.tsx na Fase 1, sem mudar de conteúdo
 
 supabase/
-├── config.toml             # portas em 553xx: outro projeto local ocupa a faixa padrão
-├── migrations/             # o schema, append-only
+├── config.toml             # portas em 553xx; segredos LOCAIS da função (transporte mailpit)
+├── functions/send-invite/  # edge function do convite: handler.ts (regra) · email.ts · index.ts (Deno)
+├── migrations/             # o schema, append-only (a das cidades é GERADA por scripts/gen-cities-seed.mjs)
 ├── baseline/README.md      # onde está o schema anterior e o que se aproveitou dele
 └── tests/                  # integração: RLS e restrições, com dois casais reais
 ```
@@ -111,7 +120,7 @@ de infraestrutura e não de gosto.
 
 `AuthGate` resolve duas perguntas em ordem, e a ordem é a regra: primeiro
 `AuthState` (`loading` | `signed_out` | `signed_in`), depois `AccountStage`
-(`needs_profile` | `needs_couple` | `ready`). **Nenhuma tela de domínio
+(`needs_profile` | `needs_couple` | `awaiting_partner` | `ready`). **Nenhuma tela de domínio
 renderiza antes de `ready`** — não é zelo: `listStays` para quem não tem casal
 devolve `ok` com zero linhas, indistinguível de "o casal não tem estadias".
 
@@ -120,6 +129,29 @@ o Login piscar em toda recarga de quem já está logado.
 
 `getSession()` lê armazenamento local e **não valida contra o servidor**. Quem
 valida é a primeira leitura, e é o resultado dela que governa a tela.
+
+## Onboarding e convite (Fase 2)
+
+Qualquer estágio antes de `ready` — ou um código de convite pendente — renderiza
+`src/onboarding/Onboarding.tsx`. O passo do assistente é estado local; recarregar
+retoma pelo estágio do banco (`awaiting_partner` → tela Aguardando).
+
+O convite é `couple_invites`, com **código portador** (Crockford, 6 caracteres)
+que só se resolve com sessão e sob limite de falhas; nenhum caminho casa convite
+por e-mail, porque o e-mail da sessão não é verificado
+([ADR 0008](../Decisions/0008-convite-portador-e-um-casal-por-pessoa.md)). O
+link leva o código no **fragmento** (`#convite=`), que o portão guarda em
+`sessionStorage` e apaga da barra.
+
+O e-mail sai pela edge function `send-invite`, que repassa o JWT de quem chamou
+— a autorização fica em `begin_invite_send`, sob RLS — e só marca `last_sent_at`
+depois de o provedor aceitar ([ADR 0006](../Decisions/0006-email-transacional-por-resend-em-edge-function.md)).
+Local: transporte `mailpit`; o teste lê a mensagem pela API do Mailpit.
+
+Cidades são os municípios do IBGE, por migration; o cliente não insere cidade
+([ADR 0007](../Decisions/0007-cidades-brasileiras-por-seed-do-ibge.md)). Fotos
+em bucket privado `avatars/<uid>/…`, legíveis pelo casal
+([ADR 0009](../Decisions/0009-fotos-em-bucket-privado-por-casal.md)).
 
 ## Fronteiras
 
@@ -132,9 +164,9 @@ valida é a primeira leitura, e é o resultado dela que governa a tela.
 
 ## Schema
 
-Cinco tabelas, todas com RLS: `cities`, `couples`, `profiles`, `couple_members`,
-`stays`. Detalhes e invariantes na spec da Fase 0
-(`../Tasks/fase-0-fundacao.md`, seção 5). Dois pontos que não são óbvios lendo o
+Seis tabelas, todas com RLS: `cities`, `couples`, `profiles`, `couple_members`,
+`couple_invites`, `stays`; mais dois contadores de abuso em `private`, fora da
+API. Detalhes nas specs da Fase 0 (seção 5) e da Fase 2 (seção 5). Dois pontos que não são óbvios lendo o
 DDL:
 
 - `stays_no_overlap` é um `EXCLUDE USING gist` sobre
@@ -144,10 +176,16 @@ DDL:
   cobra "um casal tem dois integrantes" sem trigger e sem uma segunda função
   `security definer` — e de quebra é a faixa fixa de cada pessoa no calendário.
 
-`private.my_couple_ids()` é a **única** função `security definer`. Ela vive em
-`private`, não em `public`, para não ser publicada como endpoint REST; e tem
-`revoke execute ... from public, anon`, porque o Postgres concede `EXECUTE` a
-`PUBLIC` por padrão.
+- `couple_members` tem `unique (profile_id)`: uma pessoa em no máximo um casal,
+  por construção.
+- `couples` tem trigger que recusa `started_on` futuro em qualquer caminho.
+
+`private.my_couple_ids()` é `security definer` em `private`, fora da API. Em
+`public` há **exatamente sete** `security definer` — as RPCs do convite, listadas
+no ADR 0008 — e `supabase/tests/onboarding.test.ts` (A20) falha se aparecer uma
+oitava. Todas têm `revoke execute ... from public, anon`, porque o Postgres
+concede `EXECUTE` a `PUBLIC` por padrão. O `service_role` tem `USAGE` em
+`private` para o trigger de `couples` funcionar em escrita administrativa.
 
 ## Contrato compartilhado
 

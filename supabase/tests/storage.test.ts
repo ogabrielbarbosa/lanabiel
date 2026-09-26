@@ -34,8 +34,11 @@ beforeAll(async () => {
   asOutsider = await signIn(scene.outsider.email)
 }, 60_000)
 
+const mediaPaths: string[] = []
+
 afterAll(async () => {
   if (paths.length > 0) await admin.storage.from('avatars').remove(paths)
+  if (mediaPaths.length > 0) await admin.storage.from('couple-media').remove(mediaPaths)
 })
 
 describe('A16 — fotos por casal', () => {
@@ -78,5 +81,38 @@ describe('A16 — fotos por casal', () => {
       .upload(path, new TextEncoder().encode('oi'), { contentType: 'text/plain' })
     expect(error).not.toBeNull()
     paths.push(path)
+  })
+})
+
+// Critério A6 — .agent/Tasks/fase-3-configuracoes.md, seção 10.
+// ADR: .agent/Decisions/0012-midia-do-casal-em-bucket-por-casal.md
+describe('A6 — mídia do casal, pasta por casal', () => {
+  const cover = () => `${scene.coupleA}/cover/${crypto.randomUUID()}.jpg`
+
+  it('um integrante sobe, o outro lê', async () => {
+    const path = cover()
+    mediaPaths.push(path)
+    const { error } = await asGabriel.storage.from('couple-media').upload(path, JPEG, { contentType: 'image/jpeg' })
+    expect(error).toBeNull()
+    const { data } = await asLana.storage.from('couple-media').download(path)
+    expect(data).not.toBeNull()
+  })
+
+  it('o de fora não sobe na pasta do casal, nem lê', async () => {
+    const path = cover()
+    mediaPaths.push(path)
+    const { error } = await asOutsider.storage.from('couple-media').upload(path, JPEG, { contentType: 'image/jpeg' })
+    expect(error).not.toBeNull()
+    await asGabriel.storage.from('couple-media').upload(path, JPEG, { contentType: 'image/jpeg', upsert: true })
+    const { data } = await asOutsider.storage.from('couple-media').download(path)
+    expect(data).toBeNull()
+  })
+
+  it('cover_path fora da pasta de capas do próprio casal é recusado', async () => {
+    const { error } = await asGabriel
+      .from('couples')
+      .update({ cover_path: `${scene.coupleB}/cover/x.webp` })
+      .eq('id', scene.coupleA)
+    expect(error?.code).toBe('23514')
   })
 })

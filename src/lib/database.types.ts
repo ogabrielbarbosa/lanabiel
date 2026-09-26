@@ -178,26 +178,220 @@ export type Database = {
           },
         ]
       }
+      couple_saved_cities: {
+        Row: {
+          added_by: string | null
+          city_id: string
+          couple_id: string
+          created_at: string
+        }
+        Insert: {
+          added_by?: string | null
+          city_id: string
+          couple_id: string
+          created_at?: string
+        }
+        Update: {
+          added_by?: string | null
+          city_id?: string
+          couple_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "couple_saved_cities_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "couple_saved_cities_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "couple_saved_cities_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: false
+            referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      couple_settings: {
+        Row: {
+          calendar_default_view: string
+          color_apart: string
+          color_together_away: string
+          color_together_home_1: string
+          color_together_home_2: string
+          couple_id: string
+          hidden_categories: string[]
+          list_default_sort: string
+          remind_anniversary: boolean
+          show_adjacent_days: boolean
+          show_category_progress: boolean
+          show_daily_suggestion: boolean
+          show_day_markers: boolean
+          show_home_counter: boolean
+          updated_at: string
+          use_couple_cover: boolean
+          week_starts_on: string
+        }
+        Insert: {
+          calendar_default_view?: string
+          color_apart?: string
+          color_together_away?: string
+          color_together_home_1?: string
+          color_together_home_2?: string
+          couple_id: string
+          hidden_categories?: string[]
+          list_default_sort?: string
+          remind_anniversary?: boolean
+          show_adjacent_days?: boolean
+          show_category_progress?: boolean
+          show_daily_suggestion?: boolean
+          show_day_markers?: boolean
+          show_home_counter?: boolean
+          updated_at?: string
+          use_couple_cover?: boolean
+          week_starts_on?: string
+        }
+        Update: {
+          calendar_default_view?: string
+          color_apart?: string
+          color_together_away?: string
+          color_together_home_1?: string
+          color_together_home_2?: string
+          couple_id?: string
+          hidden_categories?: string[]
+          list_default_sort?: string
+          remind_anniversary?: boolean
+          show_adjacent_days?: boolean
+          show_category_progress?: boolean
+          show_daily_suggestion?: boolean
+          show_day_markers?: boolean
+          show_home_counter?: boolean
+          updated_at?: string
+          use_couple_cover?: boolean
+          week_starts_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "couple_settings_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: true
+            referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       couples: {
         Row: {
+          cover_path: string | null
           created_at: string
           id: string
           name: string | null
           started_on: string
         }
         Insert: {
+          cover_path?: string | null
           created_at?: string
           id?: string
           name?: string | null
           started_on: string
         }
         Update: {
+          cover_path?: string | null
           created_at?: string
           id?: string
           name?: string | null
           started_on?: string
         }
         Relationships: []
+      }
+      profile_settings: {
+        Row: {
+          notify_anniversary_app: boolean
+          notify_anniversary_email: boolean
+          notify_anniversary_push: boolean
+          notify_own_reminders_app: boolean
+          notify_own_reminders_email: boolean
+          notify_own_reminders_push: boolean
+          notify_partner_by_default: boolean
+          notify_partner_done_app: boolean
+          notify_partner_done_email: boolean
+          notify_partner_done_push: boolean
+          notify_partner_event_app: boolean
+          notify_partner_event_email: boolean
+          notify_partner_event_push: boolean
+          notify_partner_list_item_app: boolean
+          notify_partner_list_item_email: boolean
+          notify_partner_list_item_push: boolean
+          notify_trip_eve_app: boolean
+          notify_trip_eve_email: boolean
+          notify_trip_eve_push: boolean
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          notify_anniversary_app?: boolean
+          notify_anniversary_email?: boolean
+          notify_anniversary_push?: boolean
+          notify_own_reminders_app?: boolean
+          notify_own_reminders_email?: boolean
+          notify_own_reminders_push?: boolean
+          notify_partner_by_default?: boolean
+          notify_partner_done_app?: boolean
+          notify_partner_done_email?: boolean
+          notify_partner_done_push?: boolean
+          notify_partner_event_app?: boolean
+          notify_partner_event_email?: boolean
+          notify_partner_event_push?: boolean
+          notify_partner_list_item_app?: boolean
+          notify_partner_list_item_email?: boolean
+          notify_partner_list_item_push?: boolean
+          notify_trip_eve_app?: boolean
+          notify_trip_eve_email?: boolean
+          notify_trip_eve_push?: boolean
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          notify_anniversary_app?: boolean
+          notify_anniversary_email?: boolean
+          notify_anniversary_push?: boolean
+          notify_own_reminders_app?: boolean
+          notify_own_reminders_email?: boolean
+          notify_own_reminders_push?: boolean
+          notify_partner_by_default?: boolean
+          notify_partner_done_app?: boolean
+          notify_partner_done_email?: boolean
+          notify_partner_done_push?: boolean
+          notify_partner_event_app?: boolean
+          notify_partner_event_email?: boolean
+          notify_partner_event_push?: boolean
+          notify_partner_list_item_app?: boolean
+          notify_partner_list_item_email?: boolean
+          notify_partner_list_item_push?: boolean
+          notify_trip_eve_app?: boolean
+          notify_trip_eve_email?: boolean
+          notify_trip_eve_push?: boolean
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_settings_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -306,6 +500,7 @@ export type Database = {
     Functions: {
       accept_invite: { Args: { p_code: string }; Returns: Json }
       begin_invite_send: { Args: { p_invite_id: string }; Returns: Json }
+      cancel_invite: { Args: never; Returns: Json }
       create_couple: {
         Args: { p_name?: string; p_started_on: string }
         Returns: Json
@@ -313,6 +508,19 @@ export type Database = {
       create_invite: {
         Args: { p_email: string; p_invitee_name?: string }
         Returns: Json
+      }
+      delete_couple: { Args: never; Returns: Json }
+      end_my_session: { Args: { p_session_id: string }; Returns: Json }
+      leave_couple: { Args: never; Returns: Json }
+      list_my_sessions: {
+        Args: never
+        Returns: {
+          created_at: string
+          id: string
+          is_current: boolean
+          last_active_at: string
+          user_agent: string
+        }[]
       }
       lookup_invite: { Args: { p_code: string }; Returns: Json }
       mark_invite_sent: { Args: { p_invite_id: string }; Returns: undefined }

@@ -69,7 +69,7 @@ describe('A1 — cada um cria o próprio perfil, e só o próprio', () => {
     const user = await newUser('a1')
     const { data } = await user.db.from('profiles').select('id, full_name, color').eq('id', user.id).single()
     expect(data?.full_name).toBe('a1 Silva')
-    expect(data?.color).toBe('#3b82f6') // o default da migration
+    expect(data?.color).toBe('#7FD8C4') // o default (Fase 3: a paleta do design)
   })
 
   it('NÃO insere perfil com o id de outra pessoa', async () => {
@@ -356,19 +356,26 @@ describe('A12 — entrar num casal só pela função (I3)', () => {
 })
 
 describe('A20 — a lista fechada de funções security definer', () => {
-  it('exatamente sete em public, executáveis por authenticated e por nenhum anon', () => {
+  // Doze desde a Fase 3 (A11 de fase-3-configuracoes.md): as sete do convite,
+  // mais sair/apagar/cancelar e as duas de sessão.
+  it('exatamente doze em public, executáveis por authenticated e por nenhum anon', () => {
     const rows = sql(`
       select p.proname,
-             has_function_privilege('authenticated', p.oid, 'execute'),
-             has_function_privilege('anon', p.oid, 'execute')
+             has_function_privilege('authenticated', p.oid, 'execute') as authenticated,
+             has_function_privilege('anon', p.oid, 'execute') as anon
       from pg_proc p join pg_namespace n on n.oid = p.pronamespace
       where n.nspname = 'public' and p.prosecdef
       order by p.proname`)
     expect(rows.split('\n')).toEqual([
       'accept_invite|t|f',
       'begin_invite_send|t|f',
+      'cancel_invite|t|f',
       'create_couple|t|f',
       'create_invite|t|f',
+      'delete_couple|t|f',
+      'end_my_session|t|f',
+      'leave_couple|t|f',
+      'list_my_sessions|t|f',
       'lookup_invite|t|f',
       'mark_invite_sent|t|f',
       'renew_invite|t|f',
@@ -405,7 +412,7 @@ describe('A15 — o seed do IBGE está inteiro', () => {
   it('5.571 municípios, todos com código único', () => {
     // 5.571 e não os 5.570 da spec: Boa Esperança do Norte (MT) foi criado em
     // 2023 e está nas duas fontes. Ruling no ledger.
-    expect(sql(`select count(*), count(ibge_code), count(distinct ibge_code) from public.cities where country_code = 'BR'`))
+    expect(sql(`select count(*) as total, count(ibge_code) as with_code, count(distinct ibge_code) as distinct_codes from public.cities where country_code = 'BR'`))
       .toBe('5571|5571|5571')
   })
 })

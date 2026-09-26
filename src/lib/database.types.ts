@@ -25,16 +25,47 @@ export type Database = {
           Tables: {
             "cities": {
                   Row: {
-                    "country_code": string,"created_at": string,"id": string,"lat": number,"lng": number,"name": string,"state_code": string | null
+                    "country_code": string,"created_at": string,"ibge_code": number | null,"id": string,"lat": number,"lng": number,"name": string,"state_code": string | null
                   }
                   Insert: {
-                    "country_code": string,"created_at"?: string,"id"?: string,"lat": number,"lng": number,"name": string,"state_code"?: string | null
+                    "country_code": string,"created_at"?: string,"ibge_code"?: number | null,"id"?: string,"lat": number,"lng": number,"name": string,"state_code"?: string | null
                   }
                   Update: {
-                    "country_code"?: string,"created_at"?: string,"id"?: string,"lat"?: number,"lng"?: number,"name"?: string,"state_code"?: string | null
+                    "country_code"?: string,"created_at"?: string,"ibge_code"?: number | null,"id"?: string,"lat"?: number,"lng"?: number,"name"?: string,"state_code"?: string | null
                   }
                   Relationships: [
                     
+                  ]
+                },"couple_invites": {
+                  Row: {
+                    "accepted_at": string | null,"accepted_by": string | null,"code": string,"couple_id": string,"created_at": string,"created_by": string,"email": string,"expires_at": string,"id": string,"invitee_name": string | null,"last_sent_at": string | null,"revoked_at": string | null,"send_count": number
+                  }
+                  Insert: {
+                    "accepted_at"?: string | null,"accepted_by"?: string | null,"code": string,"couple_id": string,"created_at"?: string,"created_by": string,"email": string,"expires_at": string,"id"?: string,"invitee_name"?: string | null,"last_sent_at"?: string | null,"revoked_at"?: string | null,"send_count"?: number
+                  }
+                  Update: {
+                    "accepted_at"?: string | null,"accepted_by"?: string | null,"code"?: string,"couple_id"?: string,"created_at"?: string,"created_by"?: string,"email"?: string,"expires_at"?: string,"id"?: string,"invitee_name"?: string | null,"last_sent_at"?: string | null,"revoked_at"?: string | null,"send_count"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "couple_invites_accepted_by_fkey"
+      columns: ["accepted_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "couple_invites_couple_id_fkey"
+      columns: ["couple_id"]
+isOneToOne: false
+      referencedRelation: "couples"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "couple_invites_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"couple_members": {
                   Row: {
@@ -56,33 +87,33 @@ isOneToOne: false
     },{
       foreignKeyName: "couple_members_profile_id_fkey"
       columns: ["profile_id"]
-isOneToOne: false
+isOneToOne: true
       referencedRelation: "profiles"
       referencedColumns: ["id"]
     }
                   ]
                 },"couples": {
                   Row: {
-                    "created_at": string,"id": string,"invite_code": string,"name": string | null,"started_on": string
+                    "created_at": string,"id": string,"name": string | null,"started_on": string
                   }
                   Insert: {
-                    "created_at"?: string,"id"?: string,"invite_code": string,"name"?: string | null,"started_on": string
+                    "created_at"?: string,"id"?: string,"name"?: string | null,"started_on": string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"invite_code"?: string,"name"?: string | null,"started_on"?: string
+                    "created_at"?: string,"id"?: string,"name"?: string | null,"started_on"?: string
                   }
                   Relationships: [
                     
                   ]
                 },"profiles": {
                   Row: {
-                    "color": string,"created_at": string,"display_name": string,"home_city_id": string,"id": string
+                    "avatar_path": string | null,"color": string,"created_at": string,"display_name": string,"full_name": string,"home_city_id": string,"id": string
                   }
                   Insert: {
-                    "color": string,"created_at"?: string,"display_name": string,"home_city_id": string,"id": string
+                    "avatar_path"?: string | null,"color"?: string,"created_at"?: string,"display_name": string,"full_name": string,"home_city_id": string,"id": string
                   }
                   Update: {
-                    "color"?: string,"created_at"?: string,"display_name"?: string,"home_city_id"?: string,"id"?: string
+                    "avatar_path"?: string | null,"color"?: string,"created_at"?: string,"display_name"?: string,"full_name"?: string,"home_city_id"?: string,"id"?: string
                   }
                   Relationships: [
                     {
@@ -136,9 +167,44 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "my_couple_ids":
-{ Args: Record<PropertyKey, never>; Returns: string[]
-                           }
+            "accept_invite":
+{ Args: { "p_code": string }; Returns: Json
+                           },
+"begin_invite_send":
+{ Args: { "p_invite_id": string }; Returns: Json
+                           },
+"create_couple":
+{ Args: { "p_name"?: string,"p_started_on": string }; Returns: Json
+                           },
+"create_invite":
+{ Args: { "p_email": string,"p_invitee_name"?: string }; Returns: Json
+                           },
+"lookup_invite":
+{ Args: { "p_code": string }; Returns: Json
+                           },
+"mark_invite_sent":
+{ Args: { "p_invite_id": string }; Returns: undefined
+                           },
+"renew_invite":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"search_cities":
+{ Args: { "p_limit"?: number,"p_query": string }; Returns: {
+              "country_code": string,
+"created_at": string,
+"ibge_code": number | null,
+"id": string,
+"lat": number,
+"lng": number,
+"name": string,
+"state_code": string | null
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "cities"
+        isOneToOne: false
+        isSetofReturn: true
+      } }
           }
           Enums: {
             [_ in never]: never

@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { createClient } from '@supabase/supabase-js'
 import type { SupabaseClient } from '@supabase/supabase-js'
 // Node 20 não tem `WebSocket` global, e o cliente de realtime do supabase-js
@@ -60,10 +61,37 @@ export interface Scenario {
   outsider: TestUser
 }
 
+/**
+ * Apaga o usuário e, antes, o casal em que ele estava. `couple_members` cai em
+ * cascata com o perfil, mas `couples` não — sem isto, cada rodada deixaria um
+ * casal órfão no banco local.
+ */
+export async function deleteUserAndCouple(userId: string): Promise<void> {
+  const { data: memberships } = await admin
+    .from('couple_members')
+    .select('couple_id')
+    .eq('profile_id', userId)
+  const coupleIds = (memberships ?? []).map((m) => m.couple_id)
+  if (coupleIds.length > 0) await admin.from('couples').delete().in('id', coupleIds)
+  await admin.auth.admin.deleteUser(userId)
+}
+
+/**
+ * SQL direto no Postgres local, para o que a API não expõe (o catálogo, em
+ * A20). Só local: roda `psql` dentro do container da stack.
+ */
+export function sql(query: string): string {
+  return execFileSync(
+    'docker',
+    ['exec', 'supabase_db_lanabiel', 'psql', '-U', 'postgres', '-tA', '-c', query],
+    { encoding: 'utf8' },
+  ).trim()
+}
+
 async function recreateUser(email: string, homeCityId: string, name: string): Promise<TestUser> {
-  const { data: existing } = await admin.auth.admin.listUsers()
+  const { data: existing } = await admin.auth.admin.listUsers({ perPage: 1000 })
   for (const user of existing.users) {
-    if (user.email === email) await admin.auth.admin.deleteUser(user.id)
+    if (user.email === email) await deleteUserAndCouple(user.id)
   }
 
   const { data, error } = await admin.auth.admin.createUser({
@@ -79,7 +107,7 @@ async function recreateUser(email: string, homeCityId: string, name: string): Pr
   // onboarding (Fase 2) que sabe a cidade, então é ele que cria o perfil.
   const { error: profileError } = await admin
     .from('profiles')
-    .insert({ id: data.user.id, display_name: name, color: '#000000', home_city_id: homeCityId })
+    .insert({ id: data.user.id, display_name: name, full_name: `${name} de Teste`, color: '#000000', home_city_id: homeCityId })
   if (profileError) throw new Error(`perfil de ${email}: ${profileError.message}`)
 
   return { id: data.user.id, email }
@@ -99,21 +127,20 @@ export async function buildScenario(prefix: string): Promise<Scenario> {
   const lana = await recreateUser(`${prefix}-lana@test.local`, CITY.marau, 'Lana')
   const outsider = await recreateUser(`${prefix}-outro@test.local`, CITY.londrina, 'Outro')
 
-  const codeA = `${prefix}-A`
-  const codeB = `${prefix}-B`
-  await admin.from('couples').delete().in('invite_code', [codeA, codeB])
-
+  // Casais antigos deste prefixo já saíram junto com os usuários
+  // (`deleteUserAndCouple`) — `couples.invite_code`, que servia de chave de
+  // limpeza, não existe mais desde a Fase 2.
   const { data: couples, error } = await admin
     .from('couples')
     .insert([
-      { name: 'Gabi & Lana', started_on: '2024-09-17', invite_code: codeA },
-      { name: 'Outro casal', started_on: '2025-01-01', invite_code: codeB },
+      { name: 'Gabi & Lana', started_on: '2024-09-17' },
+      { name: 'Outro casal', started_on: '2025-01-01' },
     ])
-    .select('id, invite_code')
+    .select('id, name')
   if (error || !couples) throw new Error(`casais: ${error?.message}`)
 
-  const coupleA = couples.find((c) => c.invite_code === codeA)!.id
-  const coupleB = couples.find((c) => c.invite_code === codeB)!.id
+  const coupleA = couples.find((c) => c.name === 'Gabi & Lana')!.id
+  const coupleB = couples.find((c) => c.name === 'Outro casal')!.id
 
   await admin.from('couple_members').insert([
     { couple_id: coupleA, profile_id: gabriel.id, slot: 1 },

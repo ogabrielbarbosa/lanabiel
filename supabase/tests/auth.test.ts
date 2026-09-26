@@ -24,15 +24,20 @@ function freshEmail(tag: string): string {
 }
 
 async function deleteByEmail(email: string): Promise<void> {
-  const { data } = await admin.auth.admin.listUsers()
+  const { data } = await admin.auth.admin.listUsers({ perPage: 1000 })
   for (const user of data.users) {
     if (user.email === email) await admin.auth.admin.deleteUser(user.id)
   }
 }
 
-async function countUsers(): Promise<number> {
-  const { data } = await admin.auth.admin.listUsers()
-  return data.users.length
+/**
+ * Existe conta com este e-mail? Afirma sobre o e-mail tentado, e não sobre o
+ * total de `auth.users`: os arquivos de teste rodam em paralelo e criam
+ * usuários ao mesmo tempo, então o total oscila sem nada estar errado.
+ */
+async function userExists(email: string): Promise<boolean> {
+  const { data } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  return data.users.some((u) => u.email === email)
 }
 
 beforeAll(async () => {
@@ -63,7 +68,7 @@ describe('A1 — cadastro com senha devolve sessão na hora', () => {
     const email = freshEmail('confirmed')
     await signUpWithPassword(anonClient(), { email, password: GOOD_PASSWORD })
 
-    const { data } = await admin.auth.admin.listUsers()
+    const { data } = await admin.auth.admin.listUsers({ perPage: 1000 })
     const created = data.users.find((u) => u.email === email)
     expect(created?.email_confirmed_at).toBeTruthy()
 
@@ -74,15 +79,13 @@ describe('A1 — cadastro com senha devolve sessão na hora', () => {
 describe('A2 — senha curta é recusada ANTES de a conta existir', () => {
   it('devolve `too_short` e não cria usuário nenhum', async () => {
     const email = freshEmail('short')
-    const before = await countUsers()
-
     const result = await signUpWithPassword(anonClient(), { email, password: SHORT_PASSWORD })
     expect(result).toEqual({ status: 'weak_password', reason: 'too_short' })
 
     // A parte que um teste ingênuo esquece: ver o resultado e não ver o efeito.
     // Uma implementação que criasse o usuário e só então recusasse passaria no
     // teste ingênuo e deixaria conta órfã.
-    expect(await countUsers()).toBe(before)
+    expect(await userExists(email)).toBe(false)
   })
 })
 
@@ -126,7 +129,7 @@ describe('A4/A5 — os três estágios da conta', () => {
 
     await admin
       .from('profiles')
-      .insert({ id: userId, display_name: 'Sozinho', color: '#000000', home_city_id: CITY.sjc })
+      .insert({ id: userId, display_name: 'Sozinho', full_name: 'Sozinho de Teste', color: '#000000', home_city_id: CITY.sjc })
 
     expect(await loadAccountStage(db)).toEqual({
       status: 'ok',

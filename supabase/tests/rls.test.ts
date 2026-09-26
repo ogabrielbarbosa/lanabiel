@@ -110,3 +110,31 @@ describe('A5 — escrever e reler devolve o que foi escrito', () => {
     expect(reread.rows.map((s) => s.id)).toContain(written.row.id)
   })
 })
+
+// Fase 2 · A13 — .agent/Tasks/fase-2-onboarding.md, seção 10.
+describe('A13 — convites só para o próprio casal', () => {
+  it('o estranho não lê o convite do casal A; o Gabriel lê', async () => {
+    // Via admin: o casal A já tem dois membros, então create_invite responderia
+    // `couple_full`. O que se prova aqui é a policy de leitura, não a função.
+    const { data: invite, error } = await admin
+      .from('couple_invites')
+      .insert({
+        couple_id: scene.coupleA,
+        code: 'R5513A', // sem L: o alfabeto é Crockford
+        email: 'rls@exemplo.com',
+        created_by: scene.gabriel.id,
+        expires_at: new Date(Date.now() + 86_400_000).toISOString(),
+      })
+      .select('id')
+      .single()
+    expect(error).toBeNull()
+
+    const asOutsiderRows = await asOutsider.from('couple_invites').select('id').eq('id', invite!.id)
+    expect(asOutsiderRows.data).toEqual([])
+
+    const asGabrielRows = await asGabriel.from('couple_invites').select('id').eq('id', invite!.id)
+    expect(asGabrielRows.data).toHaveLength(1)
+
+    await admin.from('couple_invites').delete().eq('id', invite!.id)
+  })
+})

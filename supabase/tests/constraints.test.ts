@@ -95,8 +95,20 @@ describe('I8 — um casal tem no máximo dois integrantes', () => {
 
 describe('A11 — o seed de cidades é idempotente', () => {
   it('as três cidades existem, uma vez cada', async () => {
-    const { data, error } = await admin.from('cities').select('id, name').order('name')
+    // Desde a Fase 2 a tabela tem os municípios do IBGE (ADR 0007). O que
+    // continua valendo é: cada uma das três do seed original aparece uma vez,
+    // com o UUID fixo que o resto do código referencia.
+    const { data, error } = await admin
+      .from('cities')
+      .select('id, name')
+      .in('name', ['Londrina', 'Marau', 'São José dos Campos'])
+      .eq('country_code', 'BR')
+      .order('name')
     expect(error).toBeNull()
-    expect(data?.map((c) => c.name)).toEqual(['Londrina', 'Marau', 'São José dos Campos'])
+    expect(data).toEqual([
+      { id: CITY.londrina, name: 'Londrina' },
+      { id: CITY.marau, name: 'Marau' },
+      { id: CITY.sjc, name: 'São José dos Campos' },
+    ])
   })
 })

@@ -10,7 +10,7 @@ gosto: ela segue dependência de dados, e está justificada em cada linha.
 | 2 | [Onboarding](./fase-2-onboarding.md) | 6 frames / 23 telas | 🟡 Implementada e na `main` (2026-09-26) — A29/A30 adiados, ver abaixo |
 | 3 | [Configurações](./fase-3-configuracoes.md) | 9 abas | 🟡 Implementada (2026-09-26) — A24 manual pendente, contraste como dívida |
 | 4 | [Lista](./fase-4-lista.md) | 14 (8 modais) | 🟡 Implementada e na `main` (2026-09-26) — A21 manual pendente |
-| 5 | Calendário | 5 | 🔴 sem spec |
+| 5 | [Calendário](./fase-5-calendario.md) | 5 | 🟡 Reviewed (2026-09-26) — spec pronta, build não começou |
 | 6 | Viagens | 7 | 🔴 sem spec |
 | 7 | Home (globo) | 5 | 🔴 sem spec |
 

@@ -1,6 +1,6 @@
 # ADR 0007 — Cidades brasileiras por seed do IBGE, com escrita em `cities` fechada ao cliente
 
-- **Status:** Proposed
+- **Status:** Proposed · revisado em parte por [0017](./0017-cidades-do-mundo-por-casal.md)
 - **Data:** 2026-09-26
 - **Área:** schema (`cities`), onboarding (Fase 2)
 
@@ -104,6 +104,15 @@ permissão de inserir.**
 | Seed original de três cidades | `supabase/migrations/20260925120300_seed_cities.sql` |
 | Policy removida | `cities_insert_authenticated`, em `supabase/migrations/20260925120200_rls_policies.sql` |
 | Gerador do seed | `scripts/gen-cities-seed.ts` — não existe ainda |
+
+## Nota — 2026-09-26 (Fase 5)
+
+Revisado em parte por [0017](./0017-cidades-do-mundo-por-casal.md), como a
+seção _Negativas_ previa. O Brasil continua exatamente como aqui: só IBGE, e o
+cliente não cria cidade brasileira. O que muda é que o cliente volta a poder
+**inserir** em `cities`, mas só cidade de fora do Brasil, só do próprio casal, e
+num recorte que nenhum outro casal lê. O motivo deste ADR para fechar a escrita
+(a tabela compartilhada) não se aplica a esse recorte.
 
 ## Related
 

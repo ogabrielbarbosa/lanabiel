@@ -158,6 +158,21 @@ dos Campos` e o contador `Juntos há 12 dias` da mesma fonte.
 | Fim efetivo (`end ?? hoje`) e datas ISO locais | `src/lib/date.ts` |
 | Falha silenciosa já catalogada | `.agent/SOP/falhas-silenciosas.md` |
 
+## Nota — 2026-09-26 (Fase 5)
+
+O "como" desta decisão está no [0018](./0018-periodo-se-grava-pintando-estadias.md):
+toda escrita de estadia é uma pintura numa RPC, o evento pinta uma vez e não
+fica ligado ao período, e os dias que saem de um período voltam para a casa de
+cada um. O arrasto de faixa, citado acima como custo, ficou **fora** da Fase 5.
+A timeline antiga (`src/timeline/`) é apagada na Fase 5, e com ela os arquivos
+da tabela _Código / evidência_ acima. O que os substitui:
+
+| Artefato | Caminho |
+| -------- | ------- |
+| Derivação | `src/domain/coupleState.ts` (já existia desde a Fase 0) |
+| Pintura, trechos, contagens, faixas | `src/domain/calendar.ts` (a criar) |
+| Pintura no banco | `public.paint_stays`, `public.create_event` (a criar) |
+
 ## Related
 
 - [0001 — Supabase com RLS por casal](./0001-supabase-com-rls-por-casal.md)

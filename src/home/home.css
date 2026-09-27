@@ -1,0 +1,1353 @@
+/* A Home (Fase 7) — `home.css`, o arquivo da feature. As tarefas do mapa e do
+   painel ESTENDEM este arquivo; aqui mora só o esqueleto e os estados da
+   leitura (carregando, erro, sozinho, `stale`).
+
+   Frame `Home — Escuro` (eocRt), 1440×900: a área do mapa de 928, o painel de
+   424 com a mesma margem das outras telas (12 até a borda), sobre a casca de
+   16. Fundo escuro com os dois brilhos da casca (`.shell::before/::after`);
+   o mapa é o mesmo nos dois temas (seção 14), o painel segue os tokens.
+   Tokens de `app.css`. */
+
+.shell:has(.home-screen) {
+  gap: 12px;
+}
+
+.home-screen {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  height: calc(100dvh - 32px);
+  min-height: 560px;
+}
+
+.home-screen p {
+  margin: 0;
+}
+
+/* --- a área do mapa ------------------------------------------------------ */
+
+.home-map-slot,
+.home-map-blank {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  border-radius: 36px;
+  overflow: hidden;
+  /* O espaço sideral do .pen atrás do globo: o fundo da casca, mais fundo. */
+  background:
+    radial-gradient(90% 70% at 50% 45%, color-mix(in srgb, var(--glow-aqua) 35%, transparent), transparent 70%),
+    #030616;
+  isolation: isolate;
+}
+
+.home-map {
+  position: absolute;
+  inset: 0;
+}
+
+/* --- o painel ------------------------------------------------------------ */
+
+.home-panel,
+.home-panel-state {
+  flex: 0 0 424px;
+  max-height: 100%;
+  overflow-y: auto;
+  border-radius: 36px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--glass), var(--glass)) padding-box,
+    linear-gradient(180deg, var(--glass-shine), var(--glass-stroke-soft) 45%, var(--glass-stroke)) border-box;
+  box-shadow: 0 30px 80px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
+  backdrop-filter: blur(60px);
+  -webkit-backdrop-filter: blur(60px);
+  scrollbar-width: none;
+}
+
+.home-panel-state {
+  padding: 23px 19px;
+}
+
+/* --- estados da leitura -------------------------------------------------- */
+
+.home-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 4px;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.home-state-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--glass-stroke-soft);
+  border-radius: 999px;
+  background: var(--glass);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.home-state-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.home-notice {
+  position: absolute;
+  z-index: 5;
+  top: 16px;
+  left: 50%;
+  translate: -50% 0;
+  max-width: calc(100% - 32px);
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--glass-dark);
+  border: 1px solid var(--glass-stroke-soft);
+  font-size: 13px;
+  color: var(--text-secondary);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.home-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.home-skeleton span {
+  height: 140px;
+  border-radius: 22px;
+  background: var(--glass);
+  animation: home-pulse 1.4s ease-in-out infinite;
+}
+
+.home-skeleton span:first-child {
+  height: 56px;
+}
+
+@keyframes home-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-skeleton span {
+    animation: none;
+  }
+}
+
+/* Celular: a casca é desktop-first (seção 14); aqui só não quebra — o mapa
+   em cima, o painel embaixo. */
+@media (max-width: 759px) {
+  .home-screen {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .home-map-slot,
+  .home-map-blank {
+    flex: 0 0 60dvh;
+  }
+
+  .home-panel,
+  .home-panel-state {
+    flex: none;
+    max-height: none;
+  }
+}
+
+/* =========================================================================
+   A área do mapa (Fase 7, T5b) — `Home — Escuro` eocRt, `Navegação ·
+   Estados` j32cy, `Navegação · Cidades` saMmF, `Zoom São José dos Campos`
+   XwYKK, e os componentes X89zD, RrNiQ/OspYO/XXySj, LptF9, rhuQS, ZLuWp,
+   PfsUA, shqGO, RWZKP, apt2z/V8VroB, GxIWr. Medidas do export do `.pen`.
+
+   O mapa é o mesmo nos dois temas (spec, seção 14): as cores aqui são as do
+   `.pen` escuro, fixas em `.home-map`, e NÃO os tokens de tema — no claro,
+   `--text-primary` viraria texto escuro sobre o satélite. As cores de
+   categoria também ficam nas do escuro (o `list.css` troca no claro).
+   ========================================================================= */
+
+.home-map {
+  --hm-text: #f4f6fb;
+  --hm-text-2: #f4f6fbb3;
+  --hm-text-3: #f4f6fb73;
+  --hm-glass: #ffffff12;
+  --hm-glass-strong: #ffffff1f;
+  --hm-glass-hover: #ffffff29;
+  --hm-stroke: #ffffff38;
+  --hm-stroke-soft: #ffffff14;
+  --hm-shine: #ffffff40;
+  --hm-shadow: #02051480;
+  --hm-dark: #0a1030b8;
+  --hm-accent: #7fd8c4;
+  --hm-accent-glow: #7fd8c466;
+  --hm-on-accent: #08102a;
+  --hm-apart: #f4a3b4;
+  --hm-edge: linear-gradient(180deg, #ffffff40 0%, #ffffff14 45%, #ffffff38 100%);
+  --cat-pais: #9ccbf2;
+  --cat-cidade: #f7c59f;
+  --cat-restaurante: #eda88a;
+  --cat-parque: #7fd8c4;
+  --cat-comida: #f6e3a1;
+  --cat-experiencia: #cbe68e;
+  --cat-filme: #f4a3b4;
+  --cat-serie: #c3b3f2;
+
+  color: var(--hm-text);
+  font-family: var(--font);
+  pointer-events: none;
+}
+
+.home-map button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.home-map button:focus-visible,
+.home-map input:focus-visible {
+  outline: 2px solid var(--hm-accent);
+  outline-offset: 2px;
+}
+
+/* Tudo que se toca pega o ponteiro; o resto deixa arrastar o mapa. */
+.home-map .hm-canvas,
+.home-map .map-failed,
+.home-map .hm-pin-btn,
+.home-map .hm-status,
+.home-map .hm-crumbs,
+.home-map .hm-zoom,
+.home-map .hm-nearby,
+.home-map .hm-popover,
+.home-map .hm-filters > * {
+  pointer-events: auto;
+}
+
+.hm-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/* O `Map Vignette` do XwYKK: escurece em cima e embaixo para o texto ler
+   sobre o satélite. No globo o fundo já é o espaço. */
+.hm-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    radial-gradient(80% 75% at 35% 60%, #060a1c00 45%, #060a1cb3 100%),
+    linear-gradient(180deg, #060a1cf2 0%, #060a1c80 20%, #060a1c00 42%, #060a1c00 78%, #060a1ccc 100%);
+}
+
+/* _"O mapa não carregou."_ (seção 7): o fundo escuro, e o resto por cima. */
+.home-map .map-failed {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  background:
+    radial-gradient(60% 50% at 50% 50%, #15525a55, transparent 70%),
+    #030616;
+  color: var(--hm-text-2);
+  font-size: 14px;
+  text-align: center;
+}
+
+.home-map .map-failed-retry {
+  padding: 8px 16px;
+  border: 1px solid var(--hm-stroke-soft);
+  border-radius: 999px;
+  background: var(--hm-glass);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Vidro do `.pen`: fundo translúcido, borda em degradê, brilho em cima. */
+.hm-picker,
+.hm-popover,
+.hm-zoom,
+.hm-filters-status,
+.hm-chip {
+  border: 1px solid transparent;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* --- cabeçalho: Couple Status + Breadcrumb (Top Left) -------------------- */
+
+.hm-top {
+  position: absolute;
+  z-index: 6;
+  top: 36px;
+  left: 40px;
+  right: 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.hm-status {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.hm-status-pair {
+  position: relative;
+  flex: 0 0 84px;
+  height: 52px;
+}
+
+.hm-status-pair .hm-avatar {
+  position: absolute;
+  top: 0;
+  outline: 2px solid var(--hm-stroke);
+}
+
+.hm-status-pair .hm-avatar:first-child {
+  left: 0;
+}
+
+.hm-status-pair .hm-avatar:last-child {
+  left: 32px;
+}
+
+.hm-status-cover {
+  flex: 0 0 52px;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  overflow: hidden;
+  outline: 2px solid var(--hm-stroke);
+}
+
+.hm-status-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hm-status-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.hm-status-live {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--hm-text-2);
+  white-space: nowrap;
+}
+
+.hm-status-dot {
+  flex: 0 0 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--hm-accent);
+  box-shadow: 0 0 10px var(--hm-accent);
+}
+
+.hm-status-live--apart .hm-status-dot {
+  background: var(--hm-apart);
+  box-shadow: 0 0 10px var(--hm-apart);
+}
+
+.hm-status-live--unknown .hm-status-dot {
+  background: var(--hm-text-3);
+  box-shadow: none;
+}
+
+.hm-status-big {
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: -1.8px;
+  line-height: 46px;
+  color: var(--hm-text);
+  white-space: nowrap;
+}
+
+.hm-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--person, var(--hm-glass-strong));
+  color: var(--hm-on-accent);
+  font-size: 0.42em;
+  font-weight: 600;
+}
+
+.hm-status-pair .hm-avatar {
+  font-size: 22px;
+}
+
+.hm-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* O breadcrumb (RrNiQ): pílula de 44 com o globo e os segmentos. O desfoque
+   mora num pseudo-elemento: `backdrop-filter` no próprio breadcrumb o faria
+   "raiz de fundo" do seletor que pende dele, e o seletor desfocaria só a
+   barra, deixando o mapa nítido por trás. */
+.hm-crumbs {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 44px;
+  max-width: 100%;
+  padding: 0 8px 0 6px;
+  border-radius: 999px;
+  background:
+    linear-gradient(#ffffff12, #ffffff12) padding-box,
+    linear-gradient(var(--hm-dark), var(--hm-dark)) padding-box,
+    var(--hm-edge) border-box;
+  box-shadow: inset 0 1px 1px var(--hm-shine), 0 18px 48px var(--hm-shadow);
+}
+
+.hm-crumbs::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.hm-crumbs-globe {
+  display: inline-flex;
+  flex: 0 0 32px;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--hm-glass-strong);
+}
+
+.hm-crumb-sep {
+  flex: none;
+  color: var(--hm-text-3);
+}
+
+.hm-crumb-slot {
+  position: relative;
+  flex: none;
+}
+
+.hm-crumb {
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--hm-text-2);
+  white-space: nowrap;
+}
+
+.hm-crumb:hover {
+  color: var(--hm-text);
+}
+
+.hm-crumb.is-active,
+.hm-crumb.is-open {
+  background: var(--hm-glass-hover);
+  box-shadow: inset 0 1px 1px var(--hm-shine);
+  font-weight: 600;
+  color: var(--hm-text);
+}
+
+/* O segmento com o seletor aberto ganha o contorno verde (OspYO). */
+.hm-crumb.is-open {
+  outline: 1px solid var(--hm-accent-glow);
+  outline-offset: -1px;
+}
+
+/* O seletor (OspYO/XXySj): pende do segmento numa silhueta só com a barra —
+   280 de largura, 10 à esquerda do segmento, com os cantos de dentro
+   arredondados para fora (16) onde encosta na barra. */
+.hm-picker {
+  position: absolute;
+  z-index: 1;
+  top: 37px;
+  left: -10px;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 8px 8px;
+  border-top: 0;
+  border-radius: 0 0 26px 26px;
+  background:
+    linear-gradient(#ffffff12, #ffffff12) padding-box,
+    linear-gradient(var(--hm-dark), var(--hm-dark)) padding-box,
+    var(--hm-edge) border-box;
+  box-shadow: 0 18px 48px var(--hm-shadow);
+}
+
+.hm-picker::before,
+.hm-picker::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+
+.hm-picker::before {
+  left: -16px;
+  background: radial-gradient(circle at 0 100%, transparent 15.5px, #1a2040d9 16px);
+}
+
+.hm-picker::after {
+  right: -16px;
+  background: radial-gradient(circle at 100% 100%, transparent 15.5px, #1a2040d9 16px);
+}
+
+.hm-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 10px 0;
+}
+
+.hm-picker-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hm-text);
+}
+
+.hm-picker-meta {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--hm-text-3);
+  white-space: nowrap;
+}
+
+.hm-picker-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 999px;
+  background: var(--hm-glass);
+  outline: 1px solid var(--hm-stroke-soft);
+  outline-offset: -1px;
+  color: var(--hm-text-3);
+}
+
+.hm-picker-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  color: var(--hm-text);
+}
+
+.hm-picker-search input::placeholder {
+  color: var(--hm-text-3);
+}
+
+.hm-picker-search input:focus-visible {
+  outline: none;
+}
+
+.hm-picker-search:focus-within {
+  outline-color: var(--hm-accent-glow);
+}
+
+.hm-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 340px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.hm-picker-empty {
+  padding: 10px;
+  font-size: 13px;
+  color: var(--hm-text-3);
+}
+
+.hm-picker-foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px 4px;
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--hm-text-2);
+}
+
+.hm-picker-foot:hover {
+  color: var(--hm-text);
+}
+
+/* `Region Item` (LptF9). */
+.hm-region {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  text-align: left;
+  color: var(--hm-text-3);
+}
+
+.hm-region:hover {
+  background: var(--hm-glass);
+}
+
+.hm-region-code {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 24px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--hm-glass-strong);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  color: var(--hm-text-2);
+}
+
+.hm-region-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--hm-text);
+}
+
+.hm-region-count {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--hm-text-3);
+}
+
+.hm-region.is-active {
+  background: var(--hm-glass-hover);
+  box-shadow: inset 0 1px 1px var(--hm-shine), 0 0 16px var(--hm-accent-glow);
+  outline: 1px solid var(--hm-accent-glow);
+  outline-offset: -1px;
+}
+
+.hm-region.is-active .hm-region-code {
+  background: var(--hm-accent);
+  color: var(--hm-on-accent);
+}
+
+.hm-region.is-active .hm-region-name {
+  font-weight: 600;
+}
+
+.hm-region.is-active .hm-region-count {
+  color: var(--hm-accent);
+}
+
+/* --- Zoom Controls (rhuQS) ----------------------------------------------- */
+
+.hm-zoom {
+  position: absolute;
+  z-index: 5;
+  top: 50%;
+  right: 24px;
+  translate: 0 -50%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 999px;
+  background:
+    linear-gradient(var(--hm-glass), var(--hm-glass)) padding-box,
+    var(--hm-edge) border-box;
+  box-shadow: inset 0 1px 1px var(--hm-shine);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+}
+
+.hm-zoom button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--hm-text-2);
+}
+
+.hm-zoom button:hover:not(:disabled) {
+  background: var(--hm-glass-strong);
+  color: var(--hm-text);
+}
+
+.hm-zoom button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+/* --- Pins (PfsUA, shqGO, GxIWr) ------------------------------------------ */
+
+.hm-pins {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.hm-pin-btn {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  /* O centro do pin (30) cai na coordenada, com ou sem rótulo à direita. */
+  translate: -15px -50%;
+}
+
+.hm-pin {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+}
+
+/* Quero ir: vidro com o anel e o brilho na cor da categoria. */
+.hm-pin--want {
+  background: #ffffff1f;
+  outline: 2px solid var(--cat);
+  outline-offset: -2px;
+  box-shadow: 0 0 16px var(--cat);
+  color: var(--cat);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Já fomos: disco cheio na cor da categoria, ícone escuro. */
+.hm-pin--done {
+  background: var(--cat);
+  outline: 1.5px solid #ffffff66;
+  outline-offset: -1.5px;
+  box-shadow: 0 6px 14px #0000004d;
+  color: var(--hm-on-accent);
+}
+
+.hm-pin-btn:hover .hm-pin {
+  scale: 1.08;
+}
+
+.hm-pin-label {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--hm-dark);
+  outline: 1px solid var(--hm-stroke-soft);
+  outline-offset: -1px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--hm-text);
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* O grupo: o pin do mais recente e _"+n"_ embaixo à direita (Cluster SJC). */
+.hm-pin-count {
+  position: absolute;
+  left: 22px;
+  top: 22px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #ffffff1f;
+  outline: 1px solid var(--hm-stroke);
+  outline-offset: -1px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--hm-text);
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* No nível cidade, _"+8 em SJC"_ à direita, sobre o escuro (XwYKK). */
+.hm-pin-btn--city .hm-pin-count {
+  left: 34px;
+  top: 50%;
+  translate: 0 -50%;
+  padding: 4px 9px;
+  background: var(--hm-dark);
+}
+
+/* O selecionado: maior, com o pulso (Selected Pulse / Focus Ring). */
+.hm-pin-btn--selected {
+  z-index: 1;
+  translate: -50% -50%;
+}
+
+.hm-pin--selected {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  outline-width: 2.5px;
+  outline-offset: -2.5px;
+  box-shadow: 0 0 24px var(--cat);
+}
+
+.hm-pin-btn--at-city .hm-pin--selected {
+  width: 46px;
+  height: 46px;
+  box-shadow: 0 0 26px var(--cat);
+}
+
+.hm-pulse {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 64px;
+  height: 64px;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: #7fd8c466;
+  outline: 1px solid var(--hm-accent);
+  outline-offset: -1px;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.hm-pulse--outer {
+  width: 88px;
+  height: 88px;
+  background: transparent;
+  opacity: 0.25;
+  animation: hm-pulse 2.4s ease-out infinite;
+}
+
+.hm-pin-btn--at-city .hm-pulse {
+  width: 76px;
+  height: 76px;
+  opacity: 0.7;
+}
+
+.hm-pin-btn--at-city .hm-pulse--outer {
+  width: 112px;
+  height: 112px;
+  opacity: 0.3;
+}
+
+@keyframes hm-pulse {
+  50% {
+    scale: 1.08;
+    opacity: 0.12;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hm-pulse--outer {
+    animation: none;
+  }
+}
+
+/* --- Place Popover (RWZKP) ----------------------------------------------- */
+
+.hm-popover {
+  position: absolute;
+  z-index: 7;
+  width: 247px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 24px;
+  background:
+    linear-gradient(#ffffff1f, #ffffff1f) padding-box,
+    linear-gradient(var(--hm-dark), var(--hm-dark)) padding-box,
+    var(--hm-edge) border-box;
+  box-shadow: inset 0 1px 1px var(--hm-shine), 0 24px 56px var(--hm-shadow);
+}
+
+/* Sem engine (ou sem âncora): sob o breadcrumb, à esquerda. */
+.hm-popover--docked {
+  top: 178px;
+  left: 40px;
+}
+
+.hm-popover-photo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--cat) 22%, #0a1030);
+  color: var(--cat);
+}
+
+.hm-popover-photo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hm-popover-status {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #0b123099;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.hm-popover-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 0 6px 6px;
+}
+
+.hm-popover-name {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  color: var(--hm-text);
+}
+
+.hm-popover-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.hm-popover-author {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--hm-text-2);
+}
+
+.hm-popover-author .hm-avatar {
+  outline: 1.5px solid var(--hm-stroke);
+  font-size: 10px;
+}
+
+.hm-popover-open {
+  display: inline-flex;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  margin-left: auto;
+  border: 0;
+  border-radius: 999px;
+  background: var(--hm-glass-hover);
+}
+
+.hm-popover-open:hover {
+  background: #ffffff3d;
+}
+
+.hm-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--hm-glass-strong);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--hm-text-2);
+}
+
+.hm-dot {
+  flex: 0 0 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cat);
+}
+
+/* O marcador de status: disco (Todos, Já fomos) ou anel com brilho (Quero ir). */
+.hm-marker {
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--hm-accent);
+}
+
+.hm-marker--want {
+  background: transparent;
+  outline: 1.5px solid var(--hm-accent);
+  outline-offset: -1.5px;
+  box-shadow: 0 0 8px var(--hm-accent);
+}
+
+.hm-popover-status .hm-marker {
+  flex-basis: 8px;
+  width: 8px;
+  height: 8px;
+  box-shadow: none;
+}
+
+/* --- Aqui por perto (XwYKK) e Place Quick Card (apt2z, V8VroB) ---------- */
+
+.hm-nearby {
+  position: absolute;
+  z-index: 4;
+  top: 168px;
+  right: 88px;
+  bottom: 120px;
+  width: 236px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.hm-nearby-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 6px 6px;
+}
+
+.hm-nearby-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  color: var(--hm-text);
+}
+
+.hm-nearby-meta {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--hm-text-2);
+  white-space: nowrap;
+}
+
+.hm-nearby-sort,
+.hm-nearby-all {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--hm-glass);
+  outline: 1px solid var(--hm-stroke-soft);
+  outline-offset: -1px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--hm-text-2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.hm-nearby-all {
+  align-self: flex-start;
+  margin-left: 6px;
+}
+
+.hm-nearby-empty {
+  padding: 12px;
+  border-radius: 18px;
+  background: var(--hm-dark);
+  font-size: 13px;
+  color: var(--hm-text-2);
+}
+
+.hm-nearby-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  margin: 0;
+  padding: 0 0 12px;
+  list-style: none;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.hm-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 12px 7px 7px;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  background:
+    linear-gradient(#ffffff12, #ffffff12) padding-box,
+    linear-gradient(var(--hm-dark), var(--hm-dark)) padding-box,
+    var(--hm-edge) border-box;
+  box-shadow: inset 0 1px 1px var(--hm-shine), 0 10px 28px var(--hm-shadow);
+  text-align: left;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+}
+
+.hm-card.is-active {
+  border-color: var(--hm-accent);
+  background:
+    linear-gradient(#ffffff29, #ffffff29) padding-box,
+    linear-gradient(var(--hm-dark), var(--hm-dark)) padding-box;
+  box-shadow: inset 0 1px 1px var(--hm-shine), 0 0 22px var(--hm-accent-glow);
+}
+
+.hm-card-thumb {
+  display: inline-flex;
+  flex: 0 0 46px;
+  align-items: center;
+  justify-content: center;
+  height: 46px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--cat) 22%, #0a1030);
+  color: var(--cat);
+}
+
+.hm-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hm-card-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.hm-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: var(--hm-text);
+}
+
+.hm-card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--hm-text-2);
+  white-space: nowrap;
+}
+
+.hm-card-km {
+  font-weight: 400;
+  color: var(--hm-text-3);
+}
+
+.hm-card-status {
+  display: inline-flex;
+  flex: none;
+  color: var(--hm-text-3);
+}
+
+.hm-card-status--active {
+  color: var(--hm-accent);
+}
+
+.hm-card-status--done {
+  color: var(--cat);
+}
+
+/* --- Map Filters (ZLuWp) ------------------------------------------------- */
+
+.hm-filters {
+  position: absolute;
+  z-index: 5;
+  left: 40px;
+  right: 40px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.hm-filters-status {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background:
+    linear-gradient(var(--hm-glass), var(--hm-glass)) padding-box,
+    var(--hm-edge) border-box;
+  box-shadow: inset 0 1px 1px var(--hm-shine);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+}
+
+.hm-status-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--hm-text-2);
+  white-space: nowrap;
+}
+
+.hm-status-opt.is-active {
+  background: var(--hm-glass-hover);
+  box-shadow: inset 0 1px 1px var(--hm-shine);
+  font-weight: 600;
+  color: var(--hm-text);
+}
+
+.hm-status-count {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--hm-text-3);
+}
+
+.hm-filters-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background:
+    linear-gradient(var(--hm-glass), var(--hm-glass)) padding-box,
+    var(--hm-edge) border-box;
+  box-shadow: inset 0 1px 1px var(--hm-shine), 0 18px 48px var(--hm-shadow);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--hm-text);
+  white-space: nowrap;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.hm-chip:hover {
+  background:
+    linear-gradient(var(--hm-glass-strong), var(--hm-glass-strong)) padding-box,
+    var(--hm-edge) border-box;
+}
+
+.hm-chip.is-active {
+  border-color: var(--hm-accent);
+  background: var(--hm-glass-hover);
+  box-shadow: 0 0 18px var(--hm-accent-glow), inset 0 1px 1px var(--hm-shine);
+  font-weight: 600;
+}
+
+/* Celular (desktop-first, seção 14): só não quebra. */
+@media (max-width: 759px) {
+  .hm-top {
+    top: 16px;
+    left: 16px;
+    right: 16px;
+  }
+
+  .hm-status-big {
+    font-size: 28px;
+    line-height: 32px;
+  }
+
+  .hm-nearby {
+    display: none;
+  }
+
+  .hm-filters {
+    left: 16px;
+    right: 16px;
+  }
+
+  .hm-filters-cats {
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+}

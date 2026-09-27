@@ -30,6 +30,7 @@ import {
 import type { TripValidation } from '../domain/tripValidation'
 import { nextPosition } from '../trips/api'
 import type { TripsApi } from '../trips/api'
+import { mapboxEngine } from '../map/engine'
 import { ALL_CITIES, COUPLE_ID, GABRIEL, LIST_ITEMS, PATH_URLS, PREVIEW_TODAY, STAYS, TRIPS, eventOf, settingsSeed } from './previewSeed'
 
 /** O estado vivo do harness: as quatro APIs do `Preview` leem o MESMO. */
@@ -113,6 +114,7 @@ export function previewTripsApi(store: PreviewStore = previewStore()): TripsApi 
 
   return {
     today: () => PREVIEW_TODAY,
+    mapEngine: mapboxEngine,
 
     loadContext: () => ok(settingsSeed(STAYS)),
     loadTrips: () => {

@@ -220,15 +220,6 @@ export function MonthView() {
   const inMonth = (day: string) => month.from <= day && day <= month.to
   const occs = occurrences(c.events, { startedOn: c.startedOn }, weeks[0][0], weeks[weeks.length - 1][6])
   const hasUnknown = countDrawn(month.from, month.to, c.stays, c.members).unknown > 0
-  const sameHome = c.people[1].homeCity.id === c.people[2].homeCity.id
-
-  const legend: { band: Exclude<Band, 'unknown'>; label: string }[] = [
-    { band: 'home1', label: `Juntos em ${shortCityName(c.people[1].homeCity.name)}` },
-    ...(sameHome ? [] : [{ band: 'home2' as const, label: `Juntos em ${shortCityName(c.people[2].homeCity.name)}` }]),
-    { band: 'away', label: 'Viajando juntos' },
-    ...(sameHome ? [] : [{ band: 'apart' as const, label: 'Separados' }]),
-  ]
-  const people = [c.people[1], c.people[2]]
 
   return (
     <div className="cal-month">
@@ -243,32 +234,54 @@ export function MonthView() {
         ))}
       </div>
 
-      <div className="cal-legend" role="list" aria-label="Legenda">
-        {legend.map((l) => (
-          <span key={l.band} role="listitem" className="cal-legend-item">
-            <span className="cal-legend-swatch" style={{ '--band': bandColor(settings, l.band) } as CSSProperties} />
-            {l.label}
-          </span>
-        ))}
-        {hasUnknown && (
+      <CalendarLegend hasUnknown={hasUnknown} />
+    </div>
+  )
+}
+
+/**
+ * A legenda (R8): os estados com a cor do casal, _Sem registro_ quando a janela
+ * tem algum dia `unknown`, e a dica dos avatares. Usada pelo Mês e pelo Ano.
+ */
+export function CalendarLegend({ hasUnknown }: { hasUnknown: boolean }) {
+  const c = useCalendar()
+  const { settings } = c
+  const sameHome = c.people[1].homeCity.id === c.people[2].homeCity.id
+
+  const legend: { band: Exclude<Band, 'unknown'>; label: string }[] = [
+    { band: 'home1', label: `Juntos em ${shortCityName(c.people[1].homeCity.name)}` },
+    ...(sameHome ? [] : [{ band: 'home2' as const, label: `Juntos em ${shortCityName(c.people[2].homeCity.name)}` }]),
+    { band: 'away', label: 'Viajando juntos' },
+    ...(sameHome ? [] : [{ band: 'apart' as const, label: 'Separados' }]),
+  ]
+  const people = [c.people[1], c.people[2]]
+
+  return (
+    <div className="cal-legend" role="list" aria-label="Legenda">
+      {legend.map((l) => (
+        <span key={l.band} role="listitem" className="cal-legend-item">
+          <span className="cal-legend-swatch" style={{ '--band': bandColor(settings, l.band) } as CSSProperties} />
+          {l.label}
+        </span>
+      ))}
+      {hasUnknown && (
+        <span role="listitem" className="cal-legend-item">
+          <span className="cal-legend-swatch cal-legend-swatch--unknown" />
+          Sem registro
+        </span>
+      )}
+      {settings.showDayMarkers && (
+        <span className="cal-legend-pairs">
           <span role="listitem" className="cal-legend-item">
-            <span className="cal-legend-swatch cal-legend-swatch--unknown" />
-            Sem registro
+            <CouplePair people={people} together />
+            juntos
           </span>
-        )}
-        {settings.showDayMarkers && (
-          <span className="cal-legend-pairs">
-            <span role="listitem" className="cal-legend-item">
-              <CouplePair people={people} together />
-              juntos
-            </span>
-            <span role="listitem" className="cal-legend-item">
-              <CouplePair people={people} together={false} />
-              separados
-            </span>
+          <span role="listitem" className="cal-legend-item">
+            <CouplePair people={people} together={false} />
+            separados
           </span>
-        )}
-      </div>
+        </span>
+      )}
     </div>
   )
 }

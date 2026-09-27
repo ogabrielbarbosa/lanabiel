@@ -2,26 +2,24 @@
 // aparece com leitura `ok`, zero estadias e os dois integrantes — nunca com
 // erro de leitura (seção 7), senão o casal regravaria a história por cima.
 //
-// _Juntos em outra cidade_ precisa do seletor de cidade (R17), que nasce na
-// T10. Até lá ele entra por `renderCityPicker`: sem a prop, a opção fica
-// desabilitada ("Em breve"). A T10 passa o seletor pela `CalendarScreen`.
+// _Juntos em outra cidade_ usa o seletor de cidade (R17), que entra por
+// `renderCityPicker` (a `CalendarScreen` passa o `CityPicker` real): sem a
+// prop, a opção fica desabilitada ("Em breve"). Cidade do mundo escolhida só
+// vira linha em `cities` ao criar, logo antes da pintura (seção 7, cascata).
 
 import { useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { CalendarPlus } from 'lucide-react'
 import { CALENDAR_LIMITS, entriesForPeriod, shortCityName } from '../domain/calendar'
-import type { CalCity, PeriodChoice } from '../domain/calendar'
+import type { PeriodChoice } from '../domain/calendar'
 import { addDays, diffDays } from '../lib/date'
+import { resolveCity } from './cityChoice'
+import type { CityChoice, CityPickerProps } from './cityChoice'
 import { useCalendar, writeFailureMessage } from './context'
 import { CouplePair } from './parts'
 import { bandColor } from './view'
 
-export interface CityPickerProps {
-  value: CalCity | null
-  onChange: (city: CalCity | null) => void
-  /** Nome acessível do campo. */
-  label: string
-}
+export type { CityPickerProps }
 
 export interface FirstPeriodCardProps {
   /** O seletor de cidade (R17). Ausente = _Juntos em outra cidade_ desabilitada. */
@@ -36,7 +34,7 @@ export function FirstPeriodCard({ renderCityPicker }: FirstPeriodCardProps) {
   const sameHome = people[1].homeCity.id === people[2].homeCity.id
 
   const [choice, setChoice] = useState<PeriodChoice | null>(null)
-  const [city, setCity] = useState<CalCity | null>(null)
+  const [city, setCity] = useState<CityChoice | null>(null)
   const [from, setFrom] = useState(today)
   const [to, setTo] = useState('')
   const [pending, setPending] = useState(false)
@@ -61,7 +59,18 @@ export function FirstPeriodCard({ renderCityPicker }: FirstPeriodCardProps) {
     if (invalid !== null || choice === null) return
     setPending(true)
     setError(null)
-    const result = await c.api.paint(entriesForPeriod({ choice, cityId: city?.id ?? null, from, to: end }, members))
+    let cityId: string | null = null
+    if (choice === 'away' && city !== null) {
+      const resolved = await resolveCity(c.api, c.coupleId, city)
+      if (!resolved.ok) {
+        setError(`Não deu pra criar: ${resolved.message}`)
+        setPending(false)
+        return
+      }
+      setCity(resolved.city)
+      cityId = resolved.city.id
+    }
+    const result = await c.api.paint(entriesForPeriod({ choice, cityId, from, to: end }, members))
     if (result.status !== 'ok') {
       setError(`Não deu pra criar: ${writeFailureMessage(result)}`)
       setPending(false)

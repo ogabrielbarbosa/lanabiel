@@ -26,18 +26,25 @@ import type { SettingsData } from '../data/settings'
 import { countDrawn } from '../domain/calendar'
 import type { CalCity, CalendarEvent, EventDraft, Run } from '../domain/calendar'
 import type { CalendarApi, CalendarData } from './api'
+import { CalendarModals } from './CalendarModals'
+import { CalendarCityPicker } from './CityPicker'
 import { CalendarContext, membersOf, namesOf, peopleOf, withHomes } from './context'
 import type { CalendarContextValue, CalendarModal, YearMonth } from './context'
 import { FirstPeriodCard } from './FirstPeriodCard'
 import type { FirstPeriodCardProps } from './FirstPeriodCard'
+import { CalendarPanel } from './CalendarPanel'
 import { BareMonthGrid, MonthView } from './MonthView'
-import { gridBounds, monthBounds, monthOf, monthTitle, shiftYearMonth } from './view'
+import { gridBounds, monthBounds, monthOf, monthTitle, shiftYearMonth, yearKicker } from './view'
+import { YearView } from './YearView'
 import './calendar.css'
 
 export interface CalendarScreenProps {
   /** O que o Calendário pede ao mundo. Injetado: o teste dirige sem rede. */
   api: CalendarApi
-  /** O seletor de cidade (R17), quando a T10 existir. Repassado ao primeiro período. */
+  /**
+   * O seletor de cidade (R17) do primeiro período. Padrão: o `CityPicker`
+   * real, sobre o contexto; o teste pode trocar por um dublê.
+   */
   renderCityPicker?: FirstPeriodCardProps['renderCityPicker']
 }
 
@@ -93,7 +100,7 @@ async function readAll(
   }
 }
 
-export function CalendarScreen({ api, renderCityPicker }: CalendarScreenProps) {
+export function CalendarScreen({ api, renderCityPicker = defaultCityPicker }: CalendarScreenProps) {
   const [snap, setSnap] = useState<Snapshot | null>(null)
   const [kisses, setKisses] = useState<Kisses | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -215,6 +222,8 @@ export function CalendarScreen({ api, renderCityPicker }: CalendarScreenProps) {
     />
   )
 }
+
+const defaultCityPicker: NonNullable<FirstPeriodCardProps['renderCityPicker']> = (props) => <CalendarCityPicker {...props} />
 
 function Skeleton() {
   return (
@@ -361,7 +370,10 @@ function Loaded({
 
   const month = monthBounds(visibleMonth)
   const counts = countDrawn(month.from, month.to, value.stays, value.members)
-  const kicker = view === 'month' ? `${counts.home1 + counts.home2 + counts.away} dias juntos · ${counts.apart} separados` : null
+  const kicker =
+    view === 'month'
+      ? `${counts.home1 + counts.home2 + counts.away} dias juntos · ${counts.apart} separados`
+      : yearKicker(visibleMonth.year, today, value.stays, value.members)
 
   return (
     <CalendarContext.Provider value={value}>
@@ -397,21 +409,16 @@ function Loaded({
 
           {value.stays.length === 0 && <FirstPeriodCard renderCityPicker={renderCityPicker} />}
 
-          {view === 'month' ? (
-            <MonthView />
-          ) : (
-            // T8 renderiza a visão Ano aqui (`YearView`, R10–R11).
-            <section className="cal-year-placeholder" aria-label="Ano">
-              Ano
-            </section>
-          )}
+          {view === 'month' ? <MonthView /> : <YearView />}
         </div>
 
-        {/* T9 renderiza o painel "Onde a gente está" aqui (`CalendarPanel`, R12). */}
-        <aside className="cal-panel" aria-label="Onde a gente está" />
+        <aside className="cal-panel" aria-label="Onde a gente está">
+          <CalendarPanel />
+        </aside>
       </div>
 
-      {/* T10/T11 renderizam aqui o modal pedido em `value.modal` (período / evento). */}
+      {/* O modal pedido em `value.modal` (período / evento, T10/T11). */}
+      <CalendarModals />
     </CalendarContext.Provider>
   )
 }

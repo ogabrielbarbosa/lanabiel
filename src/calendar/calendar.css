@@ -99,10 +99,6 @@
   -webkit-backdrop-filter: blur(60px);
 }
 
-.cal-panel:empty {
-  visibility: hidden;
-}
-
 /* --- cabeçalho ----------------------------------------------------------- */
 
 .cal-header {
@@ -867,13 +863,6 @@ span.cal-chip {
   color: var(--text-tertiary);
 }
 
-.cal-year-placeholder {
-  padding: 40px;
-  border-radius: 28px;
-  background: var(--glass-soft);
-  color: var(--text-tertiary);
-}
-
 /* --- estreito ------------------------------------------------------------ */
 
 @media (max-width: 1100px) {
@@ -904,5 +893,582 @@ span.cal-chip {
   .cal-first-options,
   .cal-first-dates {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ── T8/T9: Ano e painel ── */
+
+/* Ano (`XEnYP`, área `lSxDz`): uma grade de 31 colunas por mês; a coluna
+   _JUNTOS_ à direita. As barras leem `--band` inline (couple_settings). */
+
+.cal-year {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cal-year-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 18px 20px 20px;
+  border-radius: 28px;
+  background: var(--glass);
+  border: 1px solid var(--glass-stroke-soft);
+  box-shadow: 0 30px 80px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
+}
+
+.cal-year-scale,
+.cal-year-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 56px;
+  align-items: center;
+  gap: 14px;
+}
+
+.cal-year-days {
+  display: grid;
+  grid-template-columns: repeat(31, minmax(0, 1fr));
+  column-gap: 3px;
+  align-items: center;
+}
+
+.cal-year-scale {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+
+.cal-year-total-head {
+  text-align: right;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.cal-year-row {
+  padding: 5px 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cal-year-row:hover {
+  background: var(--glass-soft);
+}
+
+.cal-year-row--current {
+  background: var(--glass-soft);
+}
+
+.cal-year-month {
+  padding-left: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.cal-year-row--current .cal-year-month {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cal-year-days {
+  position: relative;
+  min-height: 26px;
+}
+
+.cal-year-bar {
+  grid-row: 1;
+  display: flex;
+  height: 26px;
+  min-width: 0;
+}
+
+.cal-year-bar > span {
+  flex-basis: 0;
+  border-radius: 7px;
+  background: var(--band);
+}
+
+.cal-year-bar > span + span {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.cal-year-bar > span:has(+ span) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.cal-year-row:hover .cal-year-bar > span {
+  filter: brightness(1.08);
+}
+
+.cal-year-today {
+  grid-row: 1;
+  z-index: 1;
+  height: 32px;
+  margin: 0 -3px;
+  border-radius: 8px;
+  box-shadow: 0 0 0 2px var(--text-primary), 0 0 12px var(--glass-shine);
+  pointer-events: none;
+}
+
+.cal-year-total {
+  text-align: right;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cal-year-total small {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+
+.cal-year-total--future {
+  color: var(--text-tertiary);
+}
+
+/* Painel (`n2aVYz`, painel `Mt65b`): cabeçalho e quatro cartões de vidro. */
+
+.cal-panel-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+.cal-panel-head p {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+
+.cal-panel-head h2 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cal-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 24px;
+  background: var(--glass);
+  border: 1px solid var(--glass-stroke-soft);
+  box-shadow: inset 0 1px 1px var(--glass-shine);
+}
+
+.cal-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.cal-card-head h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.cal-link:hover {
+  color: var(--text-primary);
+}
+
+.cal-hint {
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+.cal-now {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.cal-now-pair {
+  display: inline-flex;
+  flex: none;
+  gap: 4px;
+}
+
+.cal-now-pair--together {
+  gap: 0;
+}
+
+.cal-now-pair--together .cal-avatar + .cal-avatar {
+  margin-left: -12px;
+}
+
+.cal-now-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cal-now-title {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+.cal-now-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.cal-now-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cal-now-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--track);
+  overflow: hidden;
+}
+
+.cal-now-track span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--band), var(--accent-2));
+}
+
+.cal-now-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.cal-now-progress-labels strong {
+  font-weight: 600;
+  color: var(--band);
+}
+
+.cal-countdowns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cal-countdown {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--glass-soft);
+}
+
+.cal-countdown-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--ev-bg);
+  color: var(--ev);
+}
+
+.cal-countdown-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.cal-countdown-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.cal-countdown-value strong {
+  font-size: 34px;
+  font-weight: 600;
+  color: var(--ev);
+}
+
+.cal-people,
+.cal-events,
+.cal-breakdown {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cal-people {
+  gap: 6px;
+}
+
+.cal-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: var(--glass-soft);
+}
+
+.cal-person-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cal-person-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cal-person-city {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.cal-person-city::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--band, var(--text-tertiary));
+}
+
+.cal-person-status {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.cal-subhead {
+  padding: 6px 2px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.cal-events {
+  gap: 14px;
+}
+
+.cal-event {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+button.cal-event {
+  cursor: pointer;
+}
+
+button.cal-event:hover .cal-event-title {
+  text-decoration: underline;
+}
+
+.cal-event-icon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--ev-bg);
+  color: var(--ev);
+}
+
+.cal-event-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cal-event-title,
+.cal-event-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cal-event-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cal-event-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.cal-event-side {
+  flex: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cal-event-date {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.1;
+}
+
+.cal-event-date strong {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.cal-event-date small {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+.cal-totals {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.cal-totals p {
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--glass-soft);
+}
+
+.cal-totals strong {
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--band);
+}
+
+.cal-totals span {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.cal-stack {
+  display: flex;
+  gap: 3px;
+  height: 10px;
+}
+
+.cal-stack span {
+  flex-basis: 0;
+  border-radius: 5px;
+  background: var(--band);
+}
+
+.cal-stack .cal-stack--unknown {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--text-tertiary);
+}
+
+.cal-breakdown {
+  gap: 10px;
+}
+
+.cal-breakdown li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.cal-breakdown li::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 4px;
+  background: var(--band);
+}
+
+.cal-breakdown li.cal-breakdown--unknown::before {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--text-tertiary);
+}
+
+.cal-breakdown strong {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+@media (max-width: 759px) {
+  .cal-year-grid {
+    padding: 14px 10px;
+  }
+
+  .cal-year-scale,
+  .cal-year-row {
+    grid-template-columns: 28px minmax(0, 1fr) 40px;
+    gap: 8px;
+  }
+
+  .cal-year-days {
+    column-gap: 1px;
+  }
+
+  .cal-year-bar,
+  .cal-year-days {
+    min-height: 18px;
+    height: 18px;
+  }
+
+  .cal-year-today {
+    height: 22px;
   }
 }

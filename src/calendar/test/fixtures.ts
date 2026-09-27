@@ -7,10 +7,11 @@
 // (`u-lana`) — os mesmos de `settingsData()`.
 
 import { vi } from 'vitest'
+import type { City } from '../../data/cities'
 import type { SettingsData } from '../../data/settings'
 import type { CalCity, CalendarEvent, Stay } from '../../domain/calendar'
 import { MARAU, PARATY, SJC, settingsData } from '../../settings/test/fixtures'
-import type { CalendarApi, CalendarData, ListItemRef } from '../api'
+import type { CalendarApi, CalendarData, ListItemRef, WorldCityCandidate } from '../api'
 
 export const TODAY = '2026-09-25'
 export const GABRIEL = 'u-gabriel'
@@ -181,4 +182,42 @@ export function seededCalendarApi(
     })),
     ...overrides,
   })
+}
+
+// ---------------------------------------------------------------------------
+// Seletor de cidade e modais (T10/T11): um município do IBGE fora das casas e
+// candidatos do Photon ainda não gravados (R17).
+// ---------------------------------------------------------------------------
+
+export const PELOTAS_IBGE: City = { id: 'c-pelotas', name: 'Pelotas', stateCode: 'RS', lat: -31.77, lng: -52.34 }
+export const CITY_PELOTAS: CalCity = { ...PELOTAS_IBGE, countryCode: 'BR', region: null }
+
+export const LISBOA_CANDIDATE: WorldCityCandidate = {
+  osmRef: 'R5400890',
+  name: 'Lisboa',
+  region: 'Lisboa',
+  countryCode: 'PT',
+  country: 'Portugal',
+  lat: 38.7223,
+  lng: -9.1393,
+}
+
+/** Um resultado BR que o Photon devolveria — o seletor tem de descartá-lo (I2). */
+export const PELOTAS_PHOTON: WorldCityCandidate = {
+  osmRef: 'R242512',
+  name: 'Pelotas',
+  region: 'Rio Grande do Sul',
+  countryCode: 'BR',
+  country: 'Brasil',
+  lat: -31.77,
+  lng: -52.34,
+}
+
+/** Uma promessa que o teste resolve quando quiser (resposta atrasada). */
+export function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>((r) => {
+    resolve = r
+  })
+  return { promise, resolve }
 }

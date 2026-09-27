@@ -87,8 +87,8 @@ describe('A13 — primeiro período', () => {
     expect(within(card).getByText('Cria o primeiro período no calendário')).toBeInTheDocument()
     const options = within(card).getAllByRole('radio')
     expect(options.map((o) => o.textContent)).toEqual(['Juntos em SJC', 'Juntos em Marau', 'Juntos em outra cidade', 'Separados'])
-    // Sem o seletor de cidade (T10), "outra cidade" espera.
-    expect(within(card).getByRole('radio', { name: 'Juntos em outra cidade' })).toBeDisabled()
+    // O seletor de cidade real (T10) vem por padrão: "outra cidade" está disponível.
+    expect(within(card).getByRole('radio', { name: 'Juntos em outra cidade' })).toBeEnabled()
     expect(within(card).getByLabelText('Desde')).toHaveValue(TODAY)
     expect(within(card).getByLabelText('Até')).toHaveValue('')
     expect(within(card).getByRole('button', { name: 'Criar no calendário' })).toBeDisabled()

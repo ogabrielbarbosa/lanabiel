@@ -41,8 +41,10 @@ que ainda não aconteceram.
 **Causa.** `ends_on` nulo significa "em aberto", e há duas perguntas diferentes
 sobre ele. Para **contar** dias vividos, o fim efetivo é `min(ends_on ?? hoje,
 hoje)`. Para **desenhar**, é `ends_on ?? fim da janela visível`. O código antigo
-(`stayOnDay` em `timeline/together.ts`) tinha só a primeira e a usava para as
-duas coisas.
+(`stayOnDay` em `timeline/together.ts`, apagado na Fase 5) tinha só a primeira e
+a usava para as duas coisas. Na Fase 5 isso ganhou nome nas contagens também:
+`countStates` (vivido) e `countDrawn` (desenhado, planejado incluso), em
+`src/domain/`.
 
 **Por que nada acusa.** As duas devolvem `string`. Trocar uma pela outra
 typecheck a, lint a, e produz um número plausível ou uma barra que só não

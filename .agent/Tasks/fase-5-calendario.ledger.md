@@ -338,3 +338,44 @@ errado: recarregar a página no meio do pedido perde o pedido (a pessoa toca de
 novo).
 
 ---
+
+## Revisão de código (`/code-review high`, branch inteira)
+
+Seis achados. Corrigidos: o _Adicionar_ usava as cores do tema escuro chumbadas
+(agora `--accent-gradient` / `--on-accent`); `loadModalEnv` não carregava as
+cidades dos eventos (editar uma viagem pela Lista abriria o Destino vazio).
+Refutado por teste: "o segundo pedido igual do _Adicionar_ não reabre" — o
+`useSyncExternalStore` relê a cada render, e abrir o modal re-renderiza; o
+teste que pede duas vezes passa com e sem a mudança, e ficou como regressão.
+Justificados sem mudança: re-assinar os avatares a cada foco (as URLs expiram
+em 1 h, e isso as mantém válidas); "hoje" congelado até a próxima releitura (o
+mesmo trade do ADR 0015); `insertStay` fica, porque `rls.test.ts` e
+`constraints.test.ts` testam a RLS da escrita direta que a policy `for all`
+ainda permite.
+
+## Revisão de conformidade com o `.pen` (sem navegador)
+
+O Gabriel pediu para não depender do navegador: a prova foi comparar código e
+`.pen` pelo MCP do Pencil. Um revisor só-leitura apontou 29 divergências (3
+altas: dias passados esmaecidos, Separados com opacidade reduzida, célula de
+hoje). Outro agente aplicou, lendo cada valor no `.pen` antes de mudar; onde o
+`.pen` e o revisor discordaram, valeu o `.pen` (ícone das setas é 16 nas
+instâncias; o Mês não esmaece o futuro no frame, mas R6 pede, então `--planned`
+0.45 fica e o Ano usa 0.5). Prova: 774 passando, typecheck, lint e build limpos.
+**A fidelidade visual não foi vista renderizada**; é conferência de valores.
+
+Ruling (do agente, aceito): o 💋 some da célula com zero (o frame desliga o
+emoji e só mostra o número rosa), com _+1_ ao passar o mouse; o nome acessível
+continua "💋 {n} em {dia}".
+
+Ruling (do agente, aceito): a distância de 12 px entre o painel e a barra vale
+só no Calendário (`.shell:has(.cal)` em `calendar.css`); as outras telas mantêm
+16. Custo: uma regra da casca morando no CSS da feature.
+
+Ruling (do agente, aceito): o branco do coração virou o token `--on-heart` no
+bloco de tokens de `calendar.css`, para nenhuma cor ficar fora de token.
+
+Limpeza: `src/lib/date.ts` perdeu `WEEKDAYS_PT`, `monthLabel`, `formatDateBR`,
+`GridDay` e `buildMonthGrid`, que só a timeline usava.
+
+---

@@ -4,7 +4,7 @@
 
 - **Data:** 2026-09-26
 - **Autor:** Gabriel Barbosa (com Claude)
-- **Status:** 🟡 Reviewed (2026-09-26): zero perguntas bloqueantes. As decisões tomadas na spec estão na seção 13 e podem ser vetadas antes do build
+- **Status:** 🟡 Implementada e verificada (2026-09-27) — A24 (manual, duas contas) pendente; ver o ledger
 - **Research (Gate 0):** N/A. A fase está desenhada nos 5 frames do Calendário, e o provedor de lugares (Photon) já foi provado na Fase 4 (ADR 0016)
 - **ADR necessário?** Sim, dois no mesmo PR: **0017** (cidades do mundo em `cities`, por casal, a partir do Photon; revisa em parte o 0007) e **0018** (período se grava _pintando_ estadias numa RPC; o evento pinta uma vez, e os dias tirados de um período voltam para a casa de cada um). O **0015** (sem realtime) ganha uma linha estendendo o escopo ao Calendário, e a tabela de evidência do **0002** troca `src/timeline/` pelos arquivos novos. Os dois estão `Proposed`, então recebem uma nota datada
 
@@ -442,18 +442,18 @@ Decisões tomadas na spec, dentro do que o design deixa em aberto. **Ficam regis
 > Toda tarefa que toca `supabase/migrations/` termina com `npx supabase db push --dry-run`, `npm run db:push`, `npm run types:gen` e `npm run typecheck` limpos. Antes do `db:push` da migration 1: `select count(*) from cities where country_code <> 'BR'`. Tarefas que apagam ou movem arquivo terminam com `npm run build`.
 
 1. [x] **ADRs que destravam.** _(feito em 2026-09-26, `Proposed` até a implementação)_ 0017 (cidades do mundo por casal; nota de revisão no 0007), 0018 (pintura, _volta pra casa_, evento pinta uma vez), a linha do Calendário no 0015 e a nota no 0002. Índice em `Decisions/README.md`. → base para tudo
-2. [ ] **Contrato de domínio.** `src/domain/calendar.ts` + `paintCases.ts` + `eventValidationCases.ts` + `calendar.test.ts` + o caso de desempenho. → A2 e A3 (lado cliente), A4–A6
-3. [ ] **Migration 1 (cidades do mundo)** + asserções de `cities` em `supabase/tests/calendar.test.ts`. → A8
-4. [ ] **Migration 2 (eventos, 💋, triggers, `paint_stays`, `create_event`)** + o resto de `calendar.test.ts` + a asserção nova no A20 do onboarding. → A1, A2 e A3 (lado banco), A7, A9–A11
-5. [ ] **Fronteira de dados.** `src/data/calendar.ts`, `worldCities.ts`, `osmRef` em `places.ts` e nas fixtures, `loadCitiesByIds` estendida, `insertStay` fora, `CalendarApi`. → A12
-6. [ ] **Apagar a timeline e ligar a casca.** `src/timeline/` fora, `App.tsx`/`Shell.tsx` com `calendarApi`, o botão Adicionar, a remoção da chave do `localStorage`, as exportações mortas de `date.ts`. `npm run build`. → A21
-7. [ ] **Tela: mês, cartão _Primeiro período_, estados de carga e erro, releitura, 💋.** `src/calendar/CalendarScreen.tsx`, `MonthView.tsx`, `FirstPeriodCard.tsx`, `calendar.css` (tokens do `.pen`, claro e escuro). → A13, A14, A19, A20
-8. [ ] **Visão Ano.** → A15
-9. [ ] **Painel _Onde a gente está_.** → A16
-10. [ ] **Seletor de cidade + Novo/Editar período.** → A17
-11. [ ] **Novo/Editar evento** (6 tipos, período automático, vínculo com a lista). → A18
-12. [ ] **Lista e export.** _Agendar_, o texto de `unknown`, export v3. → A22, A23
-13. [ ] **Fechar.** A24 manual, A25, `grep -rn day_kisses src` só em `calendar/`, `data/calendar.ts` e `data/export.ts`, skill `verify`, `project_architecture.md`, `CLAUDE.md`, `falhas-silenciosas.md`, `Tasks/README.md`, ledger, spec → 🟢.
+2. [x] **Contrato de domínio.** `src/domain/calendar.ts` + `paintCases.ts` + `eventValidationCases.ts` + `calendar.test.ts` + o caso de desempenho. → A2 e A3 (lado cliente), A4–A6
+3. [x] **Migration 1 (cidades do mundo)** + asserções de `cities` em `supabase/tests/calendar.test.ts`. → A8
+4. [x] **Migration 2 (eventos, 💋, triggers, `paint_stays`, `create_event`)** + o resto de `calendar.test.ts` + a asserção nova no A20 do onboarding. → A1, A2 e A3 (lado banco), A7, A9–A11
+5. [x] **Fronteira de dados.** `src/data/calendar.ts`, `worldCities.ts`, `osmRef` em `places.ts` e nas fixtures, `loadCitiesByIds` estendida, `insertStay` fora, `CalendarApi`. → A12
+6. [x] **Apagar a timeline e ligar a casca.** `src/timeline/` fora, `App.tsx`/`Shell.tsx` com `calendarApi`, o botão Adicionar, a remoção da chave do `localStorage`, as exportações mortas de `date.ts`. `npm run build`. → A21
+7. [x] **Tela: mês, cartão _Primeiro período_, estados de carga e erro, releitura, 💋.** `src/calendar/CalendarScreen.tsx`, `MonthView.tsx`, `FirstPeriodCard.tsx`, `calendar.css` (tokens do `.pen`, claro e escuro). → A13, A14, A19, A20
+8. [x] **Visão Ano.** → A15
+9. [x] **Painel _Onde a gente está_.** → A16
+10. [x] **Seletor de cidade + Novo/Editar período.** → A17
+11. [x] **Novo/Editar evento** (6 tipos, período automático, vínculo com a lista). → A18
+12. [x] **Lista e export.** _Agendar_, o texto de `unknown`, export v3. → A22, A23
+13. [ ] **Fechar.** _(tudo feito exceto o A24 manual)_ A24 manual, A25, `grep -rn day_kisses src` só em `calendar/`, `data/calendar.ts` e `data/export.ts`, skill `verify`, `project_architecture.md`, `CLAUDE.md`, `falhas-silenciosas.md`, `Tasks/README.md`, ledger, spec → 🟢.
 
 ---
 

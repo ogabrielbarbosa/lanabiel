@@ -10,7 +10,8 @@ import type { Database } from '../lib/database.types'
 import { todayISO } from '../lib/date'
 import { changePassword, signOut } from '../auth/signIn'
 import { avatarUrl, prepareAvatar, prepareCover, uploadAvatar } from '../data/avatar'
-import { loadCitiesByIds, searchCities } from '../data/cities'
+import { loadCalCities, searchCities } from '../data/cities'
+import { loadCalendarExport } from '../data/calendar'
 import { createInvite, loadOpenInvite, sendInvite } from '../data/invites'
 import { endMySession, listMySessions } from '../data/sessions'
 import { loadListCounts, loadListExport } from '../data/listSummary'
@@ -42,7 +43,8 @@ export interface SettingsApi {
   updateCouple: (coupleId: string, patch: Parameters<typeof updateCouple>[2]) => ReturnType<typeof updateCouple>
   updateProfile: (patch: Parameters<typeof updateProfile>[1]) => ReturnType<typeof updateProfile>
   searchCities: (query: string) => ReturnType<typeof searchCities>
-  loadCitiesByIds: (ids: readonly string[]) => ReturnType<typeof loadCitiesByIds>
+  /** As cidades de estadias e eventos, com país e região — para o export (R24). */
+  loadCalCities: (ids: readonly string[]) => ReturnType<typeof loadCalCities>
   saveCity: (coupleId: string, cityId: string) => ReturnType<typeof saveCity>
   removeSavedCity: (cityId: string) => ReturnType<typeof removeSavedCity>
   prepareAvatar: typeof prepareAvatar
@@ -63,6 +65,8 @@ export interface SettingsApi {
   loadListCounts: () => ReturnType<typeof loadListCounts>
   /** R27: itens, memórias e contagem de fotos, para o export. */
   loadListExport: () => ReturnType<typeof loadListExport>
+  /** Fase 5, R24: eventos e 💋 inteiros (agregado por dia), só para o export. */
+  loadCalendarExport: () => ReturnType<typeof loadCalendarExport>
   loadOpenInvite: () => ReturnType<typeof loadOpenInvite>
   createInvite: (input: Parameters<typeof createInvite>[1]) => ReturnType<typeof createInvite>
   sendInvite: (inviteId: string) => ReturnType<typeof sendInvite>
@@ -93,7 +97,7 @@ export function settingsApi(db: Db): SettingsApi {
     updateCouple: (coupleId, patch) => updateCouple(db, coupleId, patch),
     updateProfile: (patch) => updateProfile(db, patch),
     searchCities: (query) => searchCities(db, query),
-    loadCitiesByIds: (ids) => loadCitiesByIds(db, ids),
+    loadCalCities: (ids) => loadCalCities(db, ids),
     saveCity: (coupleId, cityId) => saveCity(db, coupleId, cityId),
     removeSavedCity: (cityId) => removeSavedCity(db, cityId),
     prepareAvatar,
@@ -109,6 +113,7 @@ export function settingsApi(db: Db): SettingsApi {
     loadPhotoStats: (couple) => loadPhotoStats(db, couple),
     loadListCounts: () => loadListCounts(db),
     loadListExport: () => loadListExport(db),
+    loadCalendarExport: () => loadCalendarExport(db),
     loadOpenInvite: () => loadOpenInvite(db),
     createInvite: (input) => createInvite(db, input),
     sendInvite: (inviteId) => sendInvite(db, inviteId),

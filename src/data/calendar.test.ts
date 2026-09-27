@@ -14,6 +14,7 @@ import {
   createEvent,
   deleteEvent,
   loadCalendar,
+  loadCalendarExport,
   loadKisses,
   paint,
   removeKiss,
@@ -497,5 +498,42 @@ describe('removeKiss (R22)', () => {
     const { db, log } = fakeDb({ responses: { 'day_kisses.select': { data: null, error: { message: 'Failed to fetch' } } } })
     expect(await removeKiss(db, '2026-09-26')).toEqual({ status: 'error', cause: 'Failed to fetch' })
     expect(log.some((l) => l.startsWith('day_kisses.delete'))).toBe(false)
+  })
+})
+
+describe('loadCalendarExport (R24)', () => {
+  it('💋 inteiros, sem janela, agregados em [{ day, count }]; eventos mapeados', async () => {
+    const { db, log } = fakeDb({
+      responses: {
+        'day_kisses.select': {
+          data: [
+            { id: 'k1', day: '2025-02-14' },
+            { id: 'k2', day: '2026-09-01' },
+            { id: 'k3', day: '2026-09-01' },
+          ],
+          error: null,
+        },
+      },
+    })
+    const result = await loadCalendarExport(db)
+    expect(result).toEqual({
+      status: 'ok',
+      rows: {
+        events: [],
+        kisses: [
+          { day: '2025-02-14', count: 1 },
+          { day: '2026-09-01', count: 2 },
+        ],
+      },
+    })
+    const kissQuery = log.find((l) => l.includes('day_kisses'))!
+    expect(kissQuery).not.toMatch(/day>=|day<=/)
+    expect(log.join(' ')).not.toContain('couple_id')
+  })
+
+  it('falha em qualquer leitura → a falha, nunca um arquivo sem 💋', async () => {
+    const { db } = fakeDb({ responses: { 'day_kisses.select': { data: null, error: { message: 'Failed to fetch' } } } })
+    expect(await loadCalendarExport(db)).toEqual({ status: 'error', cause: 'Failed to fetch' })
+    expect(await loadCalendarExport(fakeDb({ session: false }).db)).toEqual({ status: 'unauthenticated' })
   })
 })

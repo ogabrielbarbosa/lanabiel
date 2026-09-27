@@ -12,7 +12,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { CalendarData, CalendarWrite, KissWrite, ListItemRef } from '../calendar/api'
-import type { EventDraft, PaintEntry } from '../domain/calendar'
+import type { CalendarEvent, EventDraft, PaintEntry } from '../domain/calendar'
 import type { ListCategory } from '../domain/list'
 import type { Database, Json } from '../lib/database.types'
 import { eventDraftToInsert, eventDraftToUpdate, rowToEvent } from './calendarRow'
@@ -138,9 +138,45 @@ export async function loadKisses(db: Db, from: string, to: string): Promise<Data
     db.from('day_kisses').select('id, day').gte('day', from).lte('day', to).order('day').order('id').range(start, end),
   )
   if (rows.status !== 'ok') return rows
+  return { status: 'ok', rows: countByDay(rows.rows) }
+}
+
+function countByDay(rows: readonly { day: string }[]): Map<string, number> {
   const counts = new Map<string, number>()
-  for (const { day } of rows.rows) counts.set(day, (counts.get(day) ?? 0) + 1)
-  return { status: 'ok', rows: counts }
+  for (const { day } of rows) counts.set(day, (counts.get(day) ?? 0) + 1)
+  return counts
+}
+
+/** O que o export leva do Calendário (R24). */
+export interface CalendarExportData {
+  events: CalendarEvent[]
+  /** 💋 agregado por dia, em ordem de dia. Dia sem marca não entra. */
+  kisses: { day: string; count: number }[]
+}
+
+/**
+ * Eventos e 💋 INTEIROS, sem janela — só para o "Exportar tudo" (R24). O 💋
+ * não sai da tela do Calendário para nenhuma outra superfície (I12); o
+ * arquivo do próprio casal é a única exceção, e é por isso que esta leitura
+ * existe à parte de `loadKisses`, e só o export a chama.
+ */
+export async function loadCalendarExport(db: Db): Promise<DataResult<CalendarExportData>> {
+  if (!(await hasSession(db))) return { status: 'unauthenticated' }
+  const [events, kisses] = await Promise.all([
+    selectAll((from, to) =>
+      db.from('calendar_events').select('*').order('starts_on').order('id').range(from, to),
+    ),
+    selectAll((from, to) => db.from('day_kisses').select('id, day').order('day').order('id').range(from, to)),
+  ])
+  if (events.status !== 'ok') return events
+  if (kisses.status !== 'ok') return kisses
+  return {
+    status: 'ok',
+    rows: {
+      events: events.rows.map(rowToEvent),
+      kisses: [...countByDay(kisses.rows)].map(([day, count]) => ({ day, count })),
+    },
+  }
 }
 
 // ---------------------------------------------------------------------------

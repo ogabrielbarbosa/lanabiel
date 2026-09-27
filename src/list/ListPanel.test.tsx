@@ -65,9 +65,14 @@ describe('A17 — onde o casal está hoje decide sugestão e "Perto de vocês"',
 
   it('sem estadia: os textos de unknown, nenhuma distância, e a cidade-casa nunca vira palpite', async () => {
     const panel = await renderPanel(seededListApi({ stays: STAYS.unknown }))
-    expect(region(panel, 'Perto de vocês')).toHaveTextContent(
-      'Sem registro de onde vocês estão hoje — o Calendário vai preencher isso.',
-    )
+    const near = region(panel, 'Perto de vocês')
+    expect(near).toHaveTextContent('Sem registro de onde vocês estão hoje — marque no Calendário.')
+    // R23: o "marque no Calendário" leva ao Calendário, sem recarregar a página.
+    const link = within(near).getByRole('link', { name: 'marque no Calendário' })
+    expect(link).toHaveAttribute('href', '/')
+    window.history.pushState(null, '', '/lista')
+    await userEvent.click(link)
+    expect(window.location.pathname).toBe('/')
     const suggestion = region(panel, 'Sugestão do momento')
     expect(suggestion).toHaveTextContent('Sem registro de onde vocês estão hoje.')
     // Sorteada de qualquer item não feito — o primeiro, com random = 0.

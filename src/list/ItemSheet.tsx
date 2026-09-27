@@ -30,15 +30,36 @@
 //   seção é "uma entrada por integrante".
 // - Remover foto fica na galeria (tocar uma miniatura a abre), só para quem a
 //   subiu, com confirmação.
+//
+// _Agendar_ (Fase 5, R23): abre o `EventModal` do Calendário (importado, não
+// copiado) do tipo Date, com o título e o vínculo do item. O modal ENTRA NO
+// LUGAR do detalhe enquanto está aberto, em vez de por cima: os dois diálogos
+// escutam o Esc no documento, e empilhados um Esc fecharia os dois. Fechar
+// o modal volta ao detalhe; salvar volta com _"Agendado para {d mmm}"_.
 
 import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent, ReactNode } from 'react'
-import { ChevronLeft, ChevronRight, Check, CircleCheck, ImagePlus, Link2, Pencil, StickyNote, Trash2, X } from 'lucide-react'
+import {
+  CalendarPlus,
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  CircleCheck,
+  ImagePlus,
+  Link2,
+  Pencil,
+  StickyNote,
+  Trash2,
+  X,
+} from 'lucide-react'
+import { EventModal } from '../calendar/EventModal'
+import { loadModalEnv } from '../calendar/modalEnv'
+import type { ModalEnv } from '../calendar/modalEnv'
 import type { ListFailure } from '../data/list'
 import { distanceKmExact } from '../domain/onboarding'
 import { LIST_LIMITS, formatDistance, isMediaCategory } from '../domain/list'
 import type { ListItem, ListPhoto, Rating } from '../domain/list'
-import { localDateOf } from '../lib/date'
+import { localDateOf, shortDayMonth } from '../lib/date'
 import { failureMessage, memberName, useList } from './context'
 import type { ListMember } from './context'
 import { dayMonthYear, weekdayDayMonthYear } from '../lib/date'
@@ -103,6 +124,23 @@ function Sheet({
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
+  // _Agendar_ (R23): o ambiente do modal é lido na hora (a mesma leitura da
+  // tela do Calendário); leitura que não deu `ok` mostra a causa aqui.
+  const [scheduleEnv, setScheduleEnv] = useState<ModalEnv | null>(null)
+  const [scheduleBusy, setScheduleBusy] = useState(false)
+  const [scheduleError, setScheduleError] = useState<string | null>(null)
+  const [scheduled, setScheduled] = useState<string | null>(null)
+
+  async function openSchedule() {
+    setScheduleBusy(true)
+    setScheduleError(null)
+    setScheduled(null)
+    const env = await loadModalEnv(api.calendar)
+    setScheduleBusy(false)
+    if (env.status === 'ok') setScheduleEnv(env.rows)
+    else setScheduleError(`Não deu pra abrir o agendamento: ${failureMessage(env)}`)
+  }
+
   async function pickRating(next: Rating | null) {
     setRatingBusy(true)
     setRatingError(null)
@@ -139,6 +177,24 @@ function Sheet({
   const cityLine = place ? [place.city, place.city ? (place.state ?? place.country) : place.country].filter(Boolean).join(', ') : ''
   const added = memberName(members, item.addedBy)
 
+  if (scheduleEnv) {
+    return (
+      <EventModal
+        env={scheduleEnv}
+        mode={{
+          kind: 'new',
+          day: scheduleEnv.today,
+          preset: { kind: 'date', title: item.name, listItemId: item.id },
+        }}
+        onClose={() => setScheduleEnv(null)}
+        onSaved={({ startsOn }) => {
+          setScheduleEnv(null)
+          setScheduled(`Agendado para ${shortDayMonth(startsOn)}`)
+        }}
+      />
+    )
+  }
+
   return (
     <ListDialog variant="sheet" title={item.name} onClose={onClose} footer={
       <div className="ls-sheet-foot">
@@ -171,6 +227,10 @@ function Sheet({
               <Pencil size={14} aria-hidden="true" />
               Editar
             </button>
+            <button type="button" className="ls-btn" disabled={scheduleBusy} onClick={() => void openSchedule()}>
+              <CalendarPlus size={14} aria-hidden="true" />
+              {scheduleBusy ? 'Abrindo…' : 'Agendar'}
+            </button>
             <button type="button" className="ls-btn" onClick={() => setConfirmDelete(true)}>
               <Trash2 size={14} aria-hidden="true" />
               Apagar
@@ -180,6 +240,16 @@ function Sheet({
         {deleteError && (
           <p className="ls-notice ls-notice--error" role="alert">
             {deleteError}
+          </p>
+        )}
+        {scheduleError && (
+          <p className="ls-notice ls-notice--error" role="alert">
+            {scheduleError}
+          </p>
+        )}
+        {scheduled && (
+          <p className="ls-notice" role="status">
+            {scheduled}
           </p>
         )}
       </div>

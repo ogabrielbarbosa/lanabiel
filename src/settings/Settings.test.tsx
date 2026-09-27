@@ -406,14 +406,19 @@ describe('A21 — export pela tela', () => {
     expect(vi.mocked(api.download).mock.calls[0]![0]).toBe('lanabiel-2026-09-25.json')
   })
 
-  it('baixa version 2 com a Lista', async () => {
+  it('baixa version 3 com a Lista e o Calendário', async () => {
     const { api } = renderTab('dados-e-privacidade')
     await userEvent.click(await screen.findByRole('button', { name: 'Baixar' }))
     await waitFor(() => expect(api.download).toHaveBeenCalledTimes(1))
     const doc = JSON.parse(vi.mocked(api.download).mock.calls[0]![1])
-    expect(doc.version).toBe(2)
+    expect(doc.version).toBe(3)
     expect(doc.list_items).toHaveLength(2)
     expect(doc.list_photos).toHaveLength(1)
+    expect(doc.calendar_events).toHaveLength(2)
+    expect(doc.day_kisses).toEqual([
+      { day: '2026-09-20', count: 2 },
+      { day: '2026-09-21', count: 1 },
+    ])
   })
 
   it('leitura da Lista com erro aborta sem baixar', async () => {
@@ -426,6 +431,16 @@ describe('A21 — export pela tela', () => {
     expect(api.download).not.toHaveBeenCalled()
   })
 
+  it('leitura do Calendário com erro aborta sem baixar', async () => {
+    const api = fakeApi(settingsData(), {
+      loadCalendarExport: vi.fn(async () => ({ status: 'error' as const, cause: 'rede' })),
+    })
+    renderTab('dados-e-privacidade', api)
+    await userEvent.click(await screen.findByRole('button', { name: 'Baixar' }))
+    expect(await screen.findByText('Não deu pra exportar: o calendário: rede')).toBeInTheDocument()
+    expect(api.download).not.toHaveBeenCalled()
+  })
+
   it('Fotos guardadas: a legenda inclui a lista', async () => {
     renderTab('dados-e-privacidade')
     expect(await screen.findByText('Fotos de perfil, do casal e da lista')).toBeInTheDocument()
@@ -433,7 +448,7 @@ describe('A21 — export pela tela', () => {
 
   it('leitura com erro aborta sem baixar', async () => {
     const api = fakeApi(settingsData(), {
-      loadCitiesByIds: vi.fn(async () => ({ status: 'error' as const, cause: 'rede' })),
+      loadCalCities: vi.fn(async () => ({ status: 'error' as const, cause: 'rede' })),
     })
     renderTab('dados-e-privacidade', api)
     await userEvent.click(await screen.findByRole('button', { name: 'Baixar' }))

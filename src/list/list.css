@@ -283,6 +283,16 @@
   color: var(--text-tertiary);
 }
 
+.ls-hint-link {
+  color: var(--text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.ls-hint-link:hover {
+  color: var(--text-primary);
+}
+
 .ls-meta {
   font-size: 13px;
   color: var(--text-tertiary);

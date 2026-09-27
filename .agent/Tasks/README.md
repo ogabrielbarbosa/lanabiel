@@ -10,7 +10,7 @@ gosto: ela segue dependência de dados, e está justificada em cada linha.
 | 2 | [Onboarding](./fase-2-onboarding.md) | 6 frames / 23 telas | 🟡 Implementada e na `main` (2026-09-26) — A29/A30 adiados, ver abaixo |
 | 3 | [Configurações](./fase-3-configuracoes.md) | 9 abas | 🟡 Implementada (2026-09-26) — A24 manual pendente, contraste como dívida |
 | 4 | [Lista](./fase-4-lista.md) | 14 (8 modais) | 🟡 Implementada e na `main` (2026-09-26) — A21 manual pendente |
-| 5 | Calendário | 5 | 🔴 sem spec |
+| 5 | [Calendário](./fase-5-calendario.md) | 5 | 🟡 Implementada e na `main` (2026-09-27) — A24 manual pendente |
 | 6 | Viagens | 7 | 🔴 sem spec |
 | 7 | Home (globo) | 5 | 🔴 sem spec |
 
@@ -228,6 +228,13 @@ outro sem recarregar.
 ---
 
 ## Fase 5 — Calendário
+
+> **Estado (2026-09-27):** implementada e mergeada. Spec em
+> [`fase-5-calendario.md`](./fase-5-calendario.md), decisões de execução no
+> [ledger](./fase-5-calendario.ledger.md). Falta só o A24, o roteiro manual com
+> as duas contas. O texto abaixo é o que se sabia antes da spec: o 💋 é o
+> contador de relações do casal no dia, cidades do mundo entraram (ADR 0017),
+> o arrasto de faixa ficou fora e a pintura de estadias é o ADR 0018.
 
 **Frames:** `Calendário — Mês [D1Zny4]` · `Ano [XEnYP]` · `Painel scroll
 completo [n2aVYz]` · `Modal Novo evento (Visita) [BOR8L]` · `Modal Novo

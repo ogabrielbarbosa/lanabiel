@@ -113,6 +113,14 @@ buscar dados.
 | Leitura única | `src/data/list.ts` → `loadList()` (a criar) |
 | Colisão do feito fechada no banco | RPC `mark_item_done` → `already_done` |
 
+## Nota — 2026-09-26 (Fase 5)
+
+Vale também para o **Calendário**: estadias, eventos e 💋 são relidos ao voltar
+ao foco e depois de cada escrita própria (spec da Fase 5, R25). A colisão que
+importa ali (duas pessoas pintando o mesmo período) é fechada no banco por um
+lock por casal, e vence a última ([0018](./0018-periodo-se-grava-pintando-estadias.md)).
+Os gatilhos para rever continuam os três acima.
+
 ## Related
 
 - [0001 — Supabase com RLS por casal](./0001-supabase-com-rls-por-casal.md)

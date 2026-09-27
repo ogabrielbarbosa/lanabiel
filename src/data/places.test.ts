@@ -12,7 +12,7 @@ import mocoto from './__fixtures__/photon/mocoto.json'
 import vicentina from './__fixtures__/photon/vicentina.json'
 import type { City } from './cities'
 import type { DataResult } from './result'
-import { PHOTON_URL, formatCoordinate, searchPlaces } from './places'
+import { PHOTON_URL, formatCoordinate, osmRef, searchPlaces } from './places'
 import type { PlaceSearchResult } from './places'
 
 function respond(body: unknown, status = 200) {
@@ -44,6 +44,7 @@ describe('A11 — mapeamento das Features reais', () => {
       lat: -23.4867214,
       lng: -46.5815741,
       detail: 'Avenida Nossa Senhora do Loreto, 1100 · São Paulo, SP',
+      osmRef: 'W621005163',
     })
     expect(rows(result)).toHaveLength(5)
     // Sem número: só a rua.
@@ -235,5 +236,43 @@ describe('A11 — falha do Photon', () => {
     expect(await searchPlaces('Mocotó', { mode: 'place', fetchFn, signal: controller.signal })).toEqual({
       status: 'aborted',
     })
+  })
+})
+
+describe('A12 — `osmRef` a partir de `osm_type` + `osm_id` das respostas gravadas', () => {
+  it('Gramado (layer=city): cada resultado leva a sua chave, na ordem', async () => {
+    const result = rows(await searchPlaces('Gramado', { mode: 'city', fetchFn: respond(gramadoCity) }))
+    expect(result.map((r) => [r.label, r.osmRef])).toEqual([
+      ['Gramado', 'R242571'],
+      ['Gramado dos Loureiros', 'R242635'],
+      ['Gramado Xavier', 'R242555'],
+      ['Granada', 'R344685'],
+      ['Gramat', 'R123059'],
+    ])
+  })
+
+  it('N, W e R, todas no formato do CHECK `cities_osm_ref`', async () => {
+    const result = rows(await searchPlaces('Göreme', { mode: 'place', fetchFn: respond(goreme) }))
+    expect(result.map((r) => r.osmRef)).toEqual(['R1774221', 'R14405251', 'R252585', 'N427711469', 'W1183558909'])
+    for (const r of result) expect(r.osmRef).toMatch(/^[NWR][0-9]+$/)
+  })
+
+  it('tipo desconhecido, id ausente ou não numérico → sem chave (nunca uma inventada)', () => {
+    expect(osmRef({ osm_type: 'R', osm_id: 5400890 })).toBe('R5400890')
+    expect(osmRef({ osm_type: 'r', osm_id: 5400890 })).toBe('R5400890')
+    expect(osmRef({ osm_type: 'X', osm_id: 1 })).toBeNull()
+    expect(osmRef({ osm_type: 'R' })).toBeNull()
+    expect(osmRef({ osm_type: 'R', osm_id: '5400890' })).toBeNull()
+    expect(osmRef({ osm_type: 'R', osm_id: 1.5 })).toBeNull()
+    expect(osmRef({ osm_type: 'R', osm_id: 0 })).toBeNull()
+  })
+
+  it('feature sem `osm_type`: o candidato sai, sem `osmRef`', async () => {
+    const [feature] = gramadoCity.features
+    const { osm_type: _dropped, ...properties } = feature.properties
+    const body = { ...gramadoCity, features: [{ ...feature, properties }] }
+    const [only] = rows(await searchPlaces('Gramado', { mode: 'city', fetchFn: respond(body) }))
+    expect(only.label).toBe('Gramado')
+    expect(only).not.toHaveProperty('osmRef')
   })
 })

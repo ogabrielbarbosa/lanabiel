@@ -99,14 +99,15 @@ src/domain/coupleState.ts  # derivação: estadias → juntos/separados/viajando
 src/domain/onboarding.ts   # LIMITS (paridade com os CHECK), código de convite
 src/domain/settings.ts     # paletas, categorias, abas (paridade com os CHECK)
 src/domain/list.ts         # Lista: validação (espelho do CHECK), filtros, sugestão, onde estamos
+src/domain/calendar.ts     # Calendário: pintura (espelho da RPC), trechos, as duas contagens, ocorrências
 src/data/                  # result.ts (discriminado), stays, account, invites, couple, settings…
 src/app/                   # casca: barra lateral, roteador por caminho, aparência (tema)
 src/auth/                  # portão de sessão, Login, SignUp, StartChoice
 src/onboarding/            # assistente de criar/entrar no espaço, recebe OnboardingApi
 src/list/                  # a Lista (Fase 4), recebe ListApi
+src/calendar/              # o Calendário (Fase 5), recebe CalendarApi
 src/settings/              # as nove abas das Configurações, recebe SettingsApi
 src/lib/                   # supabase.ts, database.types.ts (GERADO), date.ts
-src/timeline/              # a tela antiga, sobre localStorage — cai na Fase 5
 supabase/functions/        # edge functions (send-invite)
 supabase/migrations/       # o schema, append-only
 supabase/tests/            # integração contra o online (ADR 0014): RLS, RPCs, Storage
@@ -147,19 +148,30 @@ Três consequências que atravessam quase todo arquivo:
    sumir de todo dia futuro, sem erro nenhum.
 3. **Intervalos são inclusivos nas duas pontas** — daí `daysInclusive` somar 1.
 
-### Renderização e arrasto
+### Escrita de estadia: sempre por pintura
 
-`Calendar.tsx` monta cada semana como uma grade de 7 colunas e recorta as
-estadias em segmentos por semana (`weekSegments`), com faixa fixa por pessoa
-(Gabriel = lane 0, Lana = lane 1). `capStart`/`capEnd` dizem se aquela ponta é o
-começo/fim real da estadia ou só a borda da semana — só as pontas reais ganham
-alça de redimensionamento.
+Ninguém grava estadia com `insert`/`update` solto. Toda escrita é uma
+**pintura** ("a pessoa esteve na cidade C de `de` até `até`"), aplicada pela
+RPC `paint_stays` numa transação: corta, parte ou apaga o que havia no
+intervalo, insere, e funde com a vizinha na mesma cidade
+([ADR 0018](.agent/Decisions/0018-periodo-se-grava-pintando-estadias.md)). A
+visita e a viagem pintam junto com o evento (`create_event`), **uma vez**:
+depois disso editar o evento não mexe no período. Os dias tirados de um período
+voltam para a casa de cada um.
 
-`useBarDrag.ts` resolve o dia sob o ponteiro por **geometria**, lendo
-`data-week-start` das linhas de semana dentro do `.month-grid` de origem. O
-escopo ao mês onde o arrasto começou é deliberado: com dois meses lado a lado,
-arrastar para fora da borda cairia no mês vizinho e pularia semanas de uma vez.
-O clique disparado logo após um arrasto é descartado por `consumeClick()`.
+A regra existe em dois lugares (`paintStays` no domínio, para a prévia; a RPC,
+como autoridade) e `src/domain/paintCases.ts` roda contra os dois. Mudou um,
+mude o outro e acrescente o caso.
+
+**As faixas são trechos derivados** (`runs`): a maior sequência de dias com o
+mesmo estado. Não há arrasto de faixa; edita-se pelo modal. E há **duas
+contagens com nomes diferentes**: `countStates` (vivido, nunca passa de hoje)
+e `countDrawn` (o desenhado numa janela, planejado incluso). Usar uma no lugar
+da outra dá um número plausível e errado.
+
+**Cidade estrangeira é linha do casal em `cities`**, vinda do Photon e
+deduplicada por `osm_ref`; cidade brasileira é sempre a do IBGE
+([ADR 0017](.agent/Decisions/0017-cidades-do-mundo-por-casal.md)).
 
 ### Persistência
 
@@ -175,36 +187,38 @@ devolvendo falha de rede. Uma função que devolvesse `[]` nos dois casos ruins
 faria o app abrir com o calendário limpo e o casal concluir que perdeu a
 história.
 
-O caminho antigo (`timeline/storage.ts` sobre `localStorage`, com `SEED_STAYS`)
-**ainda existe e ainda funciona**: a Fase 0 foi aditiva de propósito, para manter
-`typecheck` e `lint` verdes sem construir interface. Ele cai na Fase 5, quando o
-Calendário desenhado substituir a tela de hoje. Até lá, **não construa nada novo
-sobre ele** — o que é novo vai em `src/domain/` e `src/data/`.
-
 ### Convenções
 
 Identificadores em inglês, texto de interface em português. CSS é arquivo único
-por feature (`timeline/timeline.css`), sem framework nem CSS-in-JS.
+por feature (`list/list.css`), sem framework nem CSS-in-JS. Exceção registrada:
+o Calendário tem `calendar.css` e `modals.css`.
 
 ## Estado atual do repositório
 
-Fases 0 a 4 na `main`. A Fase 1
+Fases 0 a 5 na `main`. A Fase 1
 entregou `src/auth/` (portão de sessão, login por senha e OAuth); a Fase 2, o
 onboarding (`src/onboarding/`), o convite (`couple_invites`, edge function
 `supabase/functions/send-invite`), os municípios do IBGE e as fotos em bucket
 privado. A Fase 3 entregou a casca (`src/app/`: barra lateral e navegação por
 caminho, ADR 0013), as Configurações (`src/settings/`), as preferências em três
 escopos (`couple_settings`, `profile_settings`, `localStorage` — ADR 0011), a
-mídia do casal (`couple-media`, ADR 0012) e sair/apagar o espaço. Com `ready`,
-o Calendário ainda é a timeline antiga sobre `localStorage` — até a Fase 5,
-**nenhum casal de fora deve usar o app**.
+mídia do casal (`couple-media`, ADR 0012) e sair/apagar o espaço.
 
 A Fase 4 entregou a Lista (`src/list/`, `/lista`): `list_items` em tabela única
 com dois formatos por `CHECK` (ADR 0003 revisado), memórias por pessoa e fotos
 do feito (`list_memories`, `list_photos`), `mark_item_done` (RPC `invoker`),
 busca de lugar no Photon/OSM com fallback IBGE (ADR 0016) e releitura ao voltar
 ao foco em vez de realtime (ADR 0015). O painel "Perto de vocês" lê as estadias
-do banco — até a Fase 5 gravá-las, ele diz "sem registro".
+do banco.
+
+A Fase 5 entregou o Calendário (`src/calendar/`, `/`): mês, ano, o painel
+"Onde a gente está", Novo/Editar período e Novo/Editar evento (seis tipos),
+`calendar_events`, o contador 💋 (`day_kisses`, só na tela do Calendário e no
+export — é dado íntimo, I12 da spec), cidades do mundo (ADR 0017) e a pintura
+de estadias (ADR 0018). A timeline antiga sobre `localStorage` foi apagada, sem
+import. O botão _Adicionar_ da barra abre evento ou item (`app/addIntent.ts`).
+Enquanto os testes de integração rodarem contra o projeto online (ADR 0014),
+**nenhum casal de fora deve usar o app**.
 
 As preferências de telas que ainda não existem (Calendário, Home,
 Notificações) já estão gravadas: **cada fase lê a coluna que a Fase 3 criou** e
@@ -213,7 +227,7 @@ a refina, em vez de inventar a sua.
 Adiado de propósito para o fim do roadmap: e-mail real pelo Resend (A29), Google
 no celular (A30), avisos ao outro e o agendador.
 
-`.agent/System/project_architecture.md` está atualizado ao fim da Fase 4.
+`.agent/System/project_architecture.md` está atualizado ao fim da Fase 5.
 
 **O arquivo `lanabiel` (sem extensão) na raiz é um export JSON ANTIGO do design,
 e não é fonte da verdade.** Ele tem 4 telas e um conjunto de tokens

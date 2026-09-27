@@ -31,47 +31,10 @@ export function addDays(iso: string, amount: number): string {
   return toISODate(date)
 }
 
-export const WEEKDAYS_PT = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
-
 const MONTHS_PT = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ]
-
-export function monthLabel(year: number, month: number): string {
-  return `${MONTHS_PT[month]} de ${year}`
-}
-
-export function formatDateBR(iso: string): string {
-  return parseISODate(iso).toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
-export interface GridDay {
-  iso: string
-  inMonth: boolean
-}
-
-/** Semanas de 7 dias cobrindo o mês, incluindo os dias vizinhos que completam a grade. */
-export function buildMonthGrid(year: number, month: number): GridDay[][] {
-  const startWeekday = new Date(year, month, 1).getDay()
-  const weeks: GridDay[][] = []
-
-  for (let week = 0; week < 6; week++) {
-    const days: GridDay[] = []
-    for (let weekday = 0; weekday < 7; weekday++) {
-      const date = new Date(year, month, 1 - startWeekday + week * 7 + weekday)
-      days.push({ iso: toISODate(date), inMonth: date.getMonth() === month })
-    }
-    if (week > 3 && days.every((day) => !day.inMonth)) break
-    weeks.push(days)
-  }
-
-  return weeks
-}
 
 const WEEKDAYS_LONG_PT = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 
@@ -120,3 +83,23 @@ export function weekdayDayMonthYear(iso: string): string {
   return `${WEEKDAYS_SHORT_CAP[parseISODate(iso).getDay()]}, ${dayMonthYear(iso)}`
 }
 
+
+/** Dia da semana de uma data ISO: 0 = domingo … 6 = sábado (horário local). */
+export function weekdayOf(iso: string): number {
+  return parseISODate(iso).getDay()
+}
+
+/** Ano bissexto no calendário gregoriano — sem `Date`, só aritmética. */
+export function isLeapYear(year: number): boolean {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0
+}
+
+/** `(2026, 9, 1)` → `'2026-09-01'`. Mês 1-based, como na própria string ISO. */
+export function isoOf(year: number, month: number, day: number): string {
+  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
+/** `'2026-11-13'` → `'Sex, 13 nov'` (o valor dos campos de data do Calendário). */
+export function weekdayShortDayMonth(iso: string): string {
+  return `${WEEKDAYS_SHORT_CAP[parseISODate(iso).getDay()]}, ${shortDayMonth(iso)}`
+}

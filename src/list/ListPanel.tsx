@@ -22,6 +22,7 @@ import {
 } from '../domain/list'
 import type { ListCategory, ListItem, WhereWeAre } from '../domain/list'
 import { distanceKmExact } from '../domain/onboarding'
+import { navigate } from '../app/router'
 import { localDateOf, shortDayMonth, weekdayDayMonthLabel } from '../lib/date'
 import { CATEGORY_ICONS, catClass } from './categories'
 import { useList } from './context'
@@ -233,9 +234,25 @@ function NearbyCard({ hidden, onOpen }: { hidden: readonly ListCategory[]; onOpe
     return (
       <PanelCard title="Perto de vocês">
         <p className="ls-hint">
-          {where.kind === 'apart'
-            ? 'Vocês estão em cidades diferentes hoje'
-            : 'Sem registro de onde vocês estão hoje — o Calendário vai preencher isso.'}
+          {where.kind === 'apart' ? (
+            'Vocês estão em cidades diferentes hoje'
+          ) : (
+            <>
+              Sem registro de onde vocês estão hoje —{' '}
+              <a
+                href="/"
+                className="ls-hint-link"
+                onClick={(event) => {
+                  if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return
+                  event.preventDefault()
+                  navigate('/')
+                }}
+              >
+                marque no Calendário
+              </a>
+              .
+            </>
+          )}
         </p>
       </PanelCard>
     )

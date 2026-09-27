@@ -381,6 +381,20 @@ describe('A20 — a lista fechada de funções security definer', () => {
       'renew_invite|t|f',
     ])
   })
+
+  // A11 de fase-5-calendario.md: as duas RPCs do Calendário existem pela
+  // atomicidade, não para furar RLS — e por isso ficam FORA da lista acima.
+  it('paint_stays e create_event: invoker, EXECUTE para authenticated e não para anon', () => {
+    const rows = sql(`
+      select p.proname,
+             p.prosecdef as definer,
+             has_function_privilege('authenticated', p.oid, 'execute') as authenticated,
+             has_function_privilege('anon', p.oid, 'execute') as anon
+      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public' and p.proname in ('create_event', 'paint_stays')
+      order by p.proname`)
+    expect(rows.split('\n')).toEqual(['create_event|f|t|f', 'paint_stays|f|t|f'])
+  })
 })
 
 describe('A14 — cidades: busca local, escrita fechada (I9)', () => {

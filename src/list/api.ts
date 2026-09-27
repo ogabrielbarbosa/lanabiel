@@ -8,6 +8,8 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../lib/database.types'
+import { calendarApi } from '../calendar/api'
+import type { CalendarApi } from '../calendar/api'
 import { todayISO } from '../lib/date'
 import { avatarUrl } from '../data/avatar'
 import { loadCitiesByIds, searchCities } from '../data/cities'
@@ -74,6 +76,12 @@ export interface ListApi {
 
   searchPlaces: (query: string, options: PlaceQueryOptions) => ReturnType<typeof searchPlaces>
   searchCities: Tail<typeof searchCities>
+
+  /**
+   * O _Agendar_ do detalhe (Fase 5, R23) abre o `EventModal` do Calendário
+   * fora da tela dele: `loadModalEnv(api.calendar)` + `createEvent`.
+   */
+  calendar: CalendarApi
 }
 
 export function listApi(db: Db): ListApi {
@@ -99,5 +107,6 @@ export function listApi(db: Db): ListApi {
     searchPlaces: (query, options) =>
       searchPlaces(query, { ...options, searchCities: (q) => searchCities(db, q) }),
     searchCities: (query) => searchCities(db, query),
+    calendar: calendarApi(db),
   }
 }

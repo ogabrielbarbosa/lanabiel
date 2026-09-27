@@ -1,6 +1,6 @@
 # Arquitetura do projeto
 
-> Atualizado ao fim da Fase 4 (Lista), 2026-09-26. O _como_ mora aqui e é
+> Atualizado ao fim da Fase 5 (Calendário), 2026-09-27. O _como_ mora aqui e é
 > reescrito sempre que o código muda; o _porquê_ mora em `../Decisions/`.
 
 ## O que é
@@ -34,10 +34,17 @@ src/
 ├── main.tsx                # entrypoint
 ├── App.tsx                 # portão de sessão + casca; nada mais mora aqui
 ├── app/                    # Fase 3: a casca
-│   ├── Shell.tsx           # barra lateral (só destinos que existem) + rota
+│   ├── Shell.tsx           # barra lateral (só destinos que existem) + rota + _Adicionar_
+│   ├── addIntent.ts        # o pedido do _Adicionar_: evento ou item, consumido pela tela dona
 │   ├── router.ts           # caminho na barra, sem biblioteca (ADR 0013)
 │   ├── appearance.ts · useAppearance.ts   # tema/densidade/animações, por aparelho
 │   └── app.css             # tokens claro/escuro do .pen, em data-theme
+├── calendar/               # Fase 5: o Calendário; recebe `CalendarApi` injetada (api.ts)
+│   ├── CalendarScreen.tsx · context.ts · MonthView.tsx · YearView.tsx · CalendarPanel.tsx
+│   ├── FirstPeriodCard.tsx · KissCounter.tsx · parts.tsx · view.ts
+│   ├── PeriodModal.tsx · EventModal.tsx · CityPicker.tsx · CalDialog.tsx · CalendarModals.tsx
+│   ├── cityChoice.ts · modalEnv.ts · modalPreview.ts
+│   └── calendar.css · modals.css   # exceção registrada ao "um CSS por feature"
 ├── list/                   # Fase 4: a Lista; recebe `ListApi` injetada (api.ts)
 │   ├── ListScreen.tsx · ListPanel.tsx · context.ts · parts.tsx · categories.ts
 │   ├── AddItemModal.tsx · ItemSheet.tsx · MarkDoneModal.tsx · Hearts.tsx
@@ -57,6 +64,8 @@ src/
 │   ├── coupleState.ts      # derivação: estadias → juntos/separados/viajando
 │   ├── onboarding.ts       # LIMITS (paridade com os CHECK), código Crockford, "juntos há", distância
 │   ├── list.ts             # Fase 4: validação (espelho do CHECK), filtros, sugestão, onde estamos
+│   ├── calendar.ts         # Fase 5: pintura (espelho da RPC), trechos, contagens, ocorrências, validação do evento
+│   ├── paintCases.ts · eventValidationCases.ts # a MESMA tabela roda no domínio e no banco (A2, A3)
 │   └── listValidationCases.ts # a MESMA tabela de casos roda no domínio e no banco (A2)
 ├── data/
 │   ├── result.ts           # DataResult / WriteResult discriminados
@@ -65,7 +74,9 @@ src/
 │   ├── profile.ts · couple.ts · invites.ts · cities.ts · avatar.ts   # Fase 2
 │   ├── stays.ts            # leitura e escrita de estadias, fronteira snake→camel
 │   ├── list.ts · listRow.ts # Fase 4: leitura/escritas/cascatas da Lista; mapeador snake↔camel
-│   ├── places.ts           # busca de lugar no Photon/OSM, fallback IBGE (ADR 0016)
+│   ├── places.ts           # busca de lugar no Photon/OSM, fallback IBGE (ADR 0016); `osmRef`
+│   ├── calendar.ts · calendarRow.ts # Fase 5: leitura, pintura, eventos, 💋; mapeador snake↔camel
+│   ├── worldCities.ts      # cidade do mundo: busca no Photon (sem BR) e `ensureWorldCity` (ADR 0017)
 │   └── listSummary.ts      # contagens e export da Lista para as Configurações
 ├── onboarding/             # Fase 2: o assistente e as telas; recebe `OnboardingApi` injetada
 │   ├── Onboarding.tsx      # a máquina de passos; o banco é a verdade, o passo é local
@@ -76,9 +87,7 @@ src/
 │   ├── supabase.ts         # cliente ÚNICO, com as opções de auth explícitas
 │   ├── database.types.ts   # GERADO — não editar à mão
 │   └── date.ts             # datas ISO em horário local, grade do mês, rótulos pt-BR
-├── test/setup.ts           # só o projeto `ui` do vitest carrega
-└── timeline/               # a tela antiga, sobre localStorage — substituída na Fase 5
-    └── TimelineScreen.tsx  # saiu de App.tsx na Fase 1, sem mudar de conteúdo
+└── test/setup.ts           # só o projeto `ui` do vitest carrega
 
 supabase/
 ├── config.toml             # declaração do projeto ONLINE (auth, functions); não há stack local
@@ -241,6 +250,42 @@ painel ("Perto de vocês", sugestão) lê o estado do casal **derivado** das
 estadias do banco; até a Fase 5 gravar estadias, ele diz "sem registro" em vez
 de adivinhar.
 
+## Calendário (Fase 5)
+
+**Estadia só se grava pintando** ([ADR 0018](../Decisions/0018-periodo-se-grava-pintando-estadias.md)).
+`paint_stays(entries)` (RPC `security invoker`, 1–8 entradas, em ordem, com
+`pg_advisory_xact_lock` por casal) aplica, para cada pessoa: apaga o que fica
+inteiro dentro do intervalo, corta o que atravessa uma borda, parte em dois o
+que cobre o intervalo (o pedaço de depois mantém o fim, inclusive aberto),
+insere e funde com a vizinha imediata na mesma cidade. A rotina mora uma vez em
+`private.paint_one`. `create_event(evento, pintar)` grava o evento e, para
+viagem e visita, pinta os viajantes na mesma transação — **uma vez**: nenhuma
+estadia referencia evento. `paintStays` (domínio) espelha a regra para a
+prévia dos modais; `paintCases.ts` prova a paridade.
+
+**O que a tela desenha é derivado**: `runs` (trechos: a maior sequência de dias
+com a mesma chave `together:{cidade}` / `apart:{a}:{b}` / `unknown`), `bandOf`
+(a cor, por slot: `home1`, `home2`, `away`, `apart`; `unknown` sem cor),
+`nowSummary` (o _Agora_), `occurrences` (data especial anual e o aniversário de
+namoro, sem linha por ano). Duas contagens: `countStates` (vivido) e
+`countDrawn` (desenhado, planejado incluso).
+
+**Cidades do mundo** ([ADR 0017](../Decisions/0017-cidades-do-mundo-por-casal.md)):
+linha de `cities` com `couple_id` e `osm_ref`, visível só ao casal, única por
+`(couple_id, osm_ref)`; `cities_scope` + `cities_br_has_ibge_code` garantem
+que cidade brasileira é sempre a do IBGE. `search_cities` busca só o IBGE.
+
+**💋** é `day_kisses`, uma linha por marca, ≤ 20 por casal por dia e nunca em
+dia futuro (trigger com trava por dia). É dado íntimo: só a tela do Calendário
+e o export o leem.
+
+`calendar_events` tem os seis tipos num `CHECK` de formato
+(`calendar_events_format`, espelhado por `validateEvent`). Triggers
+`stays_members` e `calendar_events_members` (invoker) conferem que pessoa,
+autor e cidade são do casal. Sem realtime: relê ao voltar ao foco (ADR 0015).
+O botão _Adicionar_ da barra registra um pedido em memória (`addIntent.ts`) e a
+tela dona o consome depois de ler os dados.
+
 ## Fronteiras
 
 | Fronteira | Onde | Regra |
@@ -252,11 +297,12 @@ de adivinhar.
 
 ## Schema
 
-Doze tabelas, todas com RLS: `cities`, `couples`, `profiles`, `couple_members`,
+Catorze tabelas, todas com RLS: `cities`, `couples`, `profiles`, `couple_members`,
 `couple_invites`, `stays`, `couple_settings`, `profile_settings`,
-`couple_saved_cities`, `list_items`, `list_memories`, `list_photos`; mais dois contadores de abuso em `private`, fora da API.
+`couple_saved_cities`, `list_items`, `list_memories`, `list_photos`,
+`calendar_events`, `day_kisses`; mais dois contadores de abuso em `private`, fora da API.
 Dois buckets privados: `avatars` (por pessoa, ADR 0009) e `couple-media` (por
-casal, ADR 0012). Detalhes nas specs das Fases 0, 2, 3 e 4 (seção 5). Dois pontos que não são óbvios lendo o
+casal, ADR 0012). Detalhes nas specs das Fases 0, 2, 3, 4 e 5 (seção 5). Dois pontos que não são óbvios lendo o
 DDL:
 
 - `stays_no_overlap` é um `EXCLUDE USING gist` sobre
@@ -275,8 +321,8 @@ DDL:
 `private.my_couple_ids()` é `security definer` em `private`, fora da API. Em
 `public` há **exatamente doze** `security definer` — as sete RPCs do convite
 (ADR 0008), mais `leave_couple`, `delete_couple`, `cancel_invite`,
-`list_my_sessions` e `end_my_session` (Fase 3); `mark_item_done` (Fase 4) é
-`invoker` e não conta — e
+`list_my_sessions` e `end_my_session` (Fase 3); `mark_item_done` (Fase 4),
+`paint_stays` e `create_event` (Fase 5) são `invoker` e não contam — e
 `supabase/tests/onboarding.test.ts` (A20) falha se aparecer uma décima terceira. Todas têm `revoke execute ... from public, anon`, porque o Postgres
 concede `EXECUTE` a `PUBLIC` por padrão. O `service_role` tem `USAGE` em
 `private` para o trigger de `couples` funcionar em escrita administrativa.

@@ -4,6 +4,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../lib/database.types'
+import type { CalCity } from '../domain/calendar'
 import type { DataResult } from './result'
 
 type Db = SupabaseClient<Database>
@@ -46,5 +47,43 @@ export async function loadCitiesByIds(db: Db, ids: readonly string[]): Promise<D
   return {
     status: 'ok',
     rows: new Map(data.map((c) => [c.id, { id: c.id, name: c.name, stateCode: c.state_code, lat: c.lat, lng: c.lng }])),
+  }
+}
+
+/**
+ * As cidades do Calendário por id — IBGE e do mundo (I2, ADR 0017), com país e
+ * região. À parte de `loadCitiesByIds` para não mudar o `City` que Lista e
+ * Configurações já consomem.
+ *
+ * Sem filtro de casal: a policy mostra as globais e as do próprio casal. Por
+ * isso mesmo a sessão é conferida antes — sem ela a leitura devolve zero
+ * linhas, e a faixa de Lisboa sumiria como se a cidade não existisse.
+ */
+export async function loadCalCities(db: Db, ids: readonly string[]): Promise<DataResult<Map<string, CalCity>>> {
+  const unique = [...new Set(ids)]
+  if (unique.length === 0) return { status: 'ok', rows: new Map() }
+  const { data: session } = await db.auth.getSession()
+  if (!session.session) return { status: 'unauthenticated' }
+  const { data, error } = await db
+    .from('cities')
+    .select('id, name, state_code, country_code, region, lat, lng')
+    .in('id', unique)
+  if (error) {
+    return error.code === '42501' ? { status: 'unauthenticated' } : { status: 'error', cause: error.message }
+  }
+  return { status: 'ok', rows: new Map(data.map((c) => [c.id, rowToCalCity(c)])) }
+}
+
+export function rowToCalCity(
+  c: Pick<Database['public']['Tables']['cities']['Row'], 'id' | 'name' | 'state_code' | 'country_code' | 'region' | 'lat' | 'lng'>,
+): CalCity {
+  return {
+    id: c.id,
+    name: c.name,
+    stateCode: c.state_code,
+    countryCode: c.country_code,
+    region: c.region,
+    lat: c.lat,
+    lng: c.lng,
   }
 }

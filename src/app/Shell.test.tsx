@@ -3,6 +3,7 @@
 import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { fakeCalendarApi } from '../calendar/test/fixtures'
 import { fakeListApi } from '../list/test/fixtures'
 import { fakeApi } from '../settings/test/fixtures'
 import { Shell } from './Shell'
@@ -12,7 +13,7 @@ afterEach(() => window.history.replaceState(null, '', '/'))
 
 function renderShell() {
   return render(
-    <Shell calendar={<p>timeline antiga</p>} api={fakeApi()} listApi={fakeListApi()} onStageChanged={() => undefined} />,
+    <Shell calendarApi={fakeCalendarApi()} api={fakeApi()} listApi={fakeListApi()} onStageChanged={() => undefined} />,
   )
 }
 
@@ -21,7 +22,7 @@ function mainNav() {
 }
 
 describe('A13 (Fase 3) e A19 (Fase 4) — a barra mostra só destinos que existem', () => {
-  it('Calendário, Lista e Configurações, nessa ordem, e nada de Home, Viagens ou Adicionar', () => {
+  it('Calendário, Lista e Configurações, nessa ordem, e nada de Home nem Viagens', () => {
     renderShell()
     const links = [...mainNav().querySelectorAll('a')].map((a) => a.textContent)
     expect(links).toEqual(['Calendário', 'Lista', 'Configurações'])
@@ -35,7 +36,7 @@ describe('A19 — /lista', () => {
     expect(window.location.pathname).toBe('/lista')
     expect(screen.getByRole('heading', { name: 'Nossa lista', level: 1 })).toBeInTheDocument()
     expect(within(mainNav()).getByRole('link', { name: 'Lista' })).toHaveAttribute('aria-current', 'page')
-    expect(screen.queryByText('timeline antiga')).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Setembro 2026', level: 1 })).not.toBeInTheDocument()
   })
 
   it('clicar em Lista na barra vai para /lista', async () => {
@@ -47,9 +48,9 @@ describe('A19 — /lista', () => {
 })
 
 describe('A12 — rotas', () => {
-  it('/ mostra a timeline; clicar em Configurações vai para a primeira aba', async () => {
+  it('/ mostra o Calendário (A21 da Fase 5); clicar em Configurações vai para a primeira aba', async () => {
     renderShell()
-    expect(screen.getByText('timeline antiga')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Setembro 2026', level: 1 })).toBeInTheDocument()
     await userEvent.click(within(mainNav()).getByRole('link', { name: 'Configurações' }))
     expect(window.location.pathname).toBe('/configuracoes/perfil-do-casal')
     expect(await screen.findByRole('heading', { name: 'Configurações', level: 1 })).toBeInTheDocument()
@@ -78,5 +79,49 @@ describe('A12 — rotas', () => {
       await new Promise((r) => setTimeout(r, 20))
     })
     expect(await screen.findByRole('heading', { name: 'Cidades', level: 2 })).toBeInTheDocument()
+  })
+})
+
+describe('A21 (Fase 5) — o Adicionar da barra', () => {
+  function addButton() {
+    return within(mainNav()).getByRole('button', { name: 'Adicionar' })
+  }
+
+  it('abre o seletor com evento e item, e Esc fecha', async () => {
+    window.history.replaceState(null, '', '/configuracoes/perfil-do-casal')
+    renderShell()
+    await userEvent.click(addButton())
+    const menu = screen.getByRole('menu', { name: 'Adicionar' })
+    expect(within(menu).getAllByRole('menuitem').map((b) => b.textContent)).toEqual(['Novo evento', 'Item na lista'])
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+  })
+
+  it('Novo evento vai para o Calendário e abre o modal, de qualquer rota', async () => {
+    window.history.replaceState(null, '', '/lista')
+    renderShell()
+    await userEvent.click(addButton())
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Novo evento' }))
+    expect(window.location.pathname).toBe('/')
+    expect(await screen.findByRole('dialog', { name: 'Novo evento' })).toBeInTheDocument()
+  })
+
+  it('pedir de novo reabre: o segundo Novo evento abre o modal outra vez', async () => {
+    renderShell()
+    for (let i = 0; i < 2; i++) {
+      await userEvent.click(addButton())
+      await userEvent.click(screen.getByRole('menuitem', { name: 'Novo evento' }))
+      const modal = await screen.findByRole('dialog', { name: 'Novo evento' })
+      await userEvent.click(within(modal).getByRole('button', { name: 'Fechar' }))
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    }
+  })
+
+  it('Item na lista vai para a Lista e abre o modal de adicionar', async () => {
+    renderShell()
+    await userEvent.click(addButton())
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Item na lista' }))
+    expect(window.location.pathname).toBe('/lista')
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
   })
 })

@@ -7,6 +7,8 @@ import { describe, expect, it, vi } from 'vitest'
 import type { ListItem, ListMemory, ListPhoto } from '../domain/list'
 import type { ListApi } from './api'
 import { ItemSheet } from './ItemSheet'
+import type { CalendarApi } from '../calendar/api'
+import { LIST_REFS, SEPTEMBER_EVENTS, fakeCalendarApi, seededCalendarApi } from '../calendar/test/fixtures'
 import { GABRIEL, LANA, fakeListApi, listItem, listItems } from './test/fixtures'
 import { TOGETHER_SJC, listValue, renderInList } from './test/renderInList'
 
@@ -357,5 +359,74 @@ describe('A16 — Apagar (R19, seção 7)', () => {
     await user.click(screen.getByRole('button', { name: 'Sim, apagar' }))
     await waitFor(() => expect(props.onDeleted).toHaveBeenCalled())
     expect(screen.queryByRole('alert')).toBeNull()
+  })
+})
+
+describe('A22 — Agendar (Fase 5, R23)', () => {
+  /** O Calendário com os itens desta tela no vínculo, e `createEvent` que responde `ok`. */
+  function calendarWith(item: ListItem, overrides: Partial<CalendarApi> = {}): CalendarApi {
+    return seededCalendarApi(
+      {},
+      {
+        loadCalendar: vi.fn<CalendarApi['loadCalendar']>(async () => ({
+          status: 'ok',
+          rows: { events: SEPTEMBER_EVENTS, listItems: [...LIST_REFS, { id: item.id, name: item.name, category: item.category }] },
+        })),
+        createEvent: vi.fn<CalendarApi['createEvent']>(async () => ({ status: 'ok', value: { id: 'e-new' } })),
+        ...overrides,
+      },
+    )
+  }
+
+  it('a fazer e feito: Agendar abre o Novo evento do tipo Date, com o título e o vínculo do item', async () => {
+    for (const item of [WANT, DONE]) {
+      const calendar = calendarWith(item)
+      const { user, view } = setup({ item, api: { calendar } })
+      await user.click(screen.getByRole('button', { name: 'Agendar' }))
+      const modal = await screen.findByRole('dialog', { name: 'Novo evento' })
+      expect(within(modal).getByRole('button', { name: 'Date' })).toHaveAttribute('aria-pressed', 'true')
+      expect(within(modal).getByLabelText('Título')).toHaveValue(item.name)
+      expect(within(modal).getByText(item.name, { selector: '.cal-mf-chosen' })).toBeInTheDocument()
+      // O modal entra no lugar do detalhe, não por cima (um Esc não fecha os dois).
+      expect(screen.queryByRole('dialog', { name: item.name })).toBeNull()
+      view.unmount()
+    }
+  })
+
+  it('salvar: createEvent com o vínculo, fecha o modal e mostra "Agendado para {d mmm}" no detalhe', async () => {
+    const calendar = calendarWith(WANT)
+    const { user, props } = setup({ item: WANT, api: { calendar } })
+    await user.click(screen.getByRole('button', { name: 'Agendar' }))
+    await screen.findByRole('dialog', { name: 'Novo evento' })
+    await user.click(screen.getByRole('button', { name: 'Salvar evento' }))
+    expect(calendar.createEvent).toHaveBeenCalledWith(
+      'couple-1',
+      expect.objectContaining({ kind: 'date', title: 'Parque da Cidade', listItemId: 'i-want', startsOn: '2026-09-25' }),
+      false,
+    )
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Novo evento' })).toBeNull())
+    const sheet = screen.getByRole('dialog', { name: 'Parque da Cidade' })
+    expect(within(sheet).getByRole('status')).toHaveTextContent('Agendado para 25 set')
+    // A pessoa continua na Lista, com o detalhe aberto.
+    expect(props.onClose).not.toHaveBeenCalled()
+  })
+
+  it('fechar o modal volta ao detalhe, sem aviso', async () => {
+    const { user } = setup({ item: WANT, api: { calendar: calendarWith(WANT) } })
+    await user.click(screen.getByRole('button', { name: 'Agendar' }))
+    const modal = await screen.findByRole('dialog', { name: 'Novo evento' })
+    await user.click(within(modal).getByRole('button', { name: 'Fechar' }))
+    expect(await screen.findByRole('dialog', { name: 'Parque da Cidade' })).toBeInTheDocument()
+    expect(screen.queryByText(/Agendado para/)).toBeNull()
+  })
+
+  it('leitura do Calendário que falha: a causa no detalhe, e modal nenhum', async () => {
+    const calendar = fakeCalendarApi({
+      loadCalendar: vi.fn<CalendarApi['loadCalendar']>(async () => ({ status: 'error', cause: 'projeto pausado' })),
+    })
+    const { user } = setup({ item: WANT, api: { calendar } })
+    await user.click(screen.getByRole('button', { name: 'Agendar' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Não deu pra abrir o agendamento: projeto pausado')
+    expect(screen.queryByRole('dialog', { name: 'Novo evento' })).toBeNull()
   })
 })

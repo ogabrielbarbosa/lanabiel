@@ -1,6 +1,6 @@
 # Arquitetura do projeto
 
-> Atualizado ao fim da Fase 6 (Viagens), 2026-09-27. O _como_ mora aqui e é
+> Atualizado ao fim da Fase 7 (Mapa / Home), 2026-09-27. O _como_ mora aqui e é
 > reescrito sempre que o código muda; o _porquê_ mora em `../Decisions/`.
 
 ## O que é
@@ -18,6 +18,7 @@ construído em oito fases — ver `../Tasks/`.
 | Camada | Tecnologia | Papel |
 | --- | --- | --- |
 | Build/dev | Vite 8 | dev server, bundling |
+| Mapa | Mapbox GL JS v3 (`mapbox-gl`) | globo, satélite, terreno 3D; só em `src/map/mapbox/`, por `import()` — [ADR 0022](../Decisions/0022-engine-do-mapa-mapbox.md) |
 | UI | React 19 + TS 6 | componentes e estado |
 | Backend | Supabase (Postgres 17, Auth, Storage, Edge Functions) | persistência e autorização |
 | Autorização | RLS por casal | a única porta — ver [ADR 0001](../Decisions/0001-supabase-com-rls-por-casal.md) |
@@ -33,10 +34,21 @@ construído em oito fases — ver `../Tasks/`.
 src/
 ├── main.tsx                # entrypoint
 ├── App.tsx                 # portão de sessão + casca; nada mais mora aqui
+├── home/                   # Fase 7: a Home em `/`; recebe `HomeApi` injetada (api.ts)
+│   ├── HomeScreen.tsx · context.ts   # leitura única + releitura; o mapa monta depois do 1º `ok`
+│   ├── MapArea.tsx · map/  # cabeçalho, breadcrumb + seletores, pins, cartão, filtros, _Aqui por perto_
+│   ├── HomePanel.tsx · panel/        # próxima viagem, ritmo, região, destaques, memória, pelo mundo
+│   └── home.css · panel.css          # exceção registrada: duas folhas
+├── map/                    # Fase 7: a engine atrás de `MapEngine` (engine.ts)
+│   ├── mapbox/adapter.ts   # o ÚNICO import de `mapbox-gl` (chunk dinâmico)
+│   ├── style.ts            # a receita visual (Standard Satellite / estilo próprio)
+│   ├── useMap.ts           # uma instância por montagem; `useMapTick` para quem desenha por cima
+│   └── fakeEngine.ts · MapFailed.tsx
 ├── app/                    # Fase 3: a casca
 │   ├── Shell.tsx           # barra lateral (só destinos que existem) + rota + _Adicionar_
 │   ├── addIntent.ts        # o pedido do _Adicionar_: evento ou item, consumido pela tela dona
 │   ├── calendarFocus.ts    # o _Ver no calendário_ das Viagens: o mês que o Calendário abre
+│   ├── mapFocus.ts · listFocus.ts   # Fase 7: a Home abre num lugar; a Lista abre num item
 │   ├── router.ts           # caminho na barra, sem biblioteca (ADR 0013, 0020: `/viagens/:id`)
 │   ├── appearance.ts · useAppearance.ts   # tema/densidade/animações, por aparelho
 │   └── app.css             # tokens claro/escuro do .pen, em data-theme
@@ -50,7 +62,7 @@ src/
 │   ├── TripsRoute.tsx · context.ts   # leitura única + releitura; carregando/erro/"não está aqui"
 │   ├── TripsScreen.tsx · TripsPanel.tsx · TripModal.tsx · parts.tsx · links.ts
 │   ├── detail/             # TripDetail · Itinerary · Gallery · Planning · blocks · editors (+ trip-detail.css)
-│   ├── assets/world-map.jpg   # o mapa-múndi do .pen, sem pins (ADR 0021)
+│   ├── TripMap.tsx         # os dois mapas das Viagens na engine, sem interação (ADR 0022)
 │   └── trips.css           # exceção registrada: duas folhas, como o Calendário
 ├── dev/                    # SÓ em DEV: harness `?preview` com TripsApi em memória e os dados do .pen
 ├── list/                   # Fase 4: a Lista; recebe `ListApi` injetada (api.ts)
@@ -77,7 +89,8 @@ src/
 │   ├── listValidationCases.ts # a MESMA tabela de casos roda no domínio e no banco (A2)
 │   ├── trips.ts            # Fase 6: contrato (tipos, listas, TRIP_LIMITS, DEFAULT_PREP)
 │   ├── tripValidation.ts · tripValidationCases.ts  # espelho dos CHECK, a mesma tabela no banco
-│   └── tripDerive.ts       # estado, números, herói, recordes, roteiro, projeção do mapa
+│   ├── tripDerive.ts       # estado, números, herói, recordes, roteiro
+│   └── map.ts              # Fase 7: pins, regiões, câmera, agrupamento, números do painel
 ├── data/
 │   ├── result.ts           # DataResult / WriteResult discriminados
 │   ├── rpc.ts              # chamada de RPC: 42501 → unauthenticated, resto → error
@@ -327,14 +340,50 @@ da lista" é leitura derivada (itens a ≤ 30 km do destino), não escrita.
 
 Fotos em `couple-media/<casal>/trip/<uuid>.webp` (arquivo → linha; apagar é
 arquivo → linha). URLs assinadas só do que está visível, em lote, re-assinadas
-na releitura e a cada 50 min. Os mapas são a imagem do `.pen` com pins por
-projeção equiretangular ([ADR 0021](../Decisions/0021-mapas-das-viagens-sem-engine.md)),
-até o MapLibre da Fase 7. `/viagens/:id` usa o roteador próprio
+na releitura e a cada 50 min. Os mapas são a engine da Fase 7 (`TripMap`, sem
+interação), com pins em React e arcos de grande círculo
+([ADR 0022](../Decisions/0022-engine-do-mapa-mapbox.md), que supersede o 0021). `/viagens/:id` usa o roteador próprio
 ([ADR 0020](../Decisions/0020-rota-com-parametro-sem-biblioteca.md)).
 
 Em DEV, `?preview` (ex. `/viagens?preview`) monta a casca com uma `TripsApi` em
 memória semeada com a copy e as imagens dos frames — para comparar a tela com o
 `.pen` sem login. `src/dev/` não entra no build de produção.
+
+## Home e mapa (Fase 7)
+
+`/` é a Home; o Calendário mora em `/calendario`
+([ADR 0023](../Decisions/0023-home-na-raiz-calendario-em-calendario.md)). **A
+Home só lê**: `HomeApi` compõe as leituras das Fases 3–6 (`loadSettings`,
+`loadList`, `loadTrips`, `loadCalCities`) e nada de schema mudou. Tudo o que ela
+mostra é derivado por `src/domain/map.ts` sobre as funções que já existiam —
+`runs`/`runAround` (trecho de hoje), `countDrawn` (o mês desenhado) e
+`countStates` (o vivido do ano), `heroTrip`/`tripTotals` (viagens).
+
+**A engine fica atrás de `MapEngine`** (`src/map/engine.ts`); o Mapbox chega por
+`import()` num chunk próprio, e os testes usam `fakeMapEngine` (jsdom não tem
+WebGL). Uma instância por montagem de tela — é o que o Mapbox cobra como _map
+load_ (50 mil/mês grátis). **Pins, grupos, rótulos e o cartão do lugar são React
+por cima do mapa**, posicionados por `handle.project` a cada movimento
+(`useMapTick`, que re-renderiza só eles); o agrupamento é `clusterPoints`
+(guloso, 44 px). Assim nenhum dado do casal vira GeoJSON do provedor: o Mapbox só
+vê pedidos de tile.
+
+A navegação (`home/map/useMapNav.ts`) é estado da tela: nível (`world` →
+`country` → `state` → `city`; país de fora pula `state`), caminho em foco,
+seletor aberto, pin selecionado. A câmera de cada nível é `cameraFor` (puro). O
+agrupamento por região vem do item (`country_code`, `state` → UF, `city` sem
+acento), nunca gravado. Filme e série não viram pin.
+
+Pedidos entre telas, todos em memória como `calendarFocus`: `mapFocus` (a Lista
+e as Viagens abrem a Home num item, cidade ou no mundo), `listFocus` (a Home abre
+a ficha de um item na Lista). O painel pede foco à área do mapa com a Home já
+aberta por `FocusRequest` (`{focus, nonce}`), não por `mapFocus`.
+
+O token é `VITE_MAPBOX_TOKEN`, **público** (`pk.`). Toda `VITE_*` vai para o
+bundle: o `vite.config.ts` derruba o build com um `sk.`, e o adaptador recusa
+qualquer token que não seja `pk.` (a tela mostra _"O mapa não carregou."_ e o
+resto segue). Receita visual em `src/map/style.ts`; em DEV, `?receita=custom`
+troca o Standard Satellite pelo estilo próprio.
 
 ## Fronteiras
 
@@ -344,6 +393,7 @@ memória semeada com a copy e as imagens dos frames — para comparar a tela com
 | Domínio | `src/domain/coupleState.ts` | função pura, sem import de Supabase; testável sem rede |
 | Autorização | policies em `supabase/migrations/` | nunca no cliente |
 | `Date` | `src/lib/date.ts` | não escapa deste arquivo |
+| Mapa | `src/map/mapbox/adapter.ts` | único import de `mapbox-gl`; o resto fala com `MapEngine` |
 
 ## Schema
 

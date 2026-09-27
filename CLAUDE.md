@@ -108,6 +108,9 @@ src/onboarding/            # assistente de criar/entrar no espaço, recebe Onboa
 src/list/                  # a Lista (Fase 4), recebe ListApi
 src/calendar/              # o Calendário (Fase 5), recebe CalendarApi
 src/trips/                 # as Viagens (Fase 6), recebe TripsApi; detail/ é o Detalhe e a Galeria
+src/home/                  # a Home (Fase 7), recebe HomeApi; map/ é a área do mapa, panel/ o painel
+src/map/                   # a engine do mapa atrás de MapEngine; SÓ mapbox/adapter.ts importa mapbox-gl
+src/domain/map.ts          # Home: pins, regiões, câmera, contagens do painel (puro)
 src/dev/                   # SÓ DEV: harness `?preview` com os dados do .pen, sem login
 src/settings/              # as nove abas das Configurações, recebe SettingsApi
 src/lib/                   # supabase.ts, database.types.ts (GERADO), date.ts
@@ -195,11 +198,11 @@ história.
 Identificadores em inglês, texto de interface em português. CSS é arquivo único
 por feature (`list/list.css`), sem framework nem CSS-in-JS. Exceções registradas:
 o Calendário tem `calendar.css` e `modals.css`; as Viagens, `trips.css` e
-`detail/trip-detail.css`.
+`detail/trip-detail.css`; a Home, `home.css` (área do mapa) e `panel.css`.
 
 ## Estado atual do repositório
 
-Fases 0 a 6 na `main`. A Fase 1
+Fases 0 a 7 (a 7 na branch `fase-7-mapa`). A Fase 1
 entregou `src/auth/` (portão de sessão, login por senha e OAuth); a Fase 2, o
 onboarding (`src/onboarding/`), o convite (`couple_invites`, edge function
 `supabase/functions/send-invite`), os municípios do IBGE e as fotos em bucket
@@ -234,14 +237,22 @@ até a Fase 7 (ADR 0021). **Para comparar tela com o `.pen`:** `npm run dev` e
 Enquanto os testes de integração rodarem contra o projeto online (ADR 0014),
 **nenhum casal de fora deve usar o app**.
 
-As preferências de telas que ainda não existem (Calendário, Home,
-Notificações) já estão gravadas: **cada fase lê a coluna que a Fase 3 criou** e
+A Fase 7 entregou a Home (`src/home/`, em `/`; o Calendário passou a
+`/calendario`, ADR 0023): globo 3D de satélite no **Mapbox GL JS v3** (ADR 0022,
+supersede o 0021), navegação Mundo → País → Estado → Cidade com seletores,
+filtros, _Aqui por perto_ e o painel da direita — e os mapas das Viagens na
+mesma engine. **Ela só lê**: nenhuma tabela nova. Pins e cartões são React por
+cima do mapa (`handle.project`), nunca camada do provedor. O token é
+`VITE_MAPBOX_TOKEN`, **público** (`pk.`): o build para com um `sk.`, e o
+adaptador o recusa. Harness: `/?preview`.
+
+As preferências de telas que ainda não existem (Notificações) já estão gravadas: **cada fase lê a coluna que a Fase 3 criou** e
 a refina, em vez de inventar a sua.
 
 Adiado de propósito para o fim do roadmap: e-mail real pelo Resend (A29), Google
 no celular (A30), avisos ao outro e o agendador.
 
-`.agent/System/project_architecture.md` está atualizado ao fim da Fase 6.
+`.agent/System/project_architecture.md` está atualizado ao fim da Fase 7.
 
 **O arquivo `lanabiel` (sem extensão) na raiz é um export JSON ANTIGO do design,
 e não é fonte da verdade.** Ele tem 4 telas e um conjunto de tokens

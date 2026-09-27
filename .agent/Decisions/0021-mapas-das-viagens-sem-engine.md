@@ -1,6 +1,6 @@
 # ADR 0021 — Mapas das Viagens sem engine: projeção equiretangular sobre a imagem do `.pen`
 
-- **Status:** Proposed
+- **Status:** Superseded by [0022](./0022-engine-do-mapa-mapbox.md)
 - **Data:** 2026-09-27
 - **Área:** cliente, Viagens (Fase 6)
 

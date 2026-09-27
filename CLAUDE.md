@@ -188,7 +188,7 @@ por feature (`timeline/timeline.css`), sem framework nem CSS-in-JS.
 
 ## Estado atual do repositório
 
-Fases 0 a 4 (a 4 na branch `fase-4-lista` até o merge). A Fase 1
+Fases 0 a 4 na `main`. A Fase 1
 entregou `src/auth/` (portão de sessão, login por senha e OAuth); a Fase 2, o
 onboarding (`src/onboarding/`), o convite (`couple_invites`, edge function
 `supabase/functions/send-invite`), os municípios do IBGE e as fotos em bucket

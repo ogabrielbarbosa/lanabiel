@@ -1,4 +1,5 @@
 // A12 (navegação) e A13 — a casca: barra com só o que existe, e a rota na URL.
+// A9 (Fase 6) — Viagens na barra, `/viagens` e `/viagens/<id>`.
 
 import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -6,6 +7,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { fakeCalendarApi } from '../calendar/test/fixtures'
 import { fakeListApi } from '../list/test/fixtures'
 import { fakeApi } from '../settings/test/fixtures'
+import { seededTripsApi } from '../trips/test/fakeApi'
+import { TRIP_ILHABELA_ID, UNKNOWN_TRIP_ID } from '../trips/test/fixtures'
 import { Shell } from './Shell'
 
 beforeEach(() => window.history.replaceState(null, '', '/'))
@@ -13,7 +16,13 @@ afterEach(() => window.history.replaceState(null, '', '/'))
 
 function renderShell() {
   return render(
-    <Shell calendarApi={fakeCalendarApi()} api={fakeApi()} listApi={fakeListApi()} onStageChanged={() => undefined} />,
+    <Shell
+      calendarApi={fakeCalendarApi()}
+      api={fakeApi()}
+      listApi={fakeListApi()}
+      tripsApi={seededTripsApi()}
+      onStageChanged={() => undefined}
+    />,
   )
 }
 
@@ -21,11 +30,52 @@ function mainNav() {
   return screen.getByRole('navigation', { name: 'Navegação principal' })
 }
 
-describe('A13 (Fase 3) e A19 (Fase 4) — a barra mostra só destinos que existem', () => {
-  it('Calendário, Lista e Configurações, nessa ordem, e nada de Home nem Viagens', () => {
+describe('A13 (Fase 3), A19 (Fase 4) e A9 (Fase 6) — a barra mostra só destinos que existem', () => {
+  it('Calendário, Lista, Viagens e Configurações, nessa ordem, e nada de Home', () => {
     renderShell()
     const links = [...mainNav().querySelectorAll('a')].map((a) => a.textContent)
-    expect(links).toEqual(['Calendário', 'Lista', 'Configurações'])
+    expect(links).toEqual(['Calendário', 'Lista', 'Viagens', 'Configurações'])
+  })
+})
+
+describe('A9 (Fase 6) — /viagens e /viagens/<id>', () => {
+  it('clicar em Viagens vai para /viagens, renderiza as Viagens e marca o destino', async () => {
+    renderShell()
+    await userEvent.click(within(mainNav()).getByRole('link', { name: 'Viagens' }))
+    expect(window.location.pathname).toBe('/viagens')
+    expect(await screen.findByRole('heading', { name: 'Nossas viagens', level: 1 })).toBeInTheDocument()
+    expect(within(mainNav()).getByRole('link', { name: 'Viagens' })).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('/viagens/<id> de uma viagem do casal abre o detalhe, com Viagens marcado', async () => {
+    window.history.replaceState(null, '', `/viagens/${TRIP_ILHABELA_ID}`)
+    renderShell()
+    expect(await screen.findByRole('heading', { name: 'Ilhabela, SP', level: 1 })).toBeInTheDocument()
+    expect(within(mainNav()).getByRole('link', { name: 'Viagens' })).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('id que não é viagem do casal: "Essa viagem não está aqui." e o caminho de volta', async () => {
+    window.history.replaceState(null, '', `/viagens/${UNKNOWN_TRIP_ID}`)
+    renderShell()
+    expect(await screen.findByText('Essa viagem não está aqui.')).toBeInTheDocument()
+    expect(window.location.pathname).toBe(`/viagens/${UNKNOWN_TRIP_ID}`)
+    await userEvent.click(screen.getByRole('link', { name: 'Voltar para Nossas viagens' }))
+    expect(window.location.pathname).toBe('/viagens')
+    expect(await screen.findByRole('heading', { name: 'Nossas viagens', level: 1 })).toBeInTheDocument()
+  })
+
+  it('id malformado também mostra o R1, em vez de ir para o Calendário', async () => {
+    window.history.replaceState(null, '', '/viagens/nao-e-um-id')
+    renderShell()
+    expect(await screen.findByText('Essa viagem não está aqui.')).toBeInTheDocument()
+    expect(window.location.pathname).toBe('/viagens/nao-e-um-id')
+  })
+
+  it('uuid em maiúsculas vira o caminho canônico em minúsculas', async () => {
+    window.history.replaceState(null, '', `/viagens/${TRIP_ILHABELA_ID.toUpperCase()}`)
+    renderShell()
+    expect(await screen.findByRole('heading', { name: 'Ilhabela, SP', level: 1 })).toBeInTheDocument()
+    expect(window.location.pathname).toBe(`/viagens/${TRIP_ILHABELA_ID}`)
   })
 })
 

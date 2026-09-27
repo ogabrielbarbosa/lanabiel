@@ -14,6 +14,7 @@ import type { SettingsData } from '../data/settings'
 import type { ListCounts } from '../data/listSummary'
 import type { DataResult } from '../data/result'
 import { SETTINGS_TABS } from '../domain/settings'
+import { doneTrips } from '../domain/tripDerive'
 import type { SettingsTab } from '../domain/settings'
 import { navigate } from '../app/router'
 import type { AppearanceControl } from '../app/useAppearance'
@@ -100,6 +101,20 @@ export function SettingsScreen({ tab, api, appearance, onStageChanged }: Setting
   }, [api, photoKey, urlVersion])
 
   const today = useMemo(() => api.today(), [api])
+
+  // Fase 6, R28: "viagens" no resumo = as feitas (é o `trips` de `tripTotals`,
+  // I5: as de `ends_on < hoje`). Como a da Lista: à parte, falha mostra —.
+  const [tripCount, setTripCount] = useState<DataResult<number> | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    void api.loadTrips().then((value) => {
+      if (cancelled) return
+      setTripCount(value.status === 'ok' ? { status: 'ok', rows: doneTrips(value.rows.trips, today).length } : value)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [api, version, today])
   const loading = result === null || result.version !== version
 
   let body: ReactNode
@@ -136,6 +151,7 @@ export function SettingsScreen({ tab, api, appearance, onStageChanged }: Setting
         today,
         writes,
         listCounts,
+        tripCount,
         update: (fn) => setData((d) => (d ? fn(d) : d)),
         reload,
         urls: { avatar: (id) => urls.avatars[id] ?? null, cover: urls.cover },
@@ -193,7 +209,7 @@ export function SettingsScreen({ tab, api, appearance, onStageChanged }: Setting
           </section>
         </div>
       </div>
-      {data && <RightPanel data={data} today={today} urls={urls} listCounts={listCounts} />}
+      {data && <RightPanel data={data} today={today} urls={urls} listCounts={listCounts} tripCount={tripCount} />}
     </div>
   )
 }

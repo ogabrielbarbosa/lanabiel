@@ -22,6 +22,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { CalendarCheck, CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { useAddIntent } from '../app/addIntent'
+import { clearCalendarFocus, peekCalendarFocus } from '../app/calendarFocus'
 import type { DataResult } from '../data/result'
 import type { SettingsData } from '../data/settings'
 import { countDrawn } from '../domain/calendar'
@@ -107,11 +108,16 @@ export function CalendarScreen({ api, renderCityPicker = defaultCityPicker }: Ca
   const [loadError, setLoadError] = useState<string | null>(null)
   const [stale, setStale] = useState(false)
   const [avatars, setAvatars] = useState<Readonly<Record<string, string | null>>>({})
-  const [visibleMonth, setVisibleMonthState] = useState<YearMonth>(() => monthOf(api.today()))
+  // Fase 6, R32: o _Ver no calendário_ das Viagens pediu um mês. Lido ao
+  // montar (puro), apagado no efeito abaixo.
+  const [focus] = useState(peekCalendarFocus)
+  const [visibleMonth, setVisibleMonthState] = useState<YearMonth>(() => focus ?? monthOf(api.today()))
   const monthRef = useRef(visibleMonth)
   const generation = useRef(0)
   const kissGeneration = useRef(0)
   const hasSnap = useRef(false)
+
+  useEffect(() => clearCalendarFocus(), [])
 
   const setVisibleMonth = useCallback((month: YearMonth) => {
     monthRef.current = month
@@ -220,6 +226,7 @@ export function CalendarScreen({ api, renderCityPicker = defaultCityPicker }: Ca
       visibleMonth={visibleMonth}
       setVisibleMonth={setVisibleMonth}
       renderCityPicker={renderCityPicker}
+      initialView={focus ? 'month' : undefined}
     />
   )
 }
@@ -250,6 +257,7 @@ function Loaded({
   visibleMonth,
   setVisibleMonth,
   renderCityPicker,
+  initialView,
 }: {
   api: CalendarApi
   snap: Snapshot
@@ -261,11 +269,13 @@ function Loaded({
   visibleMonth: YearMonth
   setVisibleMonth: (month: YearMonth) => void
   renderCityPicker?: FirstPeriodCardProps['renderCityPicker']
+  /** R32 (Fase 6): o pedido de foco abre na visão Mês, seja qual for a preferência. */
+  initialView?: 'month' | 'year'
 }) {
   const { ctx, cal, cities, today } = snap
   const settings = ctx.coupleSettings
   // R3: começa na preferência do casal e vale só até sair da tela.
-  const [view, setView] = useState<'month' | 'year'>(settings.calendarDefaultView)
+  const [view, setView] = useState<'month' | 'year'>(initialView ?? settings.calendarDefaultView)
   const [selectedDay, setSelectedDay] = useState(today)
   const [modal, setModal] = useState<CalendarModal | null>(null)
   // R1: o _Adicionar_ da barra pediu um evento — abre com os dados já lidos.

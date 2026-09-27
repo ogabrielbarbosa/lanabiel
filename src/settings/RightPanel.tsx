@@ -1,8 +1,8 @@
 // O painel "O espaço de vocês" (`Right Panel`, hWcCy), igual em todas as abas.
 //
-// Spec: R5 (Fase 3) e R26 (Fase 4). "Itens na lista" mostra o total real
-// (— se a contagem falhar, … enquanto lê); "viagens" mostra — até a Fase 6: a
-// tabela não existe, e zero afirmaria o que não se sabe.
+// Spec: R5 (Fase 3), R26 (Fase 4) e R28 (Fase 6). "Itens na lista" mostra o
+// total real e "viagens" as viagens FEITAS (— se a contagem falhar, …
+// enquanto lê).
 
 import { Info, MessageSquareHeart } from 'lucide-react'
 import { cityLabel } from '../data/cities'
@@ -12,18 +12,20 @@ import type { DataResult } from '../data/result'
 import { coupleLabel, daysTogetherInYear, formatThousands } from '../domain/settings'
 import { distanceKm, togetherFor } from '../domain/onboarding'
 import { weekdayDayMonthLabel } from '../lib/date'
-import { Avatar, ListTotal } from './parts'
+import { Avatar, ListTotal, TripTotal } from './parts'
 
 export function RightPanel({
   data,
   today,
   urls,
   listCounts,
+  tripCount,
 }: {
   data: SettingsData
   today: string
   urls: { avatars: Record<string, string | null>; cover: string | null }
   listCounts: DataResult<ListCounts> | null
+  tripCount: DataResult<number> | null
 }) {
   const { couple } = data
   const [a, b] = couple.members
@@ -84,7 +86,7 @@ export function RightPanel({
           </div>
           <div>
             <dt>viagens</dt>
-            <dd title="As Viagens chegam numa próxima fase">—</dd>
+            <TripTotal count={tripCount} />
           </div>
           <div>
             <dt>dias juntos em {year}</dt>

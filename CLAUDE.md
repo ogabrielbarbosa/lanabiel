@@ -100,12 +100,15 @@ src/domain/onboarding.ts   # LIMITS (paridade com os CHECK), código de convite
 src/domain/settings.ts     # paletas, categorias, abas (paridade com os CHECK)
 src/domain/list.ts         # Lista: validação (espelho do CHECK), filtros, sugestão, onde estamos
 src/domain/calendar.ts     # Calendário: pintura (espelho da RPC), trechos, as duas contagens, ocorrências
+src/domain/trips.ts        # Viagens: contrato (+ tripValidation.ts espelho dos CHECK, tripDerive.ts derivações)
 src/data/                  # result.ts (discriminado), stays, account, invites, couple, settings…
 src/app/                   # casca: barra lateral, roteador por caminho, aparência (tema)
 src/auth/                  # portão de sessão, Login, SignUp, StartChoice
 src/onboarding/            # assistente de criar/entrar no espaço, recebe OnboardingApi
 src/list/                  # a Lista (Fase 4), recebe ListApi
 src/calendar/              # o Calendário (Fase 5), recebe CalendarApi
+src/trips/                 # as Viagens (Fase 6), recebe TripsApi; detail/ é o Detalhe e a Galeria
+src/dev/                   # SÓ DEV: harness `?preview` com os dados do .pen, sem login
 src/settings/              # as nove abas das Configurações, recebe SettingsApi
 src/lib/                   # supabase.ts, database.types.ts (GERADO), date.ts
 supabase/functions/        # edge functions (send-invite)
@@ -190,12 +193,13 @@ história.
 ### Convenções
 
 Identificadores em inglês, texto de interface em português. CSS é arquivo único
-por feature (`list/list.css`), sem framework nem CSS-in-JS. Exceção registrada:
-o Calendário tem `calendar.css` e `modals.css`.
+por feature (`list/list.css`), sem framework nem CSS-in-JS. Exceções registradas:
+o Calendário tem `calendar.css` e `modals.css`; as Viagens, `trips.css` e
+`detail/trip-detail.css`.
 
 ## Estado atual do repositório
 
-Fases 0 a 5 na `main`. A Fase 1
+Fases 0 a 6 na `main`. A Fase 1
 entregou `src/auth/` (portão de sessão, login por senha e OAuth); a Fase 2, o
 onboarding (`src/onboarding/`), o convite (`couple_invites`, edge function
 `supabase/functions/send-invite`), os municípios do IBGE e as fotos em bucket
@@ -217,6 +221,16 @@ A Fase 5 entregou o Calendário (`src/calendar/`, `/`): mês, ano, o painel
 export — é dado íntimo, I12 da spec), cidades do mundo (ADR 0017) e a pintura
 de estadias (ADR 0018). A timeline antiga sobre `localStorage` foi apagada, sem
 import. O botão _Adicionar_ da barra abre evento ou item (`app/addIntent.ts`).
+
+A Fase 6 entregou as Viagens (`src/trips/`, `/viagens` e `/viagens/:id`):
+**a viagem é o evento `viagem` dos dois**, estendido 1:1 por `trips` e sete
+tabelas-filhas (ADR 0019) — datas e destino moram só no evento, e o estado
+(planejada/em andamento/feita) é derivado de hoje. `create_trip` (invoker) cria
+e pinta; editar não repinta. Grade, Linha do tempo, painel _Pelo mundo_, Detalhe
+(feita/futura), Galeria em tela cheia e Nova/Editar viagem. Rota com parâmetro no
+roteador próprio (ADR 0020); mapas são a imagem do `.pen` com pins projetados
+até a Fase 7 (ADR 0021). **Para comparar tela com o `.pen`:** `npm run dev` e
+`/viagens?preview` (harness em `src/dev/`, só DEV, dados do design, sem login).
 Enquanto os testes de integração rodarem contra o projeto online (ADR 0014),
 **nenhum casal de fora deve usar o app**.
 
@@ -227,7 +241,7 @@ a refina, em vez de inventar a sua.
 Adiado de propósito para o fim do roadmap: e-mail real pelo Resend (A29), Google
 no celular (A30), avisos ao outro e o agendador.
 
-`.agent/System/project_architecture.md` está atualizado ao fim da Fase 5.
+`.agent/System/project_architecture.md` está atualizado ao fim da Fase 6.
 
 **O arquivo `lanabiel` (sem extensão) na raiz é um export JSON ANTIGO do design,
 e não é fonte da verdade.** Ele tem 4 telas e um conjunto de tokens

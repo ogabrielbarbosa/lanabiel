@@ -111,6 +111,12 @@ export interface TabContext {
    * `null` enquanto lê.
    */
   listCounts: DataResult<ListCounts> | null
+  /**
+   * Fase 6, R28: viagens FEITAS (o `trips` de `tripTotals`, I5), lidas à
+   * parte como a contagem da Lista — número de resumo, falha mostra —.
+   * `null` enquanto lê.
+   */
+  tripCount: DataResult<number> | null
   /** Aplica o que o banco devolveu. */
   update: (fn: (data: SettingsData) => SettingsData) => void
   /** Relê tudo — depois de um conflito ("este espaço mudou"). */

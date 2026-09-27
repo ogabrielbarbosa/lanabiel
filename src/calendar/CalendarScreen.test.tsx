@@ -5,6 +5,7 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { peekCalendarFocus, requestCalendarFocus } from '../app/calendarFocus'
 import { settingsData } from '../settings/test/fixtures'
 import type { CalendarApi } from './api'
 import { CalendarScreen } from './CalendarScreen'
@@ -206,6 +207,23 @@ describe('R3 — cabeçalho', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('2026')
     await userEvent.click(screen.getByRole('button', { name: 'Mês' }))
     expect(await loaded()).toBeInTheDocument()
+  })
+
+  it('R32 (Fase 6) — o pedido de foco abre o mês pedido na visão Mês, e é consumido', async () => {
+    requestCalendarFocus('2027-01-08')
+    const { api, unmount } = renderScreen(seededCalendarApi({ settings: { calendarDefaultView: 'year' } }))
+    expect(await loaded()).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Janeiro 2027')
+    expect(screen.getByRole('button', { name: 'Mês' })).toHaveAttribute('aria-pressed', 'true')
+    // Os 💋 lidos são os da grade de janeiro, não os de hoje.
+    await waitFor(() => expect(api.loadKisses).toHaveBeenCalledWith('2026-12-27', '2027-02-06'))
+    expect(peekCalendarFocus()).toBeNull()
+    unmount()
+
+    // Voltar ao Calendário depois não reabre janeiro.
+    renderScreen()
+    await loaded()
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Setembro 2026')
   })
 
   it('o slot do painel existe à direita', async () => {

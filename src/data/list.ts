@@ -17,16 +17,27 @@ import type { ItemDraft, ListItem, ListMemory, ListPhoto, Rating } from '../doma
 import { prepareItemPhoto, prepareMemoryPhoto } from './avatar'
 import type { PrepareResult } from './avatar'
 import { draftToInsert, draftToUpdate, rowToItem, rowToMemory, rowToPhoto } from './listRow'
+import {
+  MEDIA_BUCKET,
+  SIGNED_URL_SECONDS as MEDIA_SIGNED_URL_SECONDS,
+  UPLOAD_CONCURRENCY as MEDIA_UPLOAD_CONCURRENCY,
+  mediaPath,
+  removeMediaQuietly,
+  signedMediaUrls,
+  uploadMedia,
+} from './media'
+import type { PreparedImage } from './media'
 import { selectAll } from './paginate'
 import type { DataResult } from './result'
 
 type Db = SupabaseClient<Database>
 
-export const LIST_BUCKET = 'couple-media'
+// O Storage da Lista é o de `media.ts` (compartilhado com as Viagens, Fase 6).
+export const LIST_BUCKET = MEDIA_BUCKET
 /** Validade das URLs assinadas das fotos — refeitas a cada releitura (seção 7). */
-export const SIGNED_URL_SECONDS = 3600
+export const SIGNED_URL_SECONDS = MEDIA_SIGNED_URL_SECONDS
 /** Uploads simultâneos no "Marcar como feito" (seção 8). */
-export const UPLOAD_CONCURRENCY = 3
+export const UPLOAD_CONCURRENCY = MEDIA_UPLOAD_CONCURRENCY
 
 // ---------------------------------------------------------------------------
 // Resultados
@@ -132,16 +143,8 @@ export async function loadList(db: Db): Promise<DataResult<ListData>> {
  * URLs assinadas num lote só (`createSignedUrls`, seção 8). Caminho que não
  * assinou fica fora do mapa — o card mostra o fundo da categoria (seção 7).
  */
-export async function signedUrls(db: Db, paths: readonly (string | null)[]): Promise<DataResult<Map<string, string>>> {
-  const unique = [...new Set(paths.filter((p): p is string => !!p))]
-  if (unique.length === 0) return { status: 'ok', rows: new Map() }
-  const { data, error } = await db.storage.from(LIST_BUCKET).createSignedUrls(unique, SIGNED_URL_SECONDS)
-  if (error) return { status: 'error', cause: error.message }
-  const urls = new Map<string, string>()
-  for (const entry of data ?? []) {
-    if (entry.path && entry.signedUrl && !entry.error) urls.set(entry.path, entry.signedUrl)
-  }
-  return { status: 'ok', rows: urls }
+export function signedUrls(db: Db, paths: readonly (string | null)[]): Promise<DataResult<Map<string, string>>> {
+  return signedMediaUrls(db, paths)
 }
 
 // ---------------------------------------------------------------------------
@@ -235,29 +238,14 @@ export async function deleteItem(
 
 export type Prepare = (file: File) => Promise<PrepareResult>
 
-type Prepared = { blob: Blob; extension: 'webp' | 'jpg' }
+type Prepared = PreparedImage
 
-async function upload(db: Db, path: string, image: Prepared): Promise<{ error: string | null }> {
-  const { error } = await db.storage.from(LIST_BUCKET).upload(path, image.blob, {
-    contentType: image.extension === 'webp' ? 'image/webp' : 'image/jpeg',
-    upsert: false,
-  })
-  return { error: error ? error.message : null }
-}
-
-/** Melhor esforço: a falha deixa um órfão, aceito como na Fase 3 (seção 12). */
-async function removeQuietly(db: Db, paths: readonly string[]): Promise<void> {
-  if (paths.length === 0) return
-  try {
-    await db.storage.from(LIST_BUCKET).remove([...paths])
-  } catch {
-    // órfão aceito
-  }
-}
+const upload = uploadMedia
+const removeQuietly = removeMediaQuietly
 
 function newPath(coupleId: string, folder: 'item' | 'memory', extension: 'webp' | 'jpg'): string {
   // Um uuid novo por upload (ADR 0009): o cache nunca serve a foto antiga.
-  return `${coupleId}/${folder}/${crypto.randomUUID()}.${extension}`
+  return mediaPath(coupleId, folder, extension)
 }
 
 /** Reduz todas antes de subir qualquer uma: arquivo ruim não custa upload nenhum. */

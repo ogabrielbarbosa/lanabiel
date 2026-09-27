@@ -42,6 +42,11 @@ export interface CityPickerFullProps extends CityPickerProps {
   describedBy?: string
   disabled?: boolean
   placeholder?: string
+  /**
+   * Texto já digitado ao montar, com a busca armada (Fase 6, R11: o _Planejar_
+   * dos destinos dos sonhos abre a _Nova viagem_ buscando "Itália").
+   */
+  initialQuery?: string
 }
 
 type Option =
@@ -125,12 +130,13 @@ export function CityPicker({
   describedBy,
   disabled = false,
   placeholder = 'Busque a cidade',
+  initialQuery,
 }: CityPickerFullProps) {
   const autoId = useId()
   const inputId = id ?? `${autoId}-input`
   const listId = `${autoId}-list`
-  const [text, setText] = useState('')
-  const [armed, setArmed] = useState(false)
+  const [text, setText] = useState(initialQuery ?? '')
+  const [armed, setArmed] = useState(!!initialQuery && value === null)
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
   const search = useCitySearch(api, text, armed)

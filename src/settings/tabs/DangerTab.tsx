@@ -9,7 +9,7 @@ import { coupleLabel, formatThousands } from '../../domain/settings'
 import { effectiveEndForCounting } from '../../domain/coupleState'
 import type { Stay } from '../../domain/coupleState'
 import { addDays } from '../../lib/date'
-import { Button, Card, Dialog, FieldError, ListTotal } from '../parts'
+import { Button, Card, Dialog, FieldError, ListTotal, TripTotal } from '../parts'
 import { failureMessage } from '../context'
 import type { TabContext } from '../context'
 import { exportAll } from '../exportAll'
@@ -82,7 +82,7 @@ export function DangerTab(ctx: TabContext) {
           </div>
           <div>
             <dt>viagens</dt>
-            <dd>—</dd>
+            <TripTotal count={ctx.tripCount} />
           </div>
           <PhotoCount ctx={ctx} onCount={setPhotos} />
         </dl>

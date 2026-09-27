@@ -84,7 +84,7 @@ export type ResolvedCity = { ok: true; city: CalCity } | { ok: false; message: s
  * vira linha do casal por `ensureWorldCity` (que reaproveita a mesma
  * `osm_ref`). Falhou → nada foi gravado, e quem chamou não escreve mais nada.
  */
-export async function resolveCity(api: CalendarApi, coupleId: string, choice: CityChoice): Promise<ResolvedCity> {
+export async function resolveCity(api: Pick<CalendarApi, 'ensureWorldCity'>, coupleId: string, choice: CityChoice): Promise<ResolvedCity> {
   if (!isWorldPick(choice)) return { ok: true, city: choice }
   const result = await api.ensureWorldCity(coupleId, choice.candidate)
   if (result.status !== 'ok') return { ok: false, message: `não deu pra guardar a cidade: ${writeFailureMessage(result)}` }

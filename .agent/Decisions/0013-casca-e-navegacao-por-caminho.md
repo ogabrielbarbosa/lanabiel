@@ -31,6 +31,9 @@ _Configurações › Lista_).
 com parâmetro além do slug (ex.: `/viagens/:id`), ou carregamento de dado por
 rota. As Viagens (Fase 6) provavelmente disparam o primeiro.
 
+> **Nota (2026-09-27):** disparou, e a decisão foi manter o roteador — ver
+> [0020](./0020-rota-com-parametro-sem-biblioteca.md), que substitui este gatilho.
+
 ## Alternativas descartadas
 
 - **React Router / TanStack Router agora.** Duas áreas e nove slugs não pagam a

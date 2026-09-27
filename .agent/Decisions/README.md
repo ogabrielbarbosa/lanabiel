@@ -52,6 +52,9 @@ Use `/adr <título>`. Template: [`0000-template.md`](./0000-template.md).
 | [0016](./0016-busca-de-lugares-pelo-photon-osm.md) | Busca de lugares pelo Photon (OSM), com o resultado guardado no item | dependência externa, geografia da Lista (Fase 4) | 2026-09-26 |
 | [0017](./0017-cidades-do-mundo-por-casal.md) | Cidades do mundo em `cities`, como linhas do casal, a partir do Photon (revisa em parte o 0007) | schema, autorização, Calendário (Fase 5) | 2026-09-26 |
 | [0018](./0018-periodo-se-grava-pintando-estadias.md) | Período se grava pintando estadias; o evento pinta uma vez | fluxo de dados (`stays`), RPCs (Fase 5) | 2026-09-26 |
+| [0019](./0019-viagem-e-o-evento-estendido-por-trips.md) | A viagem é o evento `viagem` dos dois, estendido 1:1 por `trips` | schema, Viagens (Fase 6) | 2026-09-27 |
+| [0020](./0020-rota-com-parametro-sem-biblioteca.md) | Rota com parâmetro (`/viagens/:id`) sem biblioteca de rotas (supera o gatilho do 0013) | cliente, navegação (Fase 6) | 2026-09-27 |
+| [0021](./0021-mapas-das-viagens-sem-engine.md) | Mapas das Viagens sem engine: projeção sobre a imagem do `.pen`, até a Fase 7 | cliente, Viagens (Fase 6) | 2026-09-27 |
 
 ## Backlog — discutido, sem código
 

@@ -13,7 +13,7 @@ import type { AppearanceControl } from '../app/useAppearance'
 import type { SettingsTab } from '../domain/settings'
 import type { SettingsApi } from './api'
 import { SettingsScreen } from './SettingsScreen'
-import { MARAU, PARATY, PASSO_FUNDO, fakeApi, settingsData } from './test/fixtures'
+import { MARAU, PARATY, PASSO_FUNDO, fakeApi, settingsData, tripsExportData } from './test/fixtures'
 
 function appearanceControl(overrides: Partial<AppearanceControl> = {}): AppearanceControl {
   const appearance: Appearance = { theme: 'dark', density: 'comfortable', reduceMotion: false }
@@ -406,12 +406,14 @@ describe('A21 — export pela tela', () => {
     expect(vi.mocked(api.download).mock.calls[0]![0]).toBe('lanabiel-2026-09-25.json')
   })
 
-  it('baixa version 3 com a Lista e o Calendário', async () => {
+  it('baixa version 4 com a Lista, o Calendário e as Viagens', async () => {
     const { api } = renderTab('dados-e-privacidade')
     await userEvent.click(await screen.findByRole('button', { name: 'Baixar' }))
     await waitFor(() => expect(api.download).toHaveBeenCalledTimes(1))
     const doc = JSON.parse(vi.mocked(api.download).mock.calls[0]![1])
-    expect(doc.version).toBe(3)
+    expect(doc.version).toBe(4)
+    expect(doc.trips).toHaveLength(1)
+    expect(doc.trips[0].city.name).toBe('Lisboa')
     expect(doc.list_items).toHaveLength(2)
     expect(doc.list_photos).toHaveLength(1)
     expect(doc.calendar_events).toHaveLength(2)
@@ -428,6 +430,16 @@ describe('A21 — export pela tela', () => {
     renderTab('dados-e-privacidade', api)
     await userEvent.click(await screen.findByRole('button', { name: 'Baixar' }))
     expect(await screen.findByText('Não deu pra exportar: a lista: rede')).toBeInTheDocument()
+    expect(api.download).not.toHaveBeenCalled()
+  })
+
+  it('leitura das Viagens com erro aborta sem baixar (Fase 6)', async () => {
+    const api = fakeApi(settingsData(), {
+      loadTrips: vi.fn(async () => ({ status: 'error' as const, cause: 'rede' })),
+    })
+    renderTab('dados-e-privacidade', api)
+    await userEvent.click(await screen.findByRole('button', { name: 'Baixar' }))
+    expect(await screen.findByText('Não deu pra exportar: as viagens: rede')).toBeInTheDocument()
     expect(api.download).not.toHaveBeenCalled()
   })
 
@@ -498,17 +510,34 @@ describe('A22 — Alterar senha', () => {
 })
 
 describe('R5 — painel', () => {
-  it('dias juntos no ano contados, itens na lista com o total real, viagens como —', async () => {
-    renderTab('perfil-do-casal')
+  it('dias juntos no ano contados, itens na lista com o total real, viagens FEITAS (Fase 6, R28)', async () => {
+    const [planned] = tripsExportData()
+    const done = { ...planned, id: 'trip-done', startsOn: '2026-07-12', endsOn: '2026-07-19' }
+    // Em andamento hoje (25/9) não é feita.
+    const ongoing = { ...planned, id: 'trip-now', startsOn: '2026-09-24', endsOn: '2026-09-26' }
+    const api = fakeApi(settingsData(), {
+      loadTrips: vi.fn(async () => ({ status: 'ok' as const, rows: { trips: [planned, done, ongoing], events: new Map() } })),
+    })
+    renderTab('perfil-do-casal', api)
     const panel = await screen.findByRole('complementary', { name: 'O espaço de vocês' })
     expect(within(panel).getByText('Sexta, 25 de setembro')).toBeInTheDocument()
     // 20, 21, 22 de setembro juntos em SJC.
     expect(within(panel).getByText('dias juntos em 2026').nextSibling).toHaveTextContent('3')
     // R26 (Fase 4): 7 + 2 + 1 + 3 do fixture.
     await waitFor(() => expect(within(panel).getByText('itens na lista').nextSibling).toHaveTextContent('13'))
-    expect(within(panel).getByText('viagens').nextSibling).toHaveTextContent('—')
-    expect(within(panel).getAllByText('—')).toHaveLength(1)
+    await waitFor(() => expect(within(panel).getByText('viagens').nextSibling).toHaveTextContent('1'))
+    expect(within(panel).queryAllByText('—')).toHaveLength(0)
     expect(within(panel).getByText('lanabiel 0.0.0-test · build test')).toBeInTheDocument()
+  })
+
+  it('a contagem de viagens que falha mostra —, nunca 0', async () => {
+    const api = fakeApi(settingsData(), {
+      loadTrips: vi.fn(async () => ({ status: 'error' as const, cause: 'projeto pausado' })),
+    })
+    renderTab('perfil-do-casal', api)
+    const panel = await screen.findByRole('complementary', { name: 'O espaço de vocês' })
+    await waitFor(() => expect(within(panel).getByText('viagens').nextSibling).toHaveTextContent('—'))
+    expect(within(panel).getByText('viagens').nextSibling).toHaveAttribute('title', 'Não deu pra contar as viagens: projeto pausado')
   })
 })
 
@@ -521,7 +550,8 @@ describe('R26 — painel: contagem da Lista que falha', () => {
     const panel = await screen.findByRole('complementary', { name: 'O espaço de vocês' })
     await waitFor(() => expect(api.loadListCounts).toHaveBeenCalled())
     await waitFor(() => expect(within(panel).getByText('itens na lista').nextSibling).toHaveTextContent('—'))
-    expect(within(panel).getAllByText('—')).toHaveLength(2)
+    // Só o da Lista: as viagens contaram (0 feitas no fixture).
+    expect(within(panel).getAllByText('—')).toHaveLength(1)
     expect(await screen.findAllByRole('switch')).toHaveLength(3)
     expect(screen.queryByText(/Não deu pra carregar as configurações/)).not.toBeInTheDocument()
   })

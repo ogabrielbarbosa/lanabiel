@@ -850,6 +850,379 @@ export type Database = {
           },
         ]
       }
+      trip_budget_lines: {
+        Row: {
+          couple_id: string
+          id: string
+          label: string
+          planned_cents: number
+          position: number
+          spent_cents: number
+          trip_id: string
+        }
+        Insert: {
+          couple_id: string
+          id?: string
+          label: string
+          planned_cents: number
+          position?: number
+          spent_cents?: number
+          trip_id: string
+        }
+        Update: {
+          couple_id?: string
+          id?: string
+          label?: string
+          planned_cents?: number
+          position?: number
+          spent_cents?: number
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_budget_trip"
+            columns: ["trip_id", "couple_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["event_id", "couple_id"]
+          },
+        ]
+      }
+      trip_days: {
+        Row: {
+          couple_id: string
+          day: string
+          title: string
+          trip_id: string
+        }
+        Insert: {
+          couple_id: string
+          day: string
+          title: string
+          trip_id: string
+        }
+        Update: {
+          couple_id?: string
+          day?: string
+          title?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_days_trip"
+            columns: ["trip_id", "couple_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["event_id", "couple_id"]
+          },
+        ]
+      }
+      trip_departures: {
+        Row: {
+          couple_id: string
+          note: string | null
+          origin_code: string | null
+          profile_id: string
+          trip_id: string
+        }
+        Insert: {
+          couple_id: string
+          note?: string | null
+          origin_code?: string | null
+          profile_id: string
+          trip_id: string
+        }
+        Update: {
+          couple_id?: string
+          note?: string | null
+          origin_code?: string | null
+          profile_id?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_departures_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_departures_trip"
+            columns: ["trip_id", "couple_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["event_id", "couple_id"]
+          },
+        ]
+      }
+      trip_itinerary_items: {
+        Row: {
+          at: string | null
+          couple_id: string
+          created_at: string
+          created_by: string | null
+          day: string
+          id: string
+          kind: string
+          list_item_id: string | null
+          note: string | null
+          position: number
+          title: string
+          trip_id: string
+        }
+        Insert: {
+          at?: string | null
+          couple_id: string
+          created_at?: string
+          created_by?: string | null
+          day: string
+          id?: string
+          kind: string
+          list_item_id?: string | null
+          note?: string | null
+          position?: number
+          title: string
+          trip_id: string
+        }
+        Update: {
+          at?: string | null
+          couple_id?: string
+          created_at?: string
+          created_by?: string | null
+          day?: string
+          id?: string
+          kind?: string
+          list_item_id?: string | null
+          note?: string | null
+          position?: number
+          title?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_itinerary_items_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_itinerary_list_item"
+            columns: ["list_item_id", "couple_id"]
+            isOneToOne: false
+            referencedRelation: "list_items"
+            referencedColumns: ["id", "couple_id"]
+          },
+          {
+            foreignKeyName: "trip_itinerary_trip"
+            columns: ["trip_id", "couple_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["event_id", "couple_id"]
+          },
+        ]
+      }
+      trip_memories: {
+        Row: {
+          body: string
+          couple_id: string
+          profile_id: string
+          rating: number
+          trip_id: string
+          updated_at: string
+          written_on: string
+        }
+        Insert: {
+          body: string
+          couple_id: string
+          profile_id?: string
+          rating: number
+          trip_id: string
+          updated_at?: string
+          written_on?: string
+        }
+        Update: {
+          body?: string
+          couple_id?: string
+          profile_id?: string
+          rating?: number
+          trip_id?: string
+          updated_at?: string
+          written_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_memories_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_memories_trip"
+            columns: ["trip_id", "couple_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["event_id", "couple_id"]
+          },
+        ]
+      }
+      trip_photos: {
+        Row: {
+          added_by: string | null
+          caption: string | null
+          couple_id: string
+          created_at: string
+          favorite: boolean
+          id: string
+          path: string
+          taken_on: string | null
+          trip_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          caption?: string | null
+          couple_id: string
+          created_at?: string
+          favorite?: boolean
+          id?: string
+          path: string
+          taken_on?: string | null
+          trip_id: string
+        }
+        Update: {
+          added_by?: string | null
+          caption?: string | null
+          couple_id?: string
+          created_at?: string
+          favorite?: boolean
+          id?: string
+          path?: string
+          taken_on?: string | null
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_photos_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_photos_trip"
+            columns: ["trip_id", "couple_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["event_id", "couple_id"]
+          },
+        ]
+      }
+      trip_prep_items: {
+        Row: {
+          couple_id: string
+          detail: string | null
+          done: boolean
+          id: string
+          kind: string
+          label: string
+          position: number
+          trip_id: string
+        }
+        Insert: {
+          couple_id: string
+          detail?: string | null
+          done?: boolean
+          id?: string
+          kind: string
+          label: string
+          position?: number
+          trip_id: string
+        }
+        Update: {
+          couple_id?: string
+          detail?: string | null
+          done?: boolean
+          id?: string
+          kind?: string
+          label?: string
+          position?: number
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_prep_trip"
+            columns: ["trip_id", "couple_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["event_id", "couple_id"]
+          },
+        ]
+      }
+      trips: {
+        Row: {
+          couple_id: string
+          cover_photo_id: string | null
+          created_at: string
+          event_id: string
+          lodging_address: string | null
+          lodging_cents: number | null
+          lodging_check_in: string | null
+          lodging_check_out: string | null
+          lodging_code: string | null
+          lodging_name: string | null
+          lodging_paid: boolean
+          lodging_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          couple_id: string
+          cover_photo_id?: string | null
+          created_at?: string
+          event_id: string
+          lodging_address?: string | null
+          lodging_cents?: number | null
+          lodging_check_in?: string | null
+          lodging_check_out?: string | null
+          lodging_code?: string | null
+          lodging_name?: string | null
+          lodging_paid?: boolean
+          lodging_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          couple_id?: string
+          cover_photo_id?: string | null
+          created_at?: string
+          event_id?: string
+          lodging_address?: string | null
+          lodging_cents?: number | null
+          lodging_check_in?: string | null
+          lodging_check_out?: string | null
+          lodging_code?: string | null
+          lodging_name?: string | null
+          lodging_paid?: boolean
+          lodging_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trips_cover_same_trip"
+            columns: ["cover_photo_id", "event_id"]
+            isOneToOne: false
+            referencedRelation: "trip_photos"
+            referencedColumns: ["id", "trip_id"]
+          },
+          {
+            foreignKeyName: "trips_event"
+            columns: ["event_id", "couple_id"]
+            isOneToOne: true
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id", "couple_id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -867,6 +1240,7 @@ export type Database = {
         Args: { p_email: string; p_invitee_name?: string }
         Returns: Json
       }
+      create_trip: { Args: { p_trip: Json }; Returns: Json }
       delete_couple: { Args: never; Returns: Json }
       end_my_session: { Args: { p_session_id: string }; Returns: Json }
       leave_couple: { Args: never; Returns: Json }

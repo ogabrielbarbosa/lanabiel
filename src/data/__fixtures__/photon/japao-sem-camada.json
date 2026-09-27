@@ -1,0 +1,115 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "N",
+    "osm_id": 6348452740,
+    "osm_key": "place",
+    "osm_value": "village",
+    "type": "district",
+    "name": "Japão",
+    "city": "Vitória do Mearim",
+    "state": "Maranhão",
+    "country": "Brasil",
+    "countrycode": "BR"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -44.8702793,
+     -3.6659601
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "N",
+    "osm_id": 10086014288,
+    "osm_key": "place",
+    "osm_value": "hamlet",
+    "type": "district",
+    "name": "Japão",
+    "city": "Lagoa Alegre",
+    "state": "Piauí",
+    "country": "Brasil",
+    "countrycode": "BR"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -42.5758557,
+     -4.4564323
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "N",
+    "osm_id": 8026707511,
+    "osm_key": "place",
+    "osm_value": "hamlet",
+    "type": "district",
+    "name": "Japão",
+    "city": "Tomar do Geru",
+    "state": "Sergipe",
+    "country": "Brasil",
+    "countrycode": "BR"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -37.803998,
+     -11.351917
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "N",
+    "osm_id": 5854167259,
+    "osm_key": "place",
+    "osm_value": "hamlet",
+    "type": "district",
+    "name": "Japão",
+    "city": "Poconé",
+    "state": "Mato Grosso",
+    "country": "Brasil",
+    "countrycode": "BR"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -56.8466953,
+     -16.1332299
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "N",
+    "osm_id": 4663193834,
+    "osm_key": "place",
+    "osm_value": "suburb",
+    "type": "district",
+    "name": "Japão",
+    "city": "Quixadá",
+    "state": "Ceará",
+    "country": "Brasil",
+    "countrycode": "BR"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -38.9555969,
+     -5.0117726
+    ]
+   }
+  }
+ ]
+}

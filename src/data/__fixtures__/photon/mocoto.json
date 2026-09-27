@@ -1,0 +1,143 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "W",
+    "osm_id": 621005163,
+    "osm_key": "amenity",
+    "osm_value": "restaurant",
+    "type": "house",
+    "housenumber": "1100",
+    "name": "Mocotó",
+    "street": "Avenida Nossa Senhora do Loreto",
+    "locality": "Vila Sabrina",
+    "district": "Vila Medeiros",
+    "city": "São Paulo",
+    "state": "São Paulo",
+    "country": "Brasil",
+    "postcode": "02219-001",
+    "countrycode": "BR",
+    "extent": [
+     -46.5816981,
+     -23.4866076,
+     -46.5814605,
+     -23.4868093
+    ]
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -46.5815741,
+     -23.4867214
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "N",
+    "osm_id": 3869504023,
+    "osm_key": "amenity",
+    "osm_value": "restaurant",
+    "type": "house",
+    "name": "Beco do Mocotó",
+    "street": "Rua Cembira",
+    "district": "Vila Curuçá",
+    "city": "São Paulo",
+    "state": "São Paulo",
+    "country": "Brasil",
+    "postcode": "08032-010",
+    "countrycode": "BR"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -46.4292372,
+     -23.5079958
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "N",
+    "osm_id": 12556881240,
+    "osm_key": "amenity",
+    "osm_value": "restaurant",
+    "type": "house",
+    "name": "Mocotó Vila Leopoldina",
+    "street": "Rua Aroaba",
+    "district": "Vila Hamburguesa",
+    "city": "São Paulo",
+    "state": "São Paulo",
+    "country": "Brasil",
+    "postcode": "05315-020",
+    "countrycode": "BR"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -46.7318684,
+     -23.5345478
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "W",
+    "osm_id": 180892558,
+    "osm_key": "highway",
+    "osm_value": "residential",
+    "type": "street",
+    "name": "Rua Vila Mocotó",
+    "district": "Ponte Nova",
+    "city": "Panorama",
+    "state": "São Paulo",
+    "country": "Brasil",
+    "postcode": "17980-122",
+    "countrycode": "BR",
+    "extent": [
+     -51.8483929,
+     -21.3535865,
+     -51.8468998,
+     -21.3545233
+    ]
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -51.8473112,
+     -21.3536543
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "N",
+    "osm_id": 13334494444,
+    "osm_key": "amenity",
+    "osm_value": "restaurant",
+    "type": "house",
+    "name": "Brasileirinho - O Rei do Mocotó",
+    "street": "Avenida Percito de Souza Queiroz",
+    "district": "Vila Barão",
+    "city": "Sorocaba",
+    "state": "São Paulo",
+    "country": "Brasil",
+    "postcode": "18061-240",
+    "countrycode": "BR"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -47.4841658,
+     -23.4936208
+    ]
+   }
+  }
+ ]
+}

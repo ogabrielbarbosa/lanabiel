@@ -1,0 +1,151 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "W",
+    "osm_id": 652991734,
+    "osm_key": "shop",
+    "osm_value": "clothes",
+    "type": "house",
+    "housenumber": "202",
+    "name": "Amarela's Boutique",
+    "street": "Rua Nelson César de Oliveira",
+    "district": "Jardim das Indústrias",
+    "city": "São José dos Campos",
+    "state": "São Paulo",
+    "country": "Brasil",
+    "postcode": "12240-220",
+    "countrycode": "BR",
+    "extent": [
+     -45.9194901,
+     -23.2252784,
+     -45.9192559,
+     -23.2254625
+    ]
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -45.9193729,
+     -23.2253704
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "N",
+    "osm_id": 10300802725,
+    "osm_key": "amenity",
+    "osm_value": "hospital",
+    "type": "house",
+    "name": "Santa Casa de São José dos Campos",
+    "street": "Rua Dolzani Ricardo",
+    "district": "Centro",
+    "city": "São José dos Campos",
+    "county": "Eugênio de Melo",
+    "state": "São Paulo",
+    "country": "Brasil",
+    "postcode": "12210-120",
+    "countrycode": "BR"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -45.8823764,
+     -23.1855521
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "N",
+    "osm_id": 5939111805,
+    "osm_key": "amenity",
+    "osm_value": "cafe",
+    "type": "house",
+    "housenumber": "67",
+    "name": "Dona Fê Café Bistrô",
+    "street": "Rua Professor Everardo Miranda Passos",
+    "district": "Vila Betânia",
+    "city": "São José dos Campos",
+    "state": "São Paulo",
+    "country": "Brasil",
+    "postcode": "12245-604",
+    "countrycode": "BR"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -45.8921614,
+     -23.2016386
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "W",
+    "osm_id": 473420631,
+    "osm_key": "amenity",
+    "osm_value": "bar",
+    "type": "house",
+    "name": "Santo Onofre Boteco Bistrô",
+    "street": "Avenida Cassiano Ricardo",
+    "district": "Jardim Alvorada",
+    "city": "São José dos Campos",
+    "state": "São Paulo",
+    "country": "Brasil",
+    "postcode": "12240-540",
+    "countrycode": "BR",
+    "extent": [
+     -45.9123713,
+     -23.2254402,
+     -45.9120585,
+     -23.2256903
+    ]
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -45.9122156,
+     -23.2255676
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "W",
+    "osm_id": 923437475,
+    "osm_key": "landuse",
+    "osm_value": "religious",
+    "type": "other",
+    "housenumber": "km 102",
+    "name": "Casa de Reiro Maria de Nazaré",
+    "street": "Rodovia Monteiro Lobato",
+    "district": "São José dos Campos",
+    "city": "São José dos Campos",
+    "state": "São Paulo",
+    "country": "Brasil",
+    "countrycode": "BR",
+    "extent": [
+     -45.9172583,
+     -23.103069,
+     -45.9170692,
+     -23.1034201
+    ]
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -45.9171602,
+     -23.1032319
+    ]
+   }
+  }
+ ]
+}

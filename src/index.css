@@ -1,48 +1,18 @@
-:root {
-  --background: #ffffff;
-  --foreground: #09090b;
-  --card: #ffffff;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  --border: #e4e4e7;
-  --input: #e4e4e7;
-  --primary: #18181b;
-  --primary-foreground: #fafafa;
-  --ring: #a1a1aa;
-  --together: #8b5cf6;
-  --together-bg: rgba(139, 92, 246, 0.16);
-  --danger: #ef4444;
-  --radius: 8px;
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.06);
-  --shadow-lg: 0 16px 40px -12px rgb(0 0 0 / 0.3);
+/* Base global, e só ela. As cores de tema moram em src/app/app.css (casca)
+   e src/auth/auth.css (login e onboarding), lidas do .pen. Os tokens que
+   ficavam aqui (`--background`, `--together`…) eram da timeline antiga, que
+   saiu na Fase 5. */
 
-  font-family:
-    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+:root {
+  /* A casca e o login trocam pela fonte do .pen; isto cobre o que renderiza
+     antes deles (o esqueleto do portão de sessão). */
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   line-height: 1.5;
-  color-scheme: light dark;
-  color: var(--foreground);
-  background: var(--background);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #09090b;
-    --foreground: #fafafa;
-    --card: #0d0d10;
-    --muted: #18181b;
-    --muted-foreground: #a1a1aa;
-    --border: #27272a;
-    --input: #27272a;
-    --primary: #fafafa;
-    --primary-foreground: #18181b;
-    --ring: #52525b;
-    --together-bg: rgba(139, 92, 246, 0.26);
-  }
 }
 
 html,
@@ -53,8 +23,8 @@ body,
 
 body {
   margin: 0;
-  background: var(--background);
-  color: var(--foreground);
+  /* O fundo da casca, para o overscroll não mostrar branco atrás dela. */
+  background: var(--bg-deep, #060a1c);
 }
 
 * {

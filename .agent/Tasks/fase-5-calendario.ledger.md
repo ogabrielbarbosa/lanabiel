@@ -379,3 +379,18 @@ Limpeza: `src/lib/date.ts` perdeu `WEEKDAYS_PT`, `monthLabel`, `formatDateBR`,
 `GridDay` e `buildMonthGrid`, que só a timeline usava.
 
 ---
+
+## Verify (Gate 3) — 2026-09-27
+
+`npm run typecheck` e `npm run lint` limpos; `npm run test` 32 arquivos, 774
+passando; `npm run build` limpo; `npm run test:db` contra o online, 12
+arquivos, 295 passando e 4 pulados (A17/A18 da Fase 2, sem `MAILPIT_URL`).
+`test ! -d src/timeline`; nenhum import de `timeline/`. I12: o 💋 só é lido
+em `src/calendar/`, `src/data/calendar.ts` e no caminho do export
+(`data/export.ts`, `settings/api.ts`, `settings/exportAll.ts`).
+
+A1–A23 e A25 com teste nomeado. **Não verificado:** A24 (roteiro manual com as
+duas contas) e a fidelidade visual renderizada (conferida valor a valor contra o
+`.pen`, nunca vista em tela).
+
+---

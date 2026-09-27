@@ -103,3 +103,30 @@ export function isoOf(year: number, month: number, day: number): string {
 export function weekdayShortDayMonth(iso: string): string {
   return `${WEEKDAYS_SHORT_CAP[parseISODate(iso).getDay()]}, ${shortDayMonth(iso)}`
 }
+
+/** `'2026-07-18'` → `'jul'` — o mês curto, em minúsculas, sem passar por `Date`. */
+export function shortMonth(iso: string): string {
+  return MONTHS_SHORT_PT[Number(iso.slice(5, 7)) - 1]
+}
+
+/** `'2026-07-18'` → `'jul 2026'` ("{N} dias · jul 2026", nos Recordes das Viagens). */
+export function shortMonthYear(iso: string): string {
+  return `${shortMonth(iso)} ${iso.slice(0, 4)}`
+}
+
+/** `'2026-10-02'` → `'sex'` — o dia da semana curto, em minúsculas (check-in da hospedagem). */
+export function weekdayShortLower(iso: string): string {
+  return WEEKDAYS_SHORT_CAP[weekdayOf(iso)].toLowerCase()
+}
+
+/**
+ * Soma anos de calendário, sem passar por `Date`: `'2025-09-27'` + 1 →
+ * `'2026-09-27'`. 29 de fevereiro num ano que não é bissexto vira 28 (e não 1º
+ * de março, que é o que `Date.setFullYear` faria).
+ */
+export function addYears(iso: string, amount: number): string {
+  const year = Number(iso.slice(0, 4)) + amount
+  const month = Number(iso.slice(5, 7))
+  const day = Number(iso.slice(8, 10))
+  return isoOf(year, month, month === 2 && day === 29 && !isLeapYear(year) ? 28 : day)
+}

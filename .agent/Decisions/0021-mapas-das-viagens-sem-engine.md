@@ -58,7 +58,7 @@ exatamente onde a projeção equiretangular os poria
 | Artefato | Caminho |
 | --- | --- |
 | Imagem | `src/trips/assets/world-map.jpg` |
-| Projeção | `src/domain/trips.ts` (`project`, `cropFor`) |
+| Projeção | `src/domain/tripDerive.ts` (`project`, `cropFor`) |
 
 ## Related
 

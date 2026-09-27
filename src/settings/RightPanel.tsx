@@ -1,24 +1,29 @@
 // O painel "O espaço de vocês" (`Right Panel`, hWcCy), igual em todas as abas.
 //
-// Spec: R5. "Itens na lista" e "viagens" mostram — até as Fases 4 e 6: as
-// tabelas não existem, e zero afirmaria o que não se sabe.
+// Spec: R5 (Fase 3) e R26 (Fase 4). "Itens na lista" mostra o total real
+// (— se a contagem falhar, … enquanto lê); "viagens" mostra — até a Fase 6: a
+// tabela não existe, e zero afirmaria o que não se sabe.
 
 import { Info, MessageSquareHeart } from 'lucide-react'
 import { cityLabel } from '../data/cities'
 import type { SettingsData } from '../data/settings'
+import type { ListCounts } from '../data/listSummary'
+import type { DataResult } from '../data/result'
 import { coupleLabel, daysTogetherInYear, formatThousands } from '../domain/settings'
 import { distanceKm, togetherFor } from '../domain/onboarding'
 import { weekdayDayMonthLabel } from '../lib/date'
-import { Avatar } from './parts'
+import { Avatar, ListTotal } from './parts'
 
 export function RightPanel({
   data,
   today,
   urls,
+  listCounts,
 }: {
   data: SettingsData
   today: string
   urls: { avatars: Record<string, string | null>; cover: string | null }
+  listCounts: DataResult<ListCounts> | null
 }) {
   const { couple } = data
   const [a, b] = couple.members
@@ -75,7 +80,7 @@ export function RightPanel({
         <dl className="st-metrics">
           <div>
             <dt>itens na lista</dt>
-            <dd title="A Lista chega numa próxima fase">—</dd>
+            <ListTotal counts={listCounts} />
           </div>
           <div>
             <dt>viagens</dt>

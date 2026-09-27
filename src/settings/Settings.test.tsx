@@ -251,12 +251,47 @@ describe('A18 — Lista: a última categoria não desliga', () => {
     const data = settingsData()
     data.coupleSettings.hiddenCategories = ['pais', 'cidade', 'restaurante', 'parque', 'comida', 'experiencia', 'filme']
     const { api } = renderTab('lista', fakeApi(data))
-    expect(await screen.findByRole('button', { name: 'Séries' })).toBeDisabled()
+    expect(await screen.findByRole('button', { name: /^Séries/ })).toBeDisabled()
     expect(screen.getByText(/1 de 8 ligadas/)).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Filmes' }))
+    await userEvent.click(screen.getByRole('button', { name: /^Filmes/ }))
     expect(api.updateCoupleSettings).toHaveBeenCalledWith({
       hiddenCategories: ['pais', 'cidade', 'restaurante', 'parque', 'comida', 'experiencia'],
     })
+  })
+})
+
+describe('A20 (Fase 4) — Lista: contagem por chip', () => {
+  it('cada chip mostra o nome e, num selo à parte, quantos itens a categoria tem — inclusive as desligadas', async () => {
+    const data = settingsData()
+    data.coupleSettings.hiddenCategories = ['filme']
+    renderTab('lista', fakeApi(data))
+    const chips = await screen.findByRole('group', { name: 'Categorias visíveis' })
+    const count = (name: string) => within(chips).getByRole('button', { name: new RegExp(`^${name}`) }).querySelector('.st-chip-count')
+    await waitFor(() => expect(count('Países')).toHaveTextContent('7'))
+    expect(within(chips).getByRole('button', { name: /^Países/ })).toHaveAttribute('aria-pressed', 'true')
+    expect(count('Cidades')).toHaveTextContent('2')
+    expect(count('Filmes')).toHaveTextContent('3')
+    expect(within(chips).getByRole('button', { name: /^Filmes/ })).toHaveAttribute('aria-pressed', 'false')
+    expect(count('Séries')).toHaveTextContent('0')
+  })
+
+  it('subtítulo da aba com o total real', async () => {
+    renderTab('lista')
+    expect(await screen.findByText('Como os 13 itens aparecem e o que o app sugere.')).toBeInTheDocument()
+  })
+
+  it('contagem com erro: os chips ficam só com o nome, e continuam funcionando', async () => {
+    const api = fakeApi(settingsData(), {
+      loadListCounts: vi.fn(async () => ({ status: 'error' as const, cause: 'rede' })),
+    })
+    renderTab('lista', api)
+    const chips = await screen.findByRole('group', { name: 'Categorias visíveis' })
+    await waitFor(() => expect(api.loadListCounts).toHaveBeenCalled())
+    const pais = within(chips).getByRole('button', { name: 'Países' })
+    expect(pais.querySelector('.st-chip-count')).toBeNull()
+    expect(screen.getByText('Como os itens aparecem e o que o app sugere.')).toBeInTheDocument()
+    await userEvent.click(pais)
+    expect(api.updateCoupleSettings).toHaveBeenCalledWith({ hiddenCategories: ['pais'] })
   })
 })
 
@@ -314,6 +349,25 @@ describe('A20 — Zona sensível', () => {
   })
 })
 
+describe('A20 (Fase 4) — Zona sensível: itens na lista', () => {
+  it('mostra o total real', async () => {
+    renderTab('zona-sensivel')
+    const card = (await screen.findByRole('heading', { name: 'Apagar o espaço' })).closest('.st-card') as HTMLElement
+    await waitFor(() => expect(within(card).getByText('itens na lista').nextSibling).toHaveTextContent('13'))
+  })
+
+  it('contagem com erro mostra —, e a tela continua de pé', async () => {
+    const api = fakeApi(settingsData(), {
+      loadListCounts: vi.fn(async () => ({ status: 'error' as const, cause: 'rede' })),
+    })
+    renderTab('zona-sensivel', api)
+    const card = (await screen.findByRole('heading', { name: 'Apagar o espaço' })).closest('.st-card') as HTMLElement
+    await waitFor(() => expect(within(card).getByText('itens na lista').nextSibling).toHaveTextContent('—'))
+    expect(within(card).getByText('itens na lista').nextSibling).toHaveAttribute('title', 'Não deu pra contar os itens: rede')
+    expect(screen.getByRole('button', { name: 'Apagar o espaço' })).toBeEnabled()
+  })
+})
+
 describe('R24 — campo de texto recusado volta ao valor gravado', () => {
   it('nome do casal com erro do banco: o campo mostra o gravado de novo', async () => {
     const api = fakeApi(settingsData(), { updateCouple: vi.fn(async () => ({ status: 'error' as const, cause: 'rede caiu' })) })
@@ -350,6 +404,31 @@ describe('A21 — export pela tela', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Baixar' }))
     await waitFor(() => expect(api.download).toHaveBeenCalledTimes(1))
     expect(vi.mocked(api.download).mock.calls[0]![0]).toBe('lanabiel-2026-09-25.json')
+  })
+
+  it('baixa version 2 com a Lista', async () => {
+    const { api } = renderTab('dados-e-privacidade')
+    await userEvent.click(await screen.findByRole('button', { name: 'Baixar' }))
+    await waitFor(() => expect(api.download).toHaveBeenCalledTimes(1))
+    const doc = JSON.parse(vi.mocked(api.download).mock.calls[0]![1])
+    expect(doc.version).toBe(2)
+    expect(doc.list_items).toHaveLength(2)
+    expect(doc.list_photos).toHaveLength(1)
+  })
+
+  it('leitura da Lista com erro aborta sem baixar', async () => {
+    const api = fakeApi(settingsData(), {
+      loadListExport: vi.fn(async () => ({ status: 'error' as const, cause: 'rede' })),
+    })
+    renderTab('dados-e-privacidade', api)
+    await userEvent.click(await screen.findByRole('button', { name: 'Baixar' }))
+    expect(await screen.findByText('Não deu pra exportar: a lista: rede')).toBeInTheDocument()
+    expect(api.download).not.toHaveBeenCalled()
+  })
+
+  it('Fotos guardadas: a legenda inclui a lista', async () => {
+    renderTab('dados-e-privacidade')
+    expect(await screen.findByText('Fotos de perfil, do casal e da lista')).toBeInTheDocument()
   })
 
   it('leitura com erro aborta sem baixar', async () => {
@@ -404,13 +483,31 @@ describe('A22 — Alterar senha', () => {
 })
 
 describe('R5 — painel', () => {
-  it('dias juntos no ano contados, itens e viagens como —', async () => {
+  it('dias juntos no ano contados, itens na lista com o total real, viagens como —', async () => {
     renderTab('perfil-do-casal')
     const panel = await screen.findByRole('complementary', { name: 'O espaço de vocês' })
     expect(within(panel).getByText('Sexta, 25 de setembro')).toBeInTheDocument()
     // 20, 21, 22 de setembro juntos em SJC.
     expect(within(panel).getByText('dias juntos em 2026').nextSibling).toHaveTextContent('3')
-    expect(within(panel).getAllByText('—')).toHaveLength(2)
+    // R26 (Fase 4): 7 + 2 + 1 + 3 do fixture.
+    await waitFor(() => expect(within(panel).getByText('itens na lista').nextSibling).toHaveTextContent('13'))
+    expect(within(panel).getByText('viagens').nextSibling).toHaveTextContent('—')
+    expect(within(panel).getAllByText('—')).toHaveLength(1)
     expect(within(panel).getByText('lanabiel 0.0.0-test · build test')).toBeInTheDocument()
+  })
+})
+
+describe('R26 — painel: contagem da Lista que falha', () => {
+  it('mostra — em itens na lista, e o resto da tela abre normalmente', async () => {
+    const api = fakeApi(settingsData(), {
+      loadListCounts: vi.fn(async () => ({ status: 'error' as const, cause: 'projeto pausado' })),
+    })
+    renderTab('perfil-do-casal', api)
+    const panel = await screen.findByRole('complementary', { name: 'O espaço de vocês' })
+    await waitFor(() => expect(api.loadListCounts).toHaveBeenCalled())
+    await waitFor(() => expect(within(panel).getByText('itens na lista').nextSibling).toHaveTextContent('—'))
+    expect(within(panel).getAllByText('—')).toHaveLength(2)
+    expect(await screen.findAllByRole('switch')).toHaveLength(3)
+    expect(screen.queryByText(/Não deu pra carregar as configurações/)).not.toBeInTheDocument()
   })
 })

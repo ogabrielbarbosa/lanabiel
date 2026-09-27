@@ -4,6 +4,8 @@
 import { vi } from 'vitest'
 import type { City } from '../../data/cities'
 import type { SettingsData } from '../../data/settings'
+import type { ListCounts, ListExportData } from '../../data/listSummary'
+import type { ListItem } from '../../domain/list'
 import type { SettingsApi } from '../api'
 
 export const SJC: City = { id: 'c-sjc', name: 'São José dos Campos', stateCode: 'SP', lat: -23.1791, lng: -45.8872 }
@@ -78,6 +80,87 @@ export function settingsData(overrides: Partial<SettingsData> = {}): SettingsDat
   }
 }
 
+// UUIDs com o formato real, para o teste do export poder varrer o JSON por
+// "algo com cara de id de perfil" — `u-gabriel` não tem essa cara.
+export const GABRIEL_UUID = '0b6a8f3e-1c2d-4e5f-8a9b-0c1d2e3f4a5b'
+export const LANA_UUID = '9f8e7d6c-5b4a-4392-8170-6f5e4d3c2b1a'
+export const EX_UUID = '11111111-2222-4333-8444-555555555555'
+export const COUPLE_UUID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'
+export const ITEM_PARATY = '7c1b2d3e-4f5a-4b6c-9d7e-8f9a0b1c2d3e'
+export const ITEM_FILME = '3e2d1c0b-9a8f-4e7d-a6c5-b4a3928170ff'
+
+/** Os mesmos dois, com UUIDs reais nos ids de perfil e de casal. */
+export function settingsDataWithUuids(): SettingsData {
+  const data = settingsData()
+  data.me.profileId = GABRIEL_UUID
+  data.couple.id = COUPLE_UUID
+  data.couple.members[0]!.profileId = GABRIEL_UUID
+  data.couple.members[1]!.profileId = LANA_UUID
+  data.stays = data.stays.map((s) => ({ ...s, profileId: s.profileId === 'u-gabriel' ? GABRIEL_UUID : LANA_UUID }))
+  return data
+}
+
+const baseItem = {
+  note: null,
+  link: null,
+  featured: false,
+  region: null,
+  venue: null,
+  highlights: [],
+  platform: null,
+  seasons: null,
+  photoPath: null,
+  rating: null,
+  doneOn: null,
+  doneWith: null,
+  doneSoloBy: null,
+} satisfies Partial<ListItem>
+
+/** Um lugar feito pela Lana sozinha, um filme adicionado por quem já saiu. */
+export function listExportData(): ListExportData {
+  return {
+    items: [
+      {
+        ...baseItem,
+        id: ITEM_PARATY,
+        category: 'cidade',
+        name: 'Paraty',
+        place: { address: null, city: 'Paraty', state: 'RJ', country: 'Brasil', countryCode: 'BR', lat: -23.2178, lng: -44.7131 },
+        region: 'Costa Verde',
+        photoPath: `${COUPLE_UUID}/item/aaaa.webp`,
+        status: 'done',
+        rating: 5,
+        addedBy: GABRIEL_UUID,
+        createdAt: '2026-09-01T12:00:00Z',
+        doneOn: '2026-09-10',
+        doneWith: 'solo',
+        doneSoloBy: LANA_UUID,
+      },
+      {
+        ...baseItem,
+        id: ITEM_FILME,
+        category: 'filme',
+        name: 'Past Lives',
+        place: null,
+        platform: 'MUBI',
+        status: 'want',
+        addedBy: EX_UUID,
+        createdAt: '2026-09-02T12:00:00Z',
+      },
+    ],
+    memories: [
+      { itemId: ITEM_PARATY, profileId: LANA_UUID, body: 'Chuva o dia todo', createdAt: '2026-09-11T10:00:00Z', updatedAt: '2026-09-11T10:00:00Z' },
+      { itemId: ITEM_PARATY, profileId: EX_UUID, body: 'Não fui', createdAt: '2026-09-12T10:00:00Z', updatedAt: '2026-09-12T10:00:00Z' },
+    ],
+    photoCounts: new Map([[ITEM_PARATY, 3]]),
+  }
+}
+
+export function listCounts(overrides: Partial<ListCounts['byCategory']> = {}): ListCounts {
+  const byCategory = { pais: 7, cidade: 2, restaurante: 0, parque: 1, comida: 0, experiencia: 0, filme: 3, serie: 0, ...overrides }
+  return { total: Object.values(byCategory).reduce((a, b) => a + b, 0), byCategory }
+}
+
 export function fakeApi(data: SettingsData = settingsData(), overrides: Partial<SettingsApi> = {}): SettingsApi {
   return {
     today: () => '2026-09-25',
@@ -111,6 +194,8 @@ export function fakeApi(data: SettingsData = settingsData(), overrides: Partial<
     listSessions: vi.fn(async () => ({ status: 'ok' as const, rows: [] })),
     endSession: vi.fn(async () => ({ status: 'ended' as const })),
     loadPhotoStats: vi.fn(async () => ({ status: 'ok' as const, rows: { count: 2, bytes: 200_000, truncated: false } })),
+    loadListCounts: vi.fn(async () => ({ status: 'ok' as const, rows: listCounts() })),
+    loadListExport: vi.fn(async () => ({ status: 'ok' as const, rows: listExportData() })),
     loadOpenInvite: vi.fn(async () => ({ status: 'ok' as const, rows: null })),
     createInvite: vi.fn(async () => ({ status: 'created' as const, inviteId: 'inv-2', code: 'ABC123', expiresAt: '2026-10-02T00:00:00Z' })),
     sendInvite: vi.fn(async () => ({ status: 'send_failed' as const, cause: 'sem Resend' })),

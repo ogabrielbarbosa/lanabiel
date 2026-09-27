@@ -12,6 +12,8 @@ import type { LucideIcon } from 'lucide-react'
 import { cityLabel } from '../data/cities'
 import type { City } from '../data/cities'
 import type { DataResult } from '../data/result'
+import type { ListCounts } from '../data/listSummary'
+import { formatThousands } from '../domain/settings'
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return <div className={`st-card ${className}`}>{children}</div>
@@ -395,4 +397,17 @@ export function Avatar({
       {url ? <img src={url} alt="" /> : <span aria-hidden="true">{initials}</span>}
     </span>
   )
+}
+
+/**
+ * "Itens na lista" (R26), no painel e na Zona sensível. Falha mostra — com a
+ * causa no `title`: é número de resumo, e um zero diria que a lista está vazia.
+ */
+export function ListTotal({ counts }: { counts: DataResult<ListCounts> | null }) {
+  if (counts === null) return <dd aria-busy="true">…</dd>
+  if (counts.status !== 'ok') {
+    const cause = counts.status === 'error' ? counts.cause : 'sua sessão expirou'
+    return <dd title={`Não deu pra contar os itens: ${cause}`}>—</dd>
+  }
+  return <dd>{formatThousands(counts.rows.total)}</dd>
 }

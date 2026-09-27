@@ -2,7 +2,7 @@
 
 - **Data:** 2026-09-26
 - **Autor:** Gabriel Barbosa
-- **Status:** 🟡 Reviewed (pronta p/ implementar) — as cinco decisões da seção 13 aprovadas pelo Gabriel em 2026-09-26
+- **Status:** 🟢 Done (fechada em 2026-09-27, a pedido do Gabriel) — implementada e verificada (ledger); **A29** (e-mail real pelo Resend) fecha quando os segredos subirem (`supabase/functions/.env.example`) e o convite chegar a um endereço de terceiro; **A30** (Google no celular) depende do Google ligado, que segue desligado — fim do roadmap
 - **Research (Gate 0):** N/A — os 23 frames estão desenhados e a copy foi lida do `.pen` pelo MCP do Pencil em 2026-09-26. O `/brainstorm` fechou escopo e dependências (Resend, IBGE); a dúvida que sobra é de contrato, não de produto.
 - **ADR necessário?** **Sim, quatro, já escritos como `Proposed`** — [0006](../Decisions/0006-email-transacional-por-resend-em-edge-function.md) e-mail por Resend numa edge function · [0007](../Decisions/0007-cidades-brasileiras-por-seed-do-ibge.md) cidades do IBGE, escrita em `cities` fechada · [0008](../Decisions/0008-convite-portador-e-um-casal-por-pessoa.md) convite portador, uma pessoa em no máximo um casal · [0009](../Decisions/0009-fotos-em-bucket-privado-por-casal.md) fotos em bucket privado por casal. Esta spec os implementa.
 

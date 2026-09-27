@@ -315,3 +315,36 @@ viajados.
 **Decisão da spec:** o breadcrumb é Mundo → Brasil → São Paulo → São José dos
 Campos, então os itens geográficos precisam de estado/região — `list_items` já
 prevê a coluna `state` no ADR 0003, mas o agrupamento por região é lógica nova.
+
+---
+
+## Fim do roadmap — o que falta depois da Fase 7 (2026-09-27)
+
+Adiado de propósito ao longo das fases; cada item diz o que o destrava.
+
+1. **E-mail real do convite (A29, Fase 2).** Segredos em
+   `supabase/functions/.env.local` (modelo em `.env.example` ao lado) →
+   `npx supabase secrets set --env-file …` → `npx supabase functions deploy
+   send-invite` → convidar um endereço de terceiro. `APP_URL` precisa do
+   domínio do deploy para o link servir fora do Mac.
+2. **SMTP próprio no Auth (Resend).** Confirmação de e-mail no cadastro e
+   _Esqueci minha senha_; ADR novo sobre o 0004 (backlog em `Decisions/README.md`).
+   Reabre a busca de convite por e-mail do 0008 — decidir junto.
+3. **Proteção contra senha vazada (A15, Fase 1).** Toggle do painel
+   (Authentication → Passwords); se o plano não oferecer, registrar como risco
+   aceito.
+4. **Google (A7 da Fase 1, A30 da Fase 2).** Credencial OAuth real e
+   `VITE_AUTH_PROVIDERS=google`; provar o vínculo de identidade e o celular.
+5. **Avisos ao outro e o agendador.** "A Lana adicionou/fez um item", evento
+   novo, aniversário de namoro, véspera de viagem — as preferências existem desde
+   a Fase 3. Precisa de spec (canais: no app, e-mail, push) e do ADR do agendador
+   (`pg_cron` vs. edge function agendada).
+6. **Provas manuais com duas contas** das Fases 3–6 (A24, A21, A24, A21): o
+   que um grava, o outro vê.
+7. **Deploy.** Hospedagem com reescrita para `index.html` (ADR 0013), o domínio
+   no `APP_URL`, nas URLs de redirect do Auth e nas URLs permitidas do token do
+   Mapbox.
+8. **Antes de abrir a outros casais:** tirar os testes de integração do projeto
+   online (ADR 0014).
+9. **Por último — o visual do mapa** (Fase 7, A1): a receita em
+   `src/map/style.ts` até bater com o `.pen` lado a lado.

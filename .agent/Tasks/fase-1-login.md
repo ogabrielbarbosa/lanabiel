@@ -2,7 +2,7 @@
 
 - **Data:** 2026-09-26
 - **Autor:** Gabriel Barbosa
-- **Status:** 🟡 Reviewed (pronta p/ implementar)
+- **Status:** 🟢 Done (fechada em 2026-09-27, a pedido do Gabriel) — tudo implementado e provado (ledger, T10), com duas ressalvas explícitas: **A15** (`auth_leaked_password_protection`) segue desligado no projeto — o advisor de 2026-09-27 ainda o acusa; é toggle do painel, e no free tier o Supabase pode não oferecê-lo — e **A7** (vínculo de identidade pelo Google) não foi provado porque o Google está desligado (`VITE_AUTH_PROVIDERS` vazio); os dois moram no fim do roadmap, em `README.md`
 - **Research (Gate 0):** N/A — as duas telas estão desenhadas (`Login [LMpij]`, `Escolha [UEca1]`) e a copy foi lida do `.pen`. A dúvida não era de produto; era de mecanismo de autenticação e de como se prova comportamento de tela, e as duas viraram ADR.
 - **ADR necessário?** **Sim, dois, e já escritos** — [0004](../Decisions/0004-login-com-senha-e-oauth.md) (login com senha e OAuth, sem link mágico) e [0005](../Decisions/0005-interface-se-prova-em-jsdom.md) (interface se prova em jsdom). Esta spec os implementa.
 

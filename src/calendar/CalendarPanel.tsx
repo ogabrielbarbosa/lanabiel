@@ -23,7 +23,7 @@ import {
   shortCityName,
   upcoming,
 } from '../domain/calendar'
-import type { CityMap, NowSummary, Occurrence, PersonDay } from '../domain/calendar'
+import type { Occurrence, PersonDay } from '../domain/calendar'
 import { coupleStateOn } from '../domain/coupleState'
 import { isoOf, shortDayMonth, weekdayDayMonthLabel } from '../lib/date'
 import { useCalendar } from './context'
@@ -40,23 +40,6 @@ function dayTitle(day: string): string {
 function oneYearAfter(day: string): string {
   const year = Number(day.slice(0, 4)) + 1
   return day.slice(5) === '02-29' ? isoOf(year, 2, 28) : `${year}${day.slice(4)}`
-}
-
-/**
- * O título e o subtítulo do _Agora_ com a cidade CURTA (I9, frame: "Juntos em
- * SJC há 4 dias"). `nowSummary` escreve o nome inteiro; aqui só se troca o
- * prefixo exato — se o domínio mudar a frase, fica a do domínio.
- */
-function withShortCity(summary: NowSummary, cities: CityMap): { title: string; subtitle: string | null } {
-  const name = summary.run?.cityId ? cities.get(summary.run.cityId)?.name : undefined
-  if (!name) return { title: summary.title, subtitle: summary.subtitle }
-  const short = shortCityName(name)
-  const swap = (text: string | null, prefix: string, next: string) =>
-    text !== null && text.startsWith(prefix) ? next + text.slice(prefix.length) : text
-  return {
-    title: swap(summary.title, `Juntos em ${name} `, `Juntos em ${short} `) as string,
-    subtitle: swap(summary.subtitle, `Em ${name} desde`, `Em ${short} desde`),
-  }
 }
 
 function Card({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
@@ -83,7 +66,7 @@ function CardAction({ label, onClick }: { label: string; onClick: () => void }) 
 function Now({ c }: { c: CalendarContextValue }) {
   const summary = nowSummary(c.today, c.stays, c.members, c.names, c.events, c.cities)
   const run = summary.run
-  const { title, subtitle } = withShortCity(summary, c.cities)
+  const { title, subtitle } = summary
   const people = [c.people[1], c.people[2]]
 
   if (run === null) {
@@ -141,11 +124,10 @@ function Now({ c }: { c: CalendarContextValue }) {
       {summary.countdowns.length > 0 && (
         <ul className="cal-countdowns" aria-label="Contadores">
           {summary.countdowns.map((cd) => {
-            // O primeiro é sempre a próxima viagem/visita ("{destino} começa em").
-            const trip = cd.label.endsWith('começa em')
+            const trip = cd.kind === 'trip'
             const Icon = trip ? Plane : Luggage
             return (
-              <li key={cd.label} className={`cal-countdown ${trip ? 'cal-ev--viagem' : 'cal-ev--visita'}`}>
+              <li key={cd.kind + cd.label} className={`cal-countdown ${trip ? 'cal-ev--viagem' : 'cal-ev--visita'}`}>
                 <span className="cal-countdown-icon" aria-hidden="true">
                   <Icon size={14} />
                 </span>

@@ -189,6 +189,8 @@ export interface PersonDay {
 }
 
 export interface Countdown {
+  /** `trip` = a próxima viagem/visita; `home` = alguém volta pra casa; `meet` = juntos de novo. */
+  kind: 'trip' | 'home' | 'meet'
   label: string
   days: number
 }
@@ -563,23 +565,23 @@ export function nowSummary(
     const together = runs(stays, members, addDays(today, 1), addDays(today, RUN_AROUND_HORIZON)).find(
       (r) => r.band === 'home1' || r.band === 'home2' || r.band === 'away',
     )
-    if (together) second = { label: 'Juntos de novo em', days: diffDays(today, together.from) }
+    if (together) second = { kind: 'meet', label: 'Juntos de novo em', days: diffDays(today, together.from) }
   } else if (run.band === 'away') {
     title = `Viajando juntos ${since}`
-    subtitle = `Em ${cityName(cities, run.cityId)} desde ${sinceDay}`
+    subtitle = `Em ${cityShort(cities, run.cityId)} desde ${sinceDay}`
     const back = [members[1], members[2]]
       .map((m) => nextHomeDay(m.profileId, m.homeCityId, today, stays))
       .filter((d): d is string => d !== null)
-    if (back.length > 0) second = { label: 'Voltam pra casa em', days: diffDays(today, back.reduce(minDay)) }
+    if (back.length > 0) second = { kind: 'home', label: 'Voltam pra casa em', days: diffDays(today, back.reduce(minDay)) }
   } else {
-    title = `Juntos em ${cityName(cities, run.cityId)} ${since}`
+    title = `Juntos em ${cityShort(cities, run.cityId)} ${since}`
     const visitor = visitorSlot(run.cityId as string, members)
     if (visitor === null) {
       subtitle = `Em casa desde ${sinceDay}`
     } else {
       subtitle = `${names[visitor]} está visitando desde ${sinceDay}`
       const back = nextHomeDay(members[visitor].profileId, members[visitor].homeCityId, today, stays)
-      if (back !== null) second = { label: `${names[visitor]} volta pra casa em`, days: diffDays(today, back) }
+      if (back !== null) second = { kind: 'home', label: `${names[visitor]} volta pra casa em`, days: diffDays(today, back) }
     }
   }
 
@@ -587,7 +589,7 @@ export function nowSummary(
   const nextTrip = events
     .filter((e) => (TRAVEL_KINDS as readonly EventKind[]).includes(e.kind) && e.startsOn > today && e.cityId !== null)
     .sort((a, b) => a.startsOn.localeCompare(b.startsOn))[0]
-  if (nextTrip) countdowns.push({ label: `${cityShort(cities, nextTrip.cityId)} começa em`, days: diffDays(today, nextTrip.startsOn) })
+  if (nextTrip) countdowns.push({ kind: 'trip', label: `${cityShort(cities, nextTrip.cityId)} começa em`, days: diffDays(today, nextTrip.startsOn) })
   if (second) countdowns.push(second)
 
   return {

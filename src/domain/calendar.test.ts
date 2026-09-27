@@ -467,24 +467,24 @@ describe('nowSummary (A5)', () => {
     ]
     const now = nowSummary(TODAY, stays, MEMBERS, NAMES, events, CITIES)
     expect(now.band).toBe('home1')
-    expect(now.title).toBe('Juntos em São José dos Campos há 4 dias')
+    expect(now.title).toBe('Juntos em SJC há 4 dias')
     expect(now.subtitle).toBe('Lana está visitando desde 22 set')
     expect(now.progress).toEqual({ from: '2026-09-22', to: '2026-09-30', dayK: 5, total: 9 })
     expect(now.countdowns).toEqual([
-      { label: 'Marau começa em', days: 34 },
-      { label: 'Lana volta pra casa em', days: 5 },
+      { kind: 'trip', label: 'Marau começa em', days: 34 },
+      { kind: 'home', label: 'Lana volta pra casa em', days: 5 },
     ])
   })
 
   it('no primeiro dia: "desde hoje"', () => {
     const stays = [stay(G, SJC, '2026-09-01', null), stay(L, SJC, TODAY, '2026-09-30'), stay(L, MARAU, '2026-10-01', null)]
-    expect(nowSummary(TODAY, stays, MEMBERS, NAMES, [], CITIES).title).toBe('Juntos em São José dos Campos desde hoje')
+    expect(nowSummary(TODAY, stays, MEMBERS, NAMES, [], CITIES).title).toBe('Juntos em SJC desde hoje')
   })
 
   it('casa dos dois: "Em casa desde", sem barra (em aberto) e sem contador', () => {
     const stays = [stay(G, SJC, '2026-09-01', null), stay(L, SJC, '2026-09-10', null)]
     const now = nowSummary(TODAY, stays, SAME_HOME, NAMES, [], CITIES)
-    expect(now.title).toBe('Juntos em São José dos Campos há 16 dias')
+    expect(now.title).toBe('Juntos em SJC há 16 dias')
     expect(now.subtitle).toBe('Em casa desde 10 set')
     expect(now.run?.to).toBeNull()
     expect(now.progress).toBeNull()
@@ -503,7 +503,7 @@ describe('nowSummary (A5)', () => {
     expect(now.title).toBe('Viajando juntos há 6 dias')
     expect(now.subtitle).toBe('Em Lisboa desde 20 set')
     expect(now.progress).toEqual({ from: '2026-09-20', to: '2026-09-28', dayK: 7, total: 9 })
-    expect(now.countdowns).toEqual([{ label: 'Voltam pra casa em', days: 3 }])
+    expect(now.countdowns).toEqual([{ kind: 'home', label: 'Voltam pra casa em', days: 3 }])
   })
 
   it('separados: cidades curtas e "Juntos de novo em"', () => {
@@ -517,7 +517,7 @@ describe('nowSummary (A5)', () => {
     expect(now.title).toBe('Separados há 25 dias')
     expect(now.subtitle).toBe('Gabriel em SJC · Lana em Marau')
     expect(now.progress).toEqual({ from: '2026-09-01', to: '2026-10-29', dayK: 26, total: 59 })
-    expect(now.countdowns).toEqual([{ label: 'Juntos de novo em', days: 34 }])
+    expect(now.countdowns).toEqual([{ kind: 'meet', label: 'Juntos de novo em', days: 34 }])
   })
 
   it('separados sem reencontro marcado: nenhum contador', () => {

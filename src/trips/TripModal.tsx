@@ -304,6 +304,9 @@ export function TripModal(props: TripModalProps) {
         if (r.status !== 'ok') failures.push(`a capa: ${tripFailureMessage(r)}`)
       }
       const coverOk = await uploadCover({ ...trip, startsOn: s.startsOn, endsOn: s.endsOn })
+      // A capa nova já é foto da viagem: um _Salvar_ de novo (depois de uma
+      // falha secundária) não pode subir o mesmo arquivo outra vez.
+      if (coverOk && s.cover.kind === 'file') setS((prev) => ({ ...prev, cover: { kind: 'keep' } }))
       await reload()
       if (failures.length > 0) {
         // O evento já foi; a tela relida mostra o que ficou, e o modal diz o que não.

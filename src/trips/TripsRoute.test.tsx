@@ -152,6 +152,23 @@ describe('seção 8 — URLs assinadas só do que a tela pede, num lote', () => 
     expect(screen.getByTestId('urls')).toHaveTextContent('-')
   })
 
+  it('re-assinatura da releitura não apaga a URL pedida enquanto ela estava em voo', async () => {
+    const api = seededTripsApi()
+    const [a, b] = [TRIP_ILHABELA.photos[0].path, TRIP_ILHABELA.photos[1].path]
+    const view = render(<Harness api={api} paths={[a]} />)
+    await waitFor(() => expect(screen.getByTestId('urls')).toHaveTextContent(signedUrlOf(a)))
+
+    const slow = deferred<Awaited<ReturnType<TripsApi['signedUrls']>>>()
+    vi.mocked(api.signedUrls).mockImplementationOnce(() => slow.promise)
+    await userEvent.click(screen.getByRole('button', { name: 'reler' }))
+    await waitFor(() => expect(api.signedUrls).toHaveBeenCalledTimes(2))
+
+    view.rerender(<Harness api={api} paths={[a, b]} />)
+    await waitFor(() => expect(screen.getByTestId('urls')).toHaveTextContent(signedUrlOf(b)))
+    await act(async () => slow.resolve({ status: 'ok', rows: new Map([[a, signedUrlOf(a)]]) }))
+    expect(screen.getByTestId('urls')).toHaveTextContent(`${signedUrlOf(a)} ${signedUrlOf(b)}`)
+  })
+
   it('releitura em voo que perde para uma mais nova não escreve por cima', async () => {
     const api = seededTripsApi()
     render(<Harness api={api} paths={[]} />)

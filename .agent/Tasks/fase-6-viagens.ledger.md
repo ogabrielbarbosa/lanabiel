@@ -173,3 +173,30 @@ frames, duas correções:
   fica com os pins juntos; é o trade-off do ADR 0021 até a Fase 7.
 
 ---
+## Revisão ampla (`/code-review high`, main...fase-6-viagens)
+
+Sete achados. Corrigidos, com teste que falha sem a correção (conferido
+revertendo o arquivo):
+
+- a re-assinatura inteira da releitura apagava a URL pedida enquanto ela estava
+  em voo (`context.ts`) — `TripsRoute.test.tsx`;
+- as URLs valem 1 hora e só eram refeitas na releitura: agora re-assina a cada
+  50 min enquanto a rota está montada;
+- no _Editar viagem_, um _Salvar_ de novo depois de falha secundária subia a
+  capa outra vez (foto duplicada) — `TripModal.test.tsx`;
+- _Apagar foto_ sem a guarda de `pending` (duplo clique apagava a próxima).
+
+Adjudicados como dívida (não corrigidos):
+
+- `deleteTrip`: foto que a outra pessoa sobe entre a leitura dos caminhos e o
+  delete do evento vira arquivo órfão. Raro (os dois mexendo na mesma viagem ao
+  mesmo tempo), sem dano visível; _Apagar o espaço_ limpa a pasta inteira.
+- O resumo das Configurações carrega `loadTrips` inteiro para contar viagens
+  feitas. Com dois usuários é irrelevante; vira um `count` quando doer.
+- `data/list.ts` ficou com apelidos (`upload = uploadMedia`) depois da extração.
+  Cosmético.
+
+Prova depois das correções: `npm run test` 44 / 1119, typecheck, lint e build
+limpos.
+
+---

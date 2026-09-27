@@ -325,6 +325,21 @@ describe('R26 — Editar viagem', () => {
     ])
   })
 
+  it('falha secundária mantém aberto; Salvar de novo não sobe a capa nova outra vez', async () => {
+    const api = editApi()
+    api.uploadCover = vi.fn<TripsApi['uploadCover']>(async () => okWrite(photo('p-new-cover')))
+    vi.mocked(api.saveDepartures).mockResolvedValueOnce({ status: 'error', cause: 'rede' })
+    renderModal({ mode: 'edit', trip: TRIP_LISBOA, api })
+    fireEvent.change(screen.getByLabelText('Escolher a foto da capa'), { target: { files: [new File(['x'], 'c.jpg', { type: 'image/jpeg' })] } })
+    setValue('Como Lana vai', 'voo POA → LIS')
+    await act(async () => fireEvent.click(save()))
+    expect(screen.getByRole('alert')).toHaveTextContent('A viagem foi salva, mas não deu pra salvar as saídas')
+    expect(api.uploadCover).toHaveBeenCalledTimes(1)
+
+    await act(async () => fireEvent.click(save()))
+    expect(api.uploadCover).toHaveBeenCalledTimes(1)
+  })
+
   it('Apagar viagem pede confirmação, apaga, relê e volta para /viagens', async () => {
     const api = editApi()
     const { value } = renderModal({ mode: 'edit', trip: TRIP_LISBOA, api })

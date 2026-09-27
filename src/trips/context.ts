@@ -83,6 +83,9 @@ export interface TripsContextValue {
   clearNotice: () => void
 }
 
+/** Re-assinatura periódica, com folga sobre a validade de 1 hora das URLs. */
+const RESIGN_EVERY_MS = 50 * 60 * 1000
+
 export const TripsContext = createContext<TripsContextValue | null>(null)
 
 /** Para os componentes dentro da `TripsRoute`. Fora dela é erro de montagem. */
@@ -239,7 +242,12 @@ export function useTripsData(api: TripsApi): TripsLoad {
         return
       }
       setUrls((prev) => {
-        const next = new Map(replace ? [] : prev)
+        // Na re-assinatura inteira (`replace`), o que foi pedido DEPOIS dela
+        // começar e já chegou fica — senão some e nunca é pedido de novo.
+        const asked = new Set(paths)
+        const next = new Map(
+          replace ? [...prev].filter(([p]) => !asked.has(p) && requested.current.has(p)) : prev,
+        )
         for (const [path, url] of result.rows) next.set(path, url)
         return next
       })
@@ -296,6 +304,13 @@ export function useTripsData(api: TripsApi): TripsLoad {
       gen.current++
     }
   }, [reload])
+
+  // As URLs valem 1 hora (`SIGNED_URL_SECONDS`): numa aba que fica visível
+  // mais que isso sem releitura, re-assina antes de vencer.
+  useEffect(() => {
+    const timer = setInterval(() => void sign([...requested.current], true), RESIGN_EVERY_MS)
+    return () => clearInterval(timer)
+  }, [sign])
 
   // ADR 0015: voltar à aba relê.
   useEffect(() => {

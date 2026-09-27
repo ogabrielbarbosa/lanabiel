@@ -152,7 +152,7 @@ export function FullGallery({ trip, start, onClose }: { trip: Trip; start: numbe
     void write(() => api.updateTrip(trip.id, { coverPhotoId: current.id }), 'Não deu pra trocar a capa')
   }
   const erase = async () => {
-    if (!current) return
+    if (!current || pending) return
     const ok = await write(() => api.deletePhoto(current), 'Não deu pra apagar a foto')
     setMenu('closed')
     if (ok && count <= 1) onClose()

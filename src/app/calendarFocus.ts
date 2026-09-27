@@ -1,5 +1,6 @@
 // _Ver no calendário_ das Viagens (R14, R18, R32): navega para `/` pedindo que
-// o Calendário abra num mês, na visão Mês.
+// o Calendário abra num mês, na visão Mês. Desde a Fase 7 o Calendário mora
+// em `/calendario` (ADR 0023).
 //
 // Spec: .agent/Tasks/fase-6-viagens.md, R32
 //
@@ -17,7 +18,7 @@ export interface CalendarFocus {
 
 let pending: CalendarFocus | null = null
 
-/** Pede o mês de `day` (`YYYY-MM-DD`) — chame antes de `navigate('/')`. */
+/** Pede o mês de `day` (`YYYY-MM-DD`) — chame antes de `navigate('/calendario')`. */
 export function requestCalendarFocus(day: string): void {
   pending = { year: Number(day.slice(0, 4)), month: Number(day.slice(5, 7)) }
 }

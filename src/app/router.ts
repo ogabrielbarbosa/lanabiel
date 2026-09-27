@@ -1,7 +1,8 @@
 // A navegação do app: caminho na barra, sem biblioteca (ADR 0013, 0020).
 //
-// O app tem hoje quatro áreas (Calendário, Lista, Viagens e Configurações) e
-// nove abas. Uma rota tem parâmetro: o detalhe da viagem, `/viagens/<id>`
+// O app tem cinco áreas (Home, Calendário, Lista, Viagens e Configurações) e
+// nove abas. A Home ocupa `/` e o Calendário mora em `/calendario` desde a
+// Fase 7 (ADR 0023). Uma rota tem parâmetro: o detalhe da viagem, `/viagens/<id>`
 // (Fase 6, ADR 0020) — o parâmetro é só identidade, e nenhuma rota carrega
 // dado. O item aberto na Lista é estado da tela, não caminho (Fase 4, seção
 // 5). O ADR 0020 diz quando trocar por biblioteca.
@@ -11,6 +12,7 @@ import { isSettingsTab } from '../domain/settings'
 import type { SettingsTab } from '../domain/settings'
 
 export type Route =
+  | { name: 'home' }
   | { name: 'calendar' }
   | { name: 'list' }
   | { name: 'trips' }
@@ -30,7 +32,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
  */
 export function parseRoute(pathname: string): Route | null {
   const path = pathname.replace(/\/+$/, '') || '/'
-  if (path === '/' || path === '/calendario') return { name: 'calendar' }
+  if (path === '/') return { name: 'home' }
+  if (path === '/calendario') return { name: 'calendar' }
   if (path === '/lista') return { name: 'list' }
   if (path === '/viagens') return { name: 'trips' }
   // R1: qualquer segmento é o detalhe — um id que não é viagem do casal (ou
@@ -55,7 +58,8 @@ export function canonicalPath(pathname: string): string | null {
 }
 
 export function pathFor(route: Route): string {
-  if (route.name === 'calendar') return '/'
+  if (route.name === 'home') return '/'
+  if (route.name === 'calendar') return '/calendario'
   if (route.name === 'list') return '/lista'
   if (route.name === 'trips') return '/viagens'
   if (route.name === 'trip') return `/viagens/${route.id}`

@@ -28,6 +28,9 @@ export async function loadModalEnv(api: CalendarApi): Promise<DataResult<ModalEn
   const ids = new Set<string>()
   for (const m of ctx.rows.couple.members) ids.add(m.homeCity.id)
   for (const s of ctx.rows.stays) ids.add(s.cityId)
+  // Os destinos dos eventos: editar uma viagem sem a cidade dela no mapa abriria
+  // o Destino vazio, e salvar seria recusado sem a pessoa ter mudado nada.
+  for (const e of cal.rows.events) if (e.cityId !== null) ids.add(e.cityId)
   const loaded = await api.loadCities([...ids])
   if (loaded.status !== 'ok') return loaded
 

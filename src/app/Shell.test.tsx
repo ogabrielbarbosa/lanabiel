@@ -106,6 +106,17 @@ describe('A21 (Fase 5) — o Adicionar da barra', () => {
     expect(await screen.findByRole('dialog', { name: 'Novo evento' })).toBeInTheDocument()
   })
 
+  it('pedir de novo reabre: o segundo Novo evento abre o modal outra vez', async () => {
+    renderShell()
+    for (let i = 0; i < 2; i++) {
+      await userEvent.click(addButton())
+      await userEvent.click(screen.getByRole('menuitem', { name: 'Novo evento' }))
+      const modal = await screen.findByRole('dialog', { name: 'Novo evento' })
+      await userEvent.click(within(modal).getByRole('button', { name: 'Fechar' }))
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    }
+  })
+
   it('Item na lista vai para a Lista e abre o modal de adicionar', async () => {
     renderShell()
     await userEvent.click(addButton())

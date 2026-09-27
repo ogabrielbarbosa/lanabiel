@@ -134,7 +134,7 @@ function AddButton() {
         title="Adicionar"
         onClick={() => setOpen((v) => !v)}
       >
-        <Plus size={20} aria-hidden="true" />
+        <Plus size={22} aria-hidden="true" />
         <span className="visually-hidden">Adicionar</span>
       </button>
       {open && (

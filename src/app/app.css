@@ -201,8 +201,8 @@
   outline-offset: 2px;
 }
 
-/* O _Adicionar_ (`Add Button`, NVoXy): 44px, gradiente 135° aqua → rosa,
-   ícone escuro. As cores são as do .pen, não tema: o botão é igual nos dois. */
+/* O _Adicionar_ (`Add Button`, NVoXy): 44px, o gradiente e o "sobre o
+   destaque" do tema, ícone de 22. */
 .shell-add {
   position: relative;
 }
@@ -214,9 +214,9 @@
   height: 44px;
   border: 0;
   border-radius: 999px;
-  background: linear-gradient(135deg, #7fd8c4, #f4a3b4);
-  box-shadow: 0 8px 24px #7fd8c466, inset 0 1px 1px #ffffff80;
-  color: #08102a;
+  background: var(--accent-gradient);
+  box-shadow: 0 8px 24px var(--accent-glow), inset 0 1px 1px var(--glass-shine);
+  color: var(--on-accent);
   cursor: pointer;
 }
 

@@ -6,15 +6,17 @@
 import { AuthGate } from './auth/AuthGate'
 import { supabase } from './lib/supabase'
 import { Shell } from './app/Shell'
+import { listApi } from './list/api'
 import { settingsApi } from './settings/api'
 import { TimelineScreen } from './timeline/TimelineScreen'
 
 const settings = settingsApi(supabase)
+const list = listApi(supabase)
 
 export default function App() {
   return (
     <AuthGate db={supabase}>
-      <Shell calendar={<TimelineScreen />} api={settings} />
+      <Shell calendar={<TimelineScreen />} api={settings} listApi={list} />
     </AuthGate>
   )
 }

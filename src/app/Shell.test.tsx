@@ -3,6 +3,7 @@
 import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { fakeCalendarApi } from '../calendar/test/fixtures'
 import { fakeListApi } from '../list/test/fixtures'
 import { fakeApi } from '../settings/test/fixtures'
 import { Shell } from './Shell'
@@ -12,7 +13,7 @@ afterEach(() => window.history.replaceState(null, '', '/'))
 
 function renderShell() {
   return render(
-    <Shell calendar={<p>timeline antiga</p>} api={fakeApi()} listApi={fakeListApi()} onStageChanged={() => undefined} />,
+    <Shell calendarApi={fakeCalendarApi()} api={fakeApi()} listApi={fakeListApi()} onStageChanged={() => undefined} />,
   )
 }
 
@@ -35,7 +36,7 @@ describe('A19 — /lista', () => {
     expect(window.location.pathname).toBe('/lista')
     expect(screen.getByRole('heading', { name: 'Nossa lista', level: 1 })).toBeInTheDocument()
     expect(within(mainNav()).getByRole('link', { name: 'Lista' })).toHaveAttribute('aria-current', 'page')
-    expect(screen.queryByText('timeline antiga')).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Setembro 2026', level: 1 })).not.toBeInTheDocument()
   })
 
   it('clicar em Lista na barra vai para /lista', async () => {
@@ -47,9 +48,9 @@ describe('A19 — /lista', () => {
 })
 
 describe('A12 — rotas', () => {
-  it('/ mostra a timeline; clicar em Configurações vai para a primeira aba', async () => {
+  it('/ mostra o Calendário (A21 da Fase 5); clicar em Configurações vai para a primeira aba', async () => {
     renderShell()
-    expect(screen.getByText('timeline antiga')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Setembro 2026', level: 1 })).toBeInTheDocument()
     await userEvent.click(within(mainNav()).getByRole('link', { name: 'Configurações' }))
     expect(window.location.pathname).toBe('/configuracoes/perfil-do-casal')
     expect(await screen.findByRole('heading', { name: 'Configurações', level: 1 })).toBeInTheDocument()

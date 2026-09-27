@@ -4,13 +4,14 @@
 // ADR:  .agent/Decisions/0013-casca-e-navegacao-por-caminho.md
 //
 // A barra mostra só destinos que existem (R1). A Lista entrou na Fase 4, entre
-// Calendário e Configurações; Home, Viagens e o botão Adicionar (que escolhe
-// entre evento e item, e o evento é da Fase 5) entram com as fases deles.
+// Calendário e Configurações; o Calendário desenhado substituiu a timeline
+// antiga na Fase 5. Home e Viagens entram com as fases deles.
 
 import { useEffect } from 'react'
-import type { ReactNode } from 'react'
 import { CalendarHeart, ListChecks, Settings } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import type { CalendarApi } from '../calendar/api'
+import { CalendarScreen } from '../calendar/CalendarScreen'
 import type { ListApi } from '../list/api'
 import { ListScreen } from '../list/ListScreen'
 import type { SettingsApi } from '../settings/api'
@@ -21,8 +22,8 @@ import { useAppearance } from './useAppearance'
 import './app.css'
 
 export interface ShellProps {
-  /** A tela de hoje (timeline antiga) até a Fase 5. */
-  calendar: ReactNode
+  /** O que o Calendário pede ao mundo. Injetado, como `api`. */
+  calendarApi: CalendarApi
   /** O que as Configurações pedem ao mundo. Injetado: o teste dirige sem rede. */
   api: SettingsApi
   /** O que a Lista pede ao mundo. Injetado, como `api`. */
@@ -41,7 +42,7 @@ const NAV: { name: Route['name']; label: string; path: string; icon: LucideIcon 
 // sessão continua, e ele recomeça pelo banco.
 const reloadApp = () => window.location.assign('/')
 
-export function Shell({ calendar, api, listApi, onStageChanged = reloadApp }: ShellProps) {
+export function Shell({ calendarApi, api, listApi, onStageChanged = reloadApp }: ShellProps) {
   const pathname = usePathname()
   const route = parseRoute(pathname)
   const appearance = useAppearance()
@@ -81,7 +82,9 @@ export function Shell({ calendar, api, listApi, onStageChanged = reloadApp }: Sh
           <ListScreen api={listApi} />
         </main>
       ) : (
-        <main className="shell-main shell-main--legacy">{calendar}</main>
+        <main className="shell-main">
+          <CalendarScreen api={calendarApi} />
+        </main>
       )}
     </div>
   )

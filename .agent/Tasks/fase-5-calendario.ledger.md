@@ -172,3 +172,122 @@ Ruling (do agente, aceito): `kiss_future` diz "Esse dia ainda não chegou" (a
 spec não tinha texto).
 
 ---
+
+## Onda 3 · T8+T9 e T10+T11 em paralelo
+
+Despachadas juntas enquanto o `db:push` espera o Gabriel: nenhuma das quatro
+depende do banco (testam contra `CalendarApi` falsa).
+
+Ruling: os modais (T10+T11) ganham um CSS próprio, `src/calendar/modals.css`,
+em vez de uma seção de `calendar.css`. É uma exceção à convenção "um CSS por
+feature", para duas frentes paralelas não editarem o mesmo arquivo ao mesmo
+tempo. Custo se errado: dois arquivos de estilo na feature; fundir depois é
+concatenar.
+
+---
+
+## Push e prova no online
+
+O Gabriel aplicou as duas migrations (`npm run db:push`, 2026-09-26); um
+segundo push confirmou "Remote database is up to date". `npm run types:gen`
+regenerou os tipos (tabelas e RPCs novas presentes; typecheck limpo).
+
+Prova: `supabase/tests/calendar.test.ts` + `onboarding.test.ts` contra o online,
+130/130 passando (A1–A3 lado banco, A7–A11, a lista das doze `security
+definer` intacta).
+
+Nota: um disparo do hook `Stop` pegou `database.types.ts` truncado — o
+`types:gen` escreve com `>`, que zera o arquivo antes de preencher, e o hook
+rodou nesse meio. Rodado de novo, typecheck limpo. Não é bug do código; é
+corrida entre o hook e a geração.
+
+---
+
+## T8 + T9 · Ano e painel
+
+Concluído. Prova: `npx vitest run src/calendar src/domain`, 377 passando (7 em
+`YearView.test.tsx`, 14 em `CalendarPanel.test.tsx`); typecheck e lint limpos
+nos arquivos deles. Não visto no navegador (T6).
+
+Ruling (do agente, aceito): o Ano reusa a legenda do Mês (`CalendarLegend`
+exportado de `MonthView.tsx`) em vez de copiar. Custo: nenhum.
+
+Ruling (do agente, aceito): o realce da linha no Ano segue o mês de hoje; o
+atalho _Ano_ do resumo some na visão Ano; "Resumo de {mês}" só leva o ano quando
+difere do de hoje. Custo: só visual.
+
+**Dívida para o fechamento** (duas trocas por TEXTO que dependem da frase do
+domínio): o painel troca "Juntos em {nome inteiro}" pelo nome curto
+compondo a string, e escolhe o ícone do contador pelo final do rótulo ("começa
+em"). O certo é o domínio: `nowSummary` usar `shortCityName` no título e
+`Countdown` ganhar `kind: 'trip' | 'home' | 'meet'`. Custo enquanto não
+corrigir: se a frase do domínio mudar, o título volta ao nome inteiro e o ícone
+erra, sem quebrar nada.
+
+Aberto para o fechamento: um evento de vários dias que cobre o dia selecionado
+aparece em "Eventos do dia" antes dos que começam no próprio dia (a ordenação é
+por dia de início). Decidir olhando o frame.
+
+---
+
+## T5 · Fronteira de dados
+
+Concluído. Prova: `npx vitest run src` inteiro, 720 passando no fim da T5 (38
+novos em `src/data/calendar.test.ts`, 13 em `worldCities.test.ts`, 4 A12 em
+`places.test.ts`); typecheck e lint limpos. As fixtures gravadas do Photon já
+traziam `osm_type`/`osm_id`: nada inventado.
+
+Ruling (do agente, aceito): 42501 numa RPC ou leitura é `unauthenticated`; numa
+escrita direta, com a sessão já conferida, é o `with check` recusando, então
+`not_member` ("recarregue"). A mesma leitura da Lista. Custo se errado: token
+anônimo em escrita direta mostraria "recarregue" em vez do Login.
+
+Ruling (do agente, aceito): `updateEvent` que muda zero linhas devolve `error`
+("Este evento não existe mais — recarregue"), nunca `ok`. `paint([])` é `ok` sem
+chamar o banco. `loadCalCities` é função nova (estender `City` quebraria as
+fixtures da Lista e das Configurações).
+
+Dívida: `insertStay` continua em `stays.ts`, porque `supabase/tests/rls.test.ts`
+e `constraints.test.ts` ainda o importam. Sai quando eles passarem a gravar por
+`paint_stays`.
+
+## T10 + T11 · Seletor de cidade, período e evento
+
+Concluído. Prova: 415 passando em `src/calendar src/domain` (7 CityPicker, 12
+PeriodModal, 19 EventModal); build limpo. O `EventModal` monta fora da tela
+(`loadModalEnv(api)` + `mode` + `onSaved`), para a Lista (R23).
+
+Correção do orquestrador: o rótulo "casa da {nome}" presumia o gênero pelo nome
+("casa da Gabriel"). Virou "casa de {nome}", neutro, na tela, nos testes e na
+spec. O frame diz "casa da Lana"; a diferença é deliberada.
+
+Ruling (do agente, aceito): casas iguais → 2 cartões (R13), não 3 (o A17 dizia 3
+e contradizia o R13). A17 corrigido na leitura: vale o R13.
+
+Ruling (do agente, aceito): o valor do seletor é `CalCity | { kind: 'world',
+candidate }`; a prévia usa um id provisório `world:{osmRef}`, e
+`ensureWorldCity` só roda ao salvar (período, evento e primeiro período). Custo
+se errado: escolher de novo pelo Photon uma Lisboa já gravada não mostra na
+prévia a fusão com a estadia vizinha; o banco deduplica igual.
+
+Ruling (do agente, aceito): editar um trecho `unknown` vira Novo período no
+primeiro dia dele (senão `entriesForEdit` mandaria esses dias "para casa").
+Novo evento abre em Visita, como o frame. Confirmações de apagar ficam no
+rodapé, não num segundo diálogo.
+
+## T6 · Casca ligada, timeline apagada
+
+Feito pelo orquestrador. `App.tsx` monta `calendarApi(supabase)` e remove a
+chave `lanabiel:stays:v1` na carga; `Shell` recebe `calendarApi` e renderiza o
+`CalendarScreen` em `/`; `src/timeline/` apagada (14 arquivos); o CSS
+`.shell-main--legacy` saiu; `Shell.test.tsx` agora espera "Setembro 2026".
+
+Prova (árvore inteira, depois de T5–T11): typecheck e lint limpos; `npx vitest
+run src` 32 arquivos, 758 passando; `npm run build` limpo; `test ! -d
+src/timeline`.
+
+Pendente: o botão global _Adicionar_ (R1) e o `index.css` global, que ainda tem
+tokens da timeline (só `--danger` é usado fora dele). Os dois ficam para a
+passada no navegador.
+
+---

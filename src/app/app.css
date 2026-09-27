@@ -140,15 +140,6 @@
   min-width: 0;
 }
 
-/* A timeline antiga tem layout e tema próprios (index.css + timeline.css) até
-   a Fase 5. Dentro da casca ela só ocupa o espaço. */
-.shell-main--legacy {
-  border-radius: 24px;
-  overflow: auto;
-  background: var(--background);
-  color: var(--foreground);
-}
-
 /* --- a barra de navegação (`Navbar`, PajKz) ------------------------------- */
 
 .shell-nav {

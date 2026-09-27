@@ -56,7 +56,7 @@ function chipClass(o: Occurrence): string {
   return `cal-chip cal-ev--${o.event?.kind ?? 'data_especial'}`
 }
 
-function EventChip({ o, label, style }: { o: Occurrence; label: string; style?: CSSProperties }) {
+function EventChip({ o, label, style, className = '' }: { o: Occurrence; label: string; style?: CSSProperties; className?: string }) {
   const { openEditEvent } = useCalendar()
   const Icon = EVENT_ICONS[o.event?.kind ?? 'data_especial']
   const content = (
@@ -69,13 +69,13 @@ function EventChip({ o, label, style }: { o: Occurrence; label: string; style?: 
   // O aniversário não se edita ali (vem das Configurações, R21): não é botão.
   if (event === null) {
     return (
-      <span className={chipClass(o)} style={style}>
+      <span className={`${chipClass(o)} ${className}`} style={style}>
         {content}
       </span>
     )
   }
   return (
-    <button type="button" className={chipClass(o)} style={style} onClick={() => openEditEvent(event)}>
+    <button type="button" className={`${chipClass(o)} ${className}`} style={style} onClick={() => openEditEvent(event)}>
       {content}
     </button>
   )
@@ -105,7 +105,7 @@ function Week({ c, days, occs, inMonth }: { c: CalendarContextValue; days: strin
     .map((o) => {
       const from = o.day > visFrom ? o.day : visFrom
       const to = o.endDay < visTo ? o.endDay : visTo
-      return { o, from, to, cont: o.day < from }
+      return { o, from, to, cont: o.day < from, contAfter: o.endDay > to }
     })
   const lanes = multi.length
   const rowSingles = lanes + 2
@@ -128,6 +128,8 @@ function Week({ c, days, occs, inMonth }: { c: CalendarContextValue; days: strin
         }
         const state = dayStateText(c, day)
         const isToday = day === today
+        // Dia que já passou: o topo e os eventos apagados (o frame, 0.5 e 0.55).
+        const past = day < today ? 'is-past' : ''
         const selected = day === c.selectedDay
         const singles = occs.filter((o) => o.day === day && o.endDay === day).sort(compareSingles)
         const kisses = c.kisses === null || !settings.showDayMarkers || day > today ? null : (c.kisses.get(day) ?? 0)
@@ -149,7 +151,7 @@ function Week({ c, days, occs, inMonth }: { c: CalendarContextValue; days: strin
           </div>,
           <div
             key={`top-${day}`}
-            className={`cal-day-top ${inMonth(day) ? '' : 'cal-day--adjacent'}`}
+            className={`cal-day-top ${inMonth(day) ? '' : 'cal-day--adjacent'} ${past}`}
             style={{ gridColumn, gridRow: 1 }}
           >
             <span className={`cal-day-number ${isToday ? 'cal-day-number--today' : ''}`} aria-hidden="true">
@@ -160,7 +162,7 @@ function Week({ c, days, occs, inMonth }: { c: CalendarContextValue; days: strin
             )}
           </div>,
           singles.length > 0 && (
-            <div key={`ev-${day}`} className="cal-day-events" style={{ gridColumn, gridRow: rowSingles }}>
+            <div key={`ev-${day}`} className={`cal-day-events ${past}`} style={{ gridColumn, gridRow: rowSingles }}>
               {singles.slice(0, 2).map((o) => (
                 <EventChip key={`${o.event?.id ?? 'anniversary'}-${o.day}`} o={o} label={o.title} />
               ))}
@@ -175,11 +177,17 @@ function Week({ c, days, occs, inMonth }: { c: CalendarContextValue; days: strin
         ]
       })}
 
-      {multi.map(({ o, from, to, cont }, lane) => (
+      {multi.map(({ o, from, to, cont, contAfter }, lane) => (
         <EventChip
           key={`multi-${o.event?.id ?? 'anniversary'}-${o.day}`}
           o={o}
           label={`${o.title}${cont ? ' (cont.)' : ''}`}
+          className={[
+            'cal-chip--span',
+            cont ? 'cal-chip--cont-start' : '',
+            contAfter ? 'cal-chip--cont-end' : '',
+            to < today ? 'is-past' : '',
+          ].join(' ')}
           style={{ gridColumn: `${col(from)} / ${col(to) + 1}`, gridRow: lane + 2, zIndex: 1 }}
         />
       ))}
@@ -189,11 +197,17 @@ function Week({ c, days, occs, inMonth }: { c: CalendarContextValue; days: strin
         const label = bandLabel(r, c.names, c.cities, c.members)
         const past = r.from > today ? 0 : daysInclusive(r.from, to < today ? to : today)
         const future = daysInclusive(r.from, to) - past
+        // Onde o trecho continua na semana vizinha, a faixa sai reta (o frame).
+        const whole = runAround(r.from, c.stays, c.members)
+        const edges = [
+          whole.from < r.from ? 'cal-band--cont-start' : '',
+          whole.to === null || whole.to > to ? 'cal-band--cont-end' : '',
+        ].join(' ')
         return (
           <button
             key={`band-${r.from}`}
             type="button"
-            className={`cal-band cal-band--${r.band}`}
+            className={`cal-band cal-band--${r.band} ${edges}`}
             style={{ gridColumn: `${col(r.from)} / ${col(to) + 1}`, gridRow: rowBand, '--band': bandColor(settings, r.band) } as CSSProperties}
             aria-label={label}
             onClick={() => c.openEditPeriod(runAround(r.from, c.stays, c.members))}
@@ -201,7 +215,7 @@ function Week({ c, days, occs, inMonth }: { c: CalendarContextValue; days: strin
             <span className="cal-band-label" aria-hidden="true">
               {label}
             </span>
-            <span className="cal-band-bar" aria-hidden="true">
+            <span className="cal-band-bar" data-band={r.band} aria-hidden="true">
               {past > 0 && <span style={{ flexGrow: past }} />}
               {future > 0 && <span className="cal-band-planned" style={{ flexGrow: future }} />}
             </span>

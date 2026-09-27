@@ -56,9 +56,10 @@ import {
   entriesForEvent,
   paintStays,
   previewImpact,
+  shortCityName,
   validateEvent,
 } from '../domain/calendar'
-import type { CalendarEvent, EventDraft, EventField, EventKind, Travelers } from '../domain/calendar'
+import type { Band, CalendarEvent, EventDraft, EventField, EventKind, Travelers } from '../domain/calendar'
 import { LIST_CATEGORY_LABEL } from '../domain/settings'
 import { addDays, daysInclusive, shortDayMonth, weekdayOf } from '../lib/date'
 import { BandStrip, CalDialog, ModalField, ModalSwitch } from './CalDialog'
@@ -69,8 +70,8 @@ import { writeFailureMessage } from './context'
 import type { CalendarPerson } from './context'
 import type { ModalEnv } from './modalEnv'
 import { bandsByDay, daysBetween, monthNameOf } from './modalPreview'
-import { Avatar } from './parts'
-import { EVENT_ICONS } from './view'
+import { Avatar, BigPair, DateField } from './parts'
+import { EVENT_ICONS, bandColor } from './view'
 import './calendar.css'
 import './modals.css'
 
@@ -218,6 +219,25 @@ function targetOf(field: EventField): string {
   }
 }
 
+/** As iniciais da linha de dias da prévia (`K2CKom`), a partir do domingo. */
+const STRIP_WEEKDAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
+
+/** O nome do estado no cartão da prévia: "Juntos em Marau", "Viajando juntos"… */
+function stateName(band: Band, env: ModalEnv): string {
+  switch (band) {
+    case 'home1':
+      return `Juntos em ${shortCityName(env.people[1].homeCity.name)}`
+    case 'home2':
+      return `Juntos em ${shortCityName(env.people[2].homeCity.name)}`
+    case 'away':
+      return 'Viajando juntos'
+    case 'apart':
+      return 'Separados'
+    case 'unknown':
+      return 'Sem registro'
+  }
+}
+
 export function EventModal({ env, mode, onClose, onSaved }: EventModalProps) {
   const { api, coupleId, people, members, stays, settings, today } = env
   const editing = mode.kind === 'edit'
@@ -284,12 +304,18 @@ export function EventModal({ env, mode, onClose, onSaved }: EventModalProps) {
     const offset = (weekdayOf(draft.startsOn) - (settings.weekStartsOn === 'mon' ? 1 : 0) + 7) % 7
     const stripFrom = addDays(draft.startsOn, -offset)
     const stripTo = addDays(stripFrom, 13)
+    const bands = bandsByDay(after, members, stripFrom, stripTo)
+    // A cor e o nome do cartão: o estado do casal no primeiro dia pintado.
+    const band = bands.get(draft.startsOn) ?? 'unknown'
     return {
       ready: true as const,
+      band,
+      color: band === 'unknown' ? undefined : bandColor(settings, band),
+      state: stateName(band, env),
       from: draft.startsOn,
       to: draft.endsOn,
       days: daysBetween(stripFrom, stripTo),
-      bands: bandsByDay(after, members, stripFrom, stripTo),
+      bands,
       impact,
     }
   })()
@@ -381,21 +407,49 @@ export function EventModal({ env, mode, onClose, onSaved }: EventModalProps) {
     )
   }
 
-  const dateInput = (field: 'startsOn' | 'endsOn', label: string, extra: { min?: string; icon?: ReactNode } = {}) => {
+  /**
+   * O campo de data do frame ("Sex, 30 out"). Na Ida/Volta a hora mora DENTRO
+   * do campo, depois de um "·" ("Sex, 30 out · 19:20"), e some com _Dia inteiro_.
+   */
+  const dateInput = (
+    field: 'startsOn' | 'endsOn',
+    label: string,
+    extra: { min?: string; icon?: ReactNode; time?: { field: 'startsAt' | 'endsAt'; label: string } } = {},
+  ) => {
     const error = errorFor(field)
+    const time = extra.time && !s.allDaySwitch ? extra.time : null
+    const timeError = time ? errorFor(time.field) : null
     return (
-      <div className={`cal-mf-input ${error ? 'is-invalid' : ''}`}>
-        {extra.icon}
-        <input
-          id={fid(field)}
-          type="date"
-          aria-label={label}
+      <div className={`cal-mf-input ${error || timeError ? 'is-invalid' : ''}`}>
+        <DateField
           value={field === 'startsOn' ? s.startsOn : s.endsOn}
-          min={extra.min}
-          aria-invalid={!!error || undefined}
-          aria-describedby={error ? fid(`${field}-error`) : undefined}
-          onChange={(e) => set(field === 'startsOn' ? { startsOn: e.target.value } : { endsOn: e.target.value })}
-        />
+          onChange={(v) => set(field === 'startsOn' ? { startsOn: v } : { endsOn: v })}
+          icon={extra.icon}
+          inputProps={{
+            id: fid(field),
+            'aria-label': label,
+            min: extra.min,
+            'aria-invalid': !!error || undefined,
+            'aria-describedby': error ? fid(`${field}-error`) : undefined,
+          }}
+        >
+          {time && (
+            <>
+              <span className="cal-date-sep" aria-hidden="true">
+                ·
+              </span>
+              <input
+                id={fid(time.field)}
+                type="time"
+                className="cal-date-time"
+                aria-label={time.label}
+                value={time.field === 'startsAt' ? s.startsAt : s.endsAt}
+                aria-invalid={!!timeError || undefined}
+                onChange={(e) => set(time.field === 'startsAt' ? { startsAt: e.target.value } : { endsAt: e.target.value })}
+              />
+            </>
+          )}
+        </DateField>
       </div>
     )
   }
@@ -489,14 +543,14 @@ export function EventModal({ env, mode, onClose, onSaved }: EventModalProps) {
             aria-checked={s.travelers === 'solo' && s.travelerId === p.profileId}
             onClick={() => pickTravelers('solo', p.profileId)}
           >
-            <Avatar person={p} size={20} />
+            <Avatar person={p} size={22} />
             {p.name}
           </button>
         ))}
         <button type="button" role="radio" aria-checked={s.travelers === 'both'} onClick={() => pickTravelers('both', null)}>
           <span className="cal-mf-seg-pair" aria-hidden="true">
-            <Avatar person={people[1]} size={20} />
-            <Avatar person={people[2]} size={20} />
+            <Avatar person={people[1]} size={22} />
+            <Avatar person={people[2]} size={22} />
           </span>
           Os dois
         </button>
@@ -539,16 +593,17 @@ export function EventModal({ env, mode, onClose, onSaved }: EventModalProps) {
             {destField}
             <div className="cal-mf-row">
               <ModalField label="Ida" htmlFor={fid('startsOn')} field="departure" error={errorFor('startsOn', 'startsAt')}>
-                <div className="cal-mf-inline">
-                  {dateInput('startsOn', 'Ida', { icon: <PlaneTakeoff size={15} aria-hidden="true" /> })}
-                  {!s.allDaySwitch && timeInput('startsAt', 'Hora da ida')}
-                </div>
+                {dateInput('startsOn', 'Ida', {
+                  icon: <PlaneTakeoff size={15} aria-hidden="true" />,
+                  time: { field: 'startsAt', label: 'Hora da ida' },
+                })}
               </ModalField>
               <ModalField label="Volta" htmlFor={fid('endsOn')} field="return" error={errorFor('endsOn', 'endsAt')}>
-                <div className="cal-mf-inline">
-                  {dateInput('endsOn', 'Volta', { min: s.startsOn, icon: <PlaneLanding size={15} aria-hidden="true" /> })}
-                  {!s.allDaySwitch && timeInput('endsAt', 'Hora da volta')}
-                </div>
+                {dateInput('endsOn', 'Volta', {
+                  min: s.startsOn,
+                  icon: <PlaneLanding size={15} aria-hidden="true" />,
+                  time: { field: 'endsAt', label: 'Hora da volta' },
+                })}
               </ModalField>
             </div>
             {allDayField}
@@ -641,35 +696,52 @@ export function EventModal({ env, mode, onClose, onSaved }: EventModalProps) {
   } else if (auto) {
     side = (
       <aside className="cal-eprev" aria-label="Período automático">
-        <p className="cal-eprev-kicker">
-          <Sparkles size={13} aria-hidden="true" />
-          Período automático
-        </p>
-        <h3 className="cal-eprev-title">Como os dias vão ficar</h3>
+        <div className="cal-eprev-head">
+          <p className="cal-eprev-kicker">
+            <Sparkles size={13} aria-hidden="true" />
+            Período automático
+          </p>
+          <h3 className="cal-eprev-title">Como os dias vão ficar</h3>
+        </div>
         {auto.ready ? (
           <>
-            <div className="cal-eprev-card">
-              <span>
-                {whoTravels} · {shortDayMonth(auto.from)} → {shortDayMonth(auto.to)}
+            <div className="cal-eprev-card" style={{ '--band': auto.color } as CSSProperties}>
+              <BigPair
+                people={[people[1], people[2]]}
+                together={auto.band !== 'apart'}
+                size={30}
+                overlap={14}
+                heart={{ size: 16, x: 15, y: 16 }}
+                icon={9}
+              />
+              <span className="cal-eprev-card-text">
+                <span className="cal-eprev-card-title">{auto.state}</span>
+                <span className="cal-eprev-card-sub">
+                  {whoTravels} · {shortDayMonth(auto.from)} → {shortDayMonth(auto.to)}
+                </span>
               </span>
               <strong>{daysInclusive(auto.from, auto.to)}d</strong>
             </div>
-            <BandStrip
-              days={auto.days}
-              bands={auto.bands}
-              settings={settings}
-              today={today}
-              highlight={(d) => d >= auto.from && d <= auto.to}
-              label="Antes e depois do evento"
-            />
-            <div className="cal-eprev-months" aria-hidden="true">
-              <span>{monthNameOf(auto.days[0]).slice(0, 3)}</span>
-              <span>{monthNameOf(auto.days[auto.days.length - 1]).slice(0, 3)}</span>
+            <div className="cal-eprev-cal">
+              <BandStrip
+                days={auto.days}
+                bands={auto.bands}
+                settings={settings}
+                today={today}
+                highlight={(d) => d >= auto.from && d <= auto.to}
+                label="Antes e depois do evento"
+                weekdays={settings.weekStartsOn === 'mon' ? [...STRIP_WEEKDAYS.slice(1), STRIP_WEEKDAYS[0]] : STRIP_WEEKDAYS}
+                tall
+              />
+              <div className="cal-eprev-months" aria-hidden="true">
+                <span>{monthNameOf(auto.days[0]).slice(0, 3)}</span>
+                <span>{monthNameOf(auto.days[auto.days.length - 1]).slice(0, 3)}</span>
+              </div>
             </div>
             <ul className="cal-eprev-lines">
               {auto.impact.togetherDeltaYear !== 0 && (
                 <li>
-                  <ArrowUpRight size={14} aria-hidden="true" />
+                  <ArrowUpRight size={14} aria-hidden="true" className="cal-eprev-up" />
                   {auto.impact.togetherDeltaYear > 0 ? '+' : '−'}
                   {Math.abs(auto.impact.togetherDeltaYear) === 1
                     ? '1 dia juntos no ano'
@@ -678,7 +750,12 @@ export function EventModal({ env, mode, onClose, onSaved }: EventModalProps) {
               )}
               {auto.impact.month !== null && auto.impact.apartBefore !== auto.impact.apartAfter && (
                 <li>
-                  <ArrowDownRight size={14} aria-hidden="true" />
+                  <ArrowDownRight
+                    size={14}
+                    aria-hidden="true"
+                    className="cal-eprev-down"
+                    style={{ '--band': bandColor(settings, 'apart') } as CSSProperties}
+                  />
                   Separados em {monthNameOf(auto.impact.month)}: {auto.impact.apartBefore} → {auto.impact.apartAfter} dias
                 </li>
               )}
@@ -721,7 +798,6 @@ export function EventModal({ env, mode, onClose, onSaved }: EventModalProps) {
       )}
       <span className="cal-modal-actions">
         <button type="button" className="cal-btn" onClick={onClose} disabled={pending}>
-          <X size={16} aria-hidden="true" />
           Cancelar
         </button>
         <button type="button" className="cal-btn cal-btn--primary" onClick={() => void save()} disabled={pending}>
@@ -738,11 +814,8 @@ export function EventModal({ env, mode, onClose, onSaved }: EventModalProps) {
     <CalDialog
       title={editing ? 'Editar evento' : 'Novo evento'}
       subtitle={SUBTITLE}
-      icon={
-        <span className={`cal-ev--${s.kind}`} style={{ color: 'var(--ev)' } as CSSProperties}>
-          <KindIcon size={18} />
-        </span>
-      }
+      icon={<KindIcon size={20} />}
+      iconClass={`cal-ev--${s.kind}`}
       onClose={onClose}
       closeDisabled={pending}
       wide={side !== null}

@@ -16,6 +16,7 @@ export function CalDialog({
   title,
   subtitle,
   icon,
+  iconClass = '',
   onClose,
   closeDisabled = false,
   wide = false,
@@ -25,6 +26,8 @@ export function CalDialog({
   title: string
   subtitle?: string
   icon?: ReactNode
+  /** Classe do quadro do ícone (a cor do tipo: `cal-ev--{tipo}`). */
+  iconClass?: string
   onClose: () => void
   /** Enquanto grava, fechar sairia com a escrita em voo. */
   closeDisabled?: boolean
@@ -69,7 +72,7 @@ export function CalDialog({
       >
         <div className="cal-modal-head">
           {icon && (
-            <span className="cal-modal-icon" aria-hidden="true">
+            <span className={`cal-modal-icon ${iconClass}`} aria-hidden="true">
               {icon}
             </span>
           )}
@@ -162,8 +165,12 @@ export function ModalSwitch({
 
 /**
  * A tira de dias das prévias (`IZ8MX`, `wfbuT`): o número e a faixa do dia
- * depois de salvar, na cor do casal. `highlight` = os dias que a escrita pinta.
- * Dia futuro com a opacidade de _planejado_; `unknown` sem faixa.
+ * depois de salvar, na cor do casal. `highlight` = os dias que a escrita pinta:
+ * fundo na cor da faixa e a faixa com brilho. Cada trecho é UMA faixa contínua
+ * de 4px — as peças de cada dia se emendam por cima do vão, e só as pontas
+ * reais do trecho ganham recuo e canto. Dia futuro fora da pintura com a
+ * opacidade de _planejado_; `unknown` sem faixa. `weekdays` = a linha de
+ * iniciais em cima (a prévia do evento).
  */
 export function BandStrip({
   days,
@@ -172,6 +179,8 @@ export function BandStrip({
   today,
   highlight,
   label,
+  weekdays,
+  tall = false,
 }: {
   days: readonly string[]
   bands: ReadonlyMap<string, Band>
@@ -179,25 +188,45 @@ export function BandStrip({
   today: string
   highlight: (day: string) => boolean
   label: string
+  weekdays?: readonly string[]
+  tall?: boolean
 }) {
+  // Um trecho acaba onde muda a faixa ou onde começa/acaba a pintura.
+  const keyOf = (i: number) => (i < 0 || i >= days.length ? null : `${bands.get(days[i]) ?? 'unknown'}|${highlight(days[i])}`)
   return (
-    <ol className="cal-strip" aria-label={label}>
-      {days.map((d) => {
-        const band = bands.get(d) ?? 'unknown'
-        const on = highlight(d)
-        return (
-          <li key={d} className={`cal-strip-day ${on ? 'is-on' : ''}`} data-day={d} data-band={band}>
-            <span className="cal-strip-num">{Number(d.slice(8, 10))}</span>
-            {band !== 'unknown' && (
-              <span
-                className={`cal-strip-bar ${d > today ? 'cal-band-planned' : ''}`}
-                style={{ '--band': bandColor(settings, band) } as CSSProperties}
-                aria-hidden="true"
-              />
-            )}
-          </li>
-        )
-      })}
-    </ol>
+    <div className="cal-strip-box">
+      {weekdays && (
+        <div className="cal-strip-weekdays" aria-hidden="true">
+          {weekdays.map((w, i) => (
+            <span key={i}>{w}</span>
+          ))}
+        </div>
+      )}
+      <ol className={`cal-strip ${tall ? 'cal-strip--tall' : ''}`} aria-label={label}>
+        {days.map((d, i) => {
+          const band = bands.get(d) ?? 'unknown'
+          const on = highlight(d)
+          const key = keyOf(i)
+          const bar = [
+            'cal-strip-bar',
+            d > today && !on ? 'cal-band-planned' : '',
+            keyOf(i - 1) !== key ? 'is-start' : i % 7 === 0 ? 'is-row-start' : '',
+            keyOf(i + 1) !== key ? 'is-end' : i % 7 === 6 ? 'is-row-end' : '',
+          ].join(' ')
+          return (
+            <li
+              key={d}
+              className={`cal-strip-day ${on ? 'is-on' : ''}`}
+              data-day={d}
+              data-band={band}
+              style={band === 'unknown' ? undefined : ({ '--band': bandColor(settings, band) } as CSSProperties)}
+            >
+              <span className="cal-strip-num">{Number(d.slice(8, 10))}</span>
+              {band !== 'unknown' && <span className={bar} aria-hidden="true" />}
+            </li>
+          )
+        })}
+      </ol>
+    </div>
   )
 }

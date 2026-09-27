@@ -19,7 +19,7 @@
 
 import { useId, useState } from 'react'
 import type { CSSProperties } from 'react'
-import { Check, Trash2, X } from 'lucide-react'
+import { Check, Trash2 } from 'lucide-react'
 import {
   CALENDAR_LIMITS,
   entriesForDelete,
@@ -37,7 +37,7 @@ import type { CityChoice } from './cityChoice'
 import { writeFailureMessage } from './context'
 import type { ModalEnv } from './modalEnv'
 import { bandsByDay, daysBetween, monthNameOf, replacedDays } from './modalPreview'
-import { CouplePair } from './parts'
+import { CouplePair, DateField } from './parts'
 import { bandColor } from './view'
 import './calendar.css'
 import './modals.css'
@@ -203,7 +203,6 @@ export function PeriodModal({ env, mode, onClose, onSaved }: PeriodModalProps) {
       )}
       <span className="cal-modal-actions">
         <button type="button" className="cal-btn" onClick={onClose} disabled={pending}>
-          <X size={16} aria-hidden="true" />
           Cancelar
         </button>
         <button type="button" className="cal-btn cal-btn--primary" onClick={save} disabled={invalid !== null || pending}>
@@ -242,9 +241,11 @@ export function PeriodModal({ env, mode, onClose, onSaved }: PeriodModalProps) {
                   <CouplePair people={[people[1], people[2]]} together={c.choice !== 'apart'} />
                   <span className="cal-pcard-radio" aria-hidden="true" />
                 </span>
-                <span className="cal-pcard-title">{c.title}</span>
-                <span className="cal-pcard-sub">{c.sub}</span>
-                <span className="cal-pcard-bar" aria-hidden="true" />
+                <span className="cal-pcard-text">
+                  <span className="cal-pcard-title">{c.title}</span>
+                  <span className="cal-pcard-sub">{c.sub}</span>
+                </span>
+                <span className="cal-pcard-bar" data-band={c.choice} aria-hidden="true" />
               </button>
             ))}
           </div>
@@ -270,27 +271,26 @@ export function PeriodModal({ env, mode, onClose, onSaved }: PeriodModalProps) {
         <div className="cal-mf-row">
           <ModalField label="Início" htmlFor={fid('from')} field="from">
             <div className="cal-mf-input">
-              <input
-                id={fid('from')}
-                type="date"
+              <DateField
                 value={from}
-                required
-                aria-invalid={invalid?.field === 'from' || undefined}
-                onChange={(e) => setFrom(e.target.value)}
+                onChange={setFrom}
+                inputProps={{ id: fid('from'), required: true, 'aria-invalid': invalid?.field === 'from' || undefined }}
               />
             </div>
           </ModalField>
           <ModalField label="Fim" htmlFor={fid('to')} field="to">
             <div className={`cal-mf-input ${invalid?.field === 'to' ? 'is-invalid' : ''}`}>
-              <input
-                id={fid('to')}
-                type="date"
+              <DateField
                 value={to}
-                min={from}
-                required={!openAllowed}
-                aria-invalid={invalid?.field === 'to' || undefined}
-                aria-describedby={invalid ? fid('invalid') : undefined}
-                onChange={(e) => setTo(e.target.value)}
+                onChange={setTo}
+                placeholder={openAllowed ? 'Em aberto' : 'Escolher'}
+                inputProps={{
+                  id: fid('to'),
+                  min: from,
+                  required: !openAllowed,
+                  'aria-invalid': invalid?.field === 'to' || undefined,
+                  'aria-describedby': invalid ? fid('invalid') : undefined,
+                }}
               />
             </div>
           </ModalField>

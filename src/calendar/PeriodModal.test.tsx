@@ -96,8 +96,23 @@ describe('A17 — Novo período', () => {
     await userEvent.click(screen.getByRole('radio', { name: /Juntos em SJC/ }))
     setDate('Fim', '2026-11-15')
 
+    // O campo mostra a data por extenso, como o frame; o input nativo fica por baixo.
+    expect(within(dialog()).getByText('Sex, 13 nov')).toBeInTheDocument()
+    expect(within(dialog()).getByText('Dom, 15 nov')).toBeInTheDocument()
+
     const preview = screen.getByRole('region', { name: 'Prévia · novembro' })
     expect(within(preview).getByText('3 dias juntos em SJC')).toBeInTheDocument()
+    // Uma faixa contínua por trecho: só as pontas reais recuam.
+    const bars = [...preview.querySelectorAll<HTMLElement>('.cal-strip-bar')]
+    expect(bars.map((b) => [b.classList.contains('is-start'), b.classList.contains('is-end')])).toEqual([
+      [true, false],
+      [false, false],
+      [false, true],
+      [true, false],
+      [false, false],
+      [false, true],
+      [true, true],
+    ])
     const days = [...preview.querySelectorAll<HTMLElement>('.cal-strip-day')]
     expect(days.map((d) => [d.dataset.day, d.dataset.band])).toEqual([
       ['2026-11-10', 'apart'],

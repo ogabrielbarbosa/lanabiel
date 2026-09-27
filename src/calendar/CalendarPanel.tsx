@@ -28,7 +28,7 @@ import { coupleStateOn } from '../domain/coupleState'
 import { isoOf, shortDayMonth, weekdayDayMonthLabel } from '../lib/date'
 import { useCalendar } from './context'
 import type { CalendarContextValue, CalendarPerson } from './context'
-import { Avatar } from './parts'
+import { Avatar, BigPair } from './parts'
 import { EVENT_ICONS, bandColor, daysWord, monthBounds, monthName } from './view'
 
 /** "Sexta, 25 set" — o título do bloco do dia. */
@@ -42,14 +42,15 @@ function oneYearAfter(day: string): string {
   return day.slice(5) === '02-29' ? isoOf(year, 2, 28) : `${year}${day.slice(4)}`
 }
 
-function Card({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
+/** O `Glass Card` (`btuiH`): cabeçalho, 16 de vão, e o conteúdo (12 por padrão). */
+function Card({ title, action, className = '', children }: { title: string; action?: ReactNode; className?: string; children: ReactNode }) {
   return (
-    <section className="cal-card" aria-label={title}>
+    <section className={`cal-card ${className}`} aria-label={title}>
       <div className="cal-card-head">
         <h3>{title}</h3>
         {action}
       </div>
-      {children}
+      <div className="cal-card-body">{children}</div>
     </section>
   )
 }
@@ -88,11 +89,7 @@ function Now({ c }: { c: CalendarContextValue }) {
   return (
     <Card title="Agora" action={<CardAction label="Ver período" onClick={() => c.openEditPeriod(run)} />}>
       <div className="cal-now">
-        <span className={`cal-now-pair ${together ? 'cal-now-pair--together' : ''}`} aria-hidden="true">
-          {people.map((p) => (
-            <Avatar key={p.profileId} person={p} size={36} />
-          ))}
-        </span>
+        <BigPair people={people} together={together} size={42} overlap={18} heart={{ size: 20, x: 24, y: 24 }} icon={11} />
         <div className="cal-now-text">
           <p className="cal-now-title">{title}</p>
           {subtitle !== null && <p className="cal-now-sub">{subtitle}</p>}
@@ -129,7 +126,7 @@ function Now({ c }: { c: CalendarContextValue }) {
             return (
               <li key={cd.kind + cd.label} className={`cal-countdown ${trip ? 'cal-ev--viagem' : 'cal-ev--visita'}`}>
                 <span className="cal-countdown-icon" aria-hidden="true">
-                  <Icon size={14} />
+                  <Icon size={15} />
                 </span>
                 <span className="cal-countdown-label">{cd.label}</span>
                 <span className="cal-countdown-value">
@@ -158,7 +155,7 @@ function PersonRow({ c, person, day }: { c: CalendarContextValue; person: Calend
   const city = where.cityId === null ? null : (c.cities.get(where.cityId)?.name ?? '?')
   return (
     <li className="cal-person">
-      <Avatar person={person} size={36} />
+      <Avatar person={person} size={34} />
       <span className="cal-person-text">
         <span className="cal-person-name">{person.name}</span>
         {city !== null && (
@@ -180,7 +177,7 @@ function EventRow({ c, o, side }: { c: CalendarContextValue; o: Occurrence; side
   const content = (
     <>
       <span className="cal-event-icon" aria-hidden="true">
-        <Icon size={15} />
+        <Icon size={17} />
       </span>
       <span className="cal-event-text">
         <span className="cal-event-title">{o.title}</span>
@@ -237,7 +234,7 @@ function SelectedDay({ c }: { c: CalendarContextValue }) {
 function Upcoming({ c }: { c: CalendarContextValue }) {
   const next = upcoming(occurrences(c.events, { startedOn: c.startedOn }, c.today, oneYearAfter(c.today)), c.today)
   return (
-    <Card title="Próximos eventos">
+    <Card title="Próximos eventos" className="cal-card--list">
       {next.length === 0 ? (
         <p className="cal-hint">Nada marcado pela frente.</p>
       ) : (
@@ -284,7 +281,11 @@ function Summary({ c }: { c: CalendarContextValue }) {
   const total = together + counts.apart + counts.unknown
 
   return (
-    <Card title={title} action={c.view === 'year' ? undefined : <CardAction label="Ano" onClick={() => c.setView('year')} />}>
+    <Card
+      title={title}
+      className="cal-card--summary"
+      action={c.view === 'year' ? undefined : <CardAction label="Ano" onClick={() => c.setView('year')} />}
+    >
       <div className="cal-totals">
         <p style={{ '--band': settings.colorTogetherHome1 } as CSSProperties}>
           <strong>{together}</strong>
@@ -301,6 +302,7 @@ function Summary({ c }: { c: CalendarContextValue }) {
           .map((l) => (
             <span
               key={l.band}
+              data-band={l.band}
               className={l.band === 'unknown' ? 'cal-stack--unknown' : undefined}
               style={{ flexGrow: counts[l.band] / total, '--band': color(l.band) } as CSSProperties}
             />

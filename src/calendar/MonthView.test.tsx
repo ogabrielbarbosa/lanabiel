@@ -181,6 +181,34 @@ describe('A14 — o kicker do mês usa a contagem desenhada', () => {
   })
 })
 
+describe('o passado e as pontas, como no frame', () => {
+  it('dia antes de hoje tem o topo e os eventos apagados; hoje e o futuro não', () => {
+    renderInCalendar(<MonthView />, calendarValue())
+    const tops = [...document.querySelectorAll<HTMLElement>('.cal-day-top')]
+    const topOf = (n: string) => tops.find((t) => t.querySelector('.cal-day-number')?.textContent === n && !t.classList.contains('cal-day--adjacent'))!
+    expect(topOf('24')).toHaveClass('is-past')
+    expect(topOf('25')).not.toHaveClass('is-past')
+    expect(topOf('26')).not.toHaveClass('is-past')
+    // O chip corrido de Paraty (11–14) já passou nas duas semanas.
+    expect(screen.getByRole('button', { name: 'Paraty · fim de semana' })).toHaveClass('is-past')
+  })
+
+  it('o chip corrido e a faixa saem retos onde continuam na semana vizinha', () => {
+    renderInCalendar(<MonthView />, calendarValue())
+    const first = screen.getByRole('button', { name: 'Paraty · fim de semana' })
+    const cont = screen.getByRole('button', { name: 'Paraty · fim de semana (cont.)' })
+    expect(first).toHaveClass('cal-chip--cont-end')
+    expect(first).not.toHaveClass('cal-chip--cont-start')
+    expect(cont).toHaveClass('cal-chip--cont-start')
+    expect(cont).not.toHaveClass('cal-chip--cont-end')
+    const [band1, band2] = screen.getAllByRole('button', { name: 'Paraty' })
+    expect(band1).toHaveClass('cal-band--cont-end')
+    expect(band1).not.toHaveClass('cal-band--cont-start')
+    expect(band2).toHaveClass('cal-band--cont-start')
+    expect(band2).not.toHaveClass('cal-band--cont-end')
+  })
+})
+
 describe('A19 — o 💋', () => {
   it('número quando > 0; +1 ao passar o mouse; dia futuro sem 💋', async () => {
     renderInCalendar(<MonthView />, calendarValue())
@@ -188,7 +216,9 @@ describe('A19 — o 💋', () => {
     expect(kiss).not.toHaveTextContent('+1')
     await userEvent.hover(kiss)
     expect(kiss).toHaveTextContent('+1')
-    expect(screen.getByRole('button', { name: '💋 3 em 12 de setembro' })).toHaveTextContent('3')
+    // Só o número: o emoji fica no nome acessível, não na célula (o frame).
+    expect(screen.getByRole('button', { name: '💋 3 em 12 de setembro' }).textContent).toBe('3')
+    expect(screen.getByRole('button', { name: '💋 em 11 de setembro' }).textContent).toBe('')
     // 26/set em diante é futuro: sem 💋.
     expect(screen.queryByRole('button', { name: /^💋.* em 26 de setembro$/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^💋.* em 30 de setembro$/ })).not.toBeInTheDocument()

@@ -9,14 +9,14 @@
 
 import { useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import { CalendarPlus } from 'lucide-react'
+import { Calendar, CalendarPlus } from 'lucide-react'
 import { CALENDAR_LIMITS, entriesForPeriod, shortCityName } from '../domain/calendar'
 import type { PeriodChoice } from '../domain/calendar'
-import { addDays, diffDays } from '../lib/date'
+import { addDays, diffDays, shortDayMonth } from '../lib/date'
 import { resolveCity } from './cityChoice'
 import type { CityChoice, CityPickerProps } from './cityChoice'
 import { useCalendar, writeFailureMessage } from './context'
-import { CouplePair } from './parts'
+import { CouplePair, DateField } from './parts'
 import { bandColor } from './view'
 
 export type { CityPickerProps }
@@ -104,11 +104,12 @@ export function FirstPeriodCard({ renderCityPicker }: FirstPeriodCardProps) {
             role="radio"
             aria-checked={choice === o.choice}
             className="cal-first-option"
+            style={{ '--band': bandColor(settings, o.choice) } as CSSProperties}
             disabled={o.disabled || pending}
             title={o.disabled ? 'Em breve' : undefined}
             onClick={() => setChoice(o.choice)}
           >
-            <span className="cal-first-swatch" style={{ '--band': bandColor(settings, o.choice) } as CSSProperties} />
+            <span className="cal-first-swatch" />
             {o.label}
           </button>
         ))}
@@ -118,12 +119,23 @@ export function FirstPeriodCard({ renderCityPicker }: FirstPeriodCardProps) {
 
       <div className="cal-first-dates">
         <label className="cal-field">
-          <span>Desde</span>
-          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} disabled={pending} required />
+          <DateField
+            value={from}
+            onChange={setFrom}
+            format={shortDayMonth}
+            icon={<FieldLead label="Desde" />}
+            inputProps={{ 'aria-label': 'Desde', disabled: pending, required: true }}
+          />
         </label>
         <label className="cal-field">
-          <span>Até</span>
-          <input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} disabled={pending} />
+          <DateField
+            value={to}
+            onChange={setTo}
+            format={shortDayMonth}
+            placeholder="em aberto"
+            icon={<FieldLead label="Até" />}
+            inputProps={{ 'aria-label': 'Até', min: from, disabled: pending }}
+          />
         </label>
       </div>
 
@@ -156,5 +168,17 @@ export function FirstPeriodCard({ renderCityPicker }: FirstPeriodCardProps) {
         {pending ? 'Criando…' : 'Criar no calendário'}
       </button>
     </section>
+  )
+}
+
+/** O ícone e a palavra antes do valor ("📅 Desde 21 set"), como no `W9BK5`. */
+function FieldLead({ label }: { label: string }) {
+  return (
+    <>
+      <Calendar size={14} aria-hidden="true" />
+      <span className="cal-field-label" aria-hidden="true">
+        {label}
+      </span>
+    </>
   )
 }

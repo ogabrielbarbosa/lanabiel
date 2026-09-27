@@ -1,5 +1,6 @@
-// O 💋 de um dia (R5, R22): o número quando > 0, _+1_ ao passar o mouse ou
-// focar, e o passo-a-passo _− {n} +_ ao tocar.
+// O 💋 de um dia (R5, R22): só o número, rosa, quando > 0 (o frame não
+// desenha o emoji na célula — ele fica no nome acessível); _+1_ ao passar o
+// mouse ou focar; e o passo-a-passo _− {n} +_ ao tocar.
 //
 // Spec: .agent/Tasks/fase-5-calendario.md — R5, R22, I12, seção 7
 //
@@ -80,8 +81,11 @@ export function KissCounter({ day, count, dayLabel }: KissCounterProps) {
         onFocus={() => setHover(true)}
         onBlur={() => setHover(false)}
       >
-        <span aria-hidden="true">💋</span>
-        {count > 0 && <span className="cal-kiss-count">{count}</span>}
+        {count > 0 && (
+          <span className="cal-kiss-count" aria-hidden="true">
+            {count}
+          </span>
+        )}
         {hover && !open && (
           <span className="cal-kiss-hint" aria-hidden="true">
             +1

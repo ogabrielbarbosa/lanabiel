@@ -20,7 +20,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { CalendarCheck, CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { useAddIntent } from '../app/addIntent'
 import type { DataResult } from '../data/result'
 import type { SettingsData } from '../data/settings'
@@ -339,7 +339,7 @@ function Loaded({
         <div className="cal-area">
           <Header visibleMonth={visibleMonth} kicker={null} onShift={(d) => setVisibleMonth(shiftYearMonth(visibleMonth, d))}>
             <button type="button" className="cal-btn" onClick={goToToday}>
-              <CalendarDays size={16} aria-hidden="true" />
+              <CalendarCheck size={16} aria-hidden="true" />
               Hoje
             </button>
           </Header>
@@ -390,16 +390,16 @@ function Loaded({
           >
             <div className="cal-segmented" role="group" aria-label="Visão">
               <button type="button" aria-pressed={view === 'month'} onClick={() => setView('month')}>
-                <CalendarDays size={15} aria-hidden="true" />
+                <CalendarDays size={14} aria-hidden="true" />
                 Mês
               </button>
               <button type="button" aria-pressed={view === 'year'} onClick={() => setView('year')}>
-                <CalendarRange size={15} aria-hidden="true" />
+                <CalendarRange size={14} aria-hidden="true" />
                 Ano
               </button>
             </div>
             <button type="button" className="cal-btn" onClick={goToToday}>
-              <CalendarDays size={16} aria-hidden="true" />
+              <CalendarCheck size={16} aria-hidden="true" />
               Hoje
             </button>
             <button type="button" className="cal-btn cal-btn--primary" onClick={() => value.openNewEvent()}>

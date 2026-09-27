@@ -172,6 +172,11 @@
   list-style: none;
 }
 
+/* O grupo de baixo (Configurações e _Adicionar_) tem 14 de vão (Nav Bottom). */
+.shell-nav-group + .shell-nav-group {
+  gap: 14px;
+}
+
 .shell-nav-button {
   display: grid;
   place-items: center;
@@ -193,6 +198,7 @@
 .shell-nav-button[aria-current='page'] {
   background: var(--glass-hover);
   border-color: var(--glass-stroke);
+  box-shadow: 0 0 20px var(--accent-glow), inset 0 1px 1px var(--glass-shine);
   color: var(--accent);
 }
 

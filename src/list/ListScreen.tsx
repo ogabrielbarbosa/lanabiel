@@ -31,6 +31,7 @@ import {
   X,
 } from 'lucide-react'
 import { useAddIntent } from '../app/addIntent'
+import { clearListFocus, peekListFocus } from '../app/listFocus'
 import { navigate } from '../app/router'
 import type { City } from '../data/cities'
 import { SIGNED_URL_SECONDS } from '../data/list'
@@ -130,6 +131,9 @@ function plural(n: number, one: string, many: string): string {
 }
 
 export function ListScreen({ api }: ListScreenProps) {
+  // Fase 7, R3: o pedido da Home não sobrevive à saída da Lista — nem quando
+  // a leitura falhou e o `Loaded` nunca o consumiu.
+  useEffect(() => () => clearListFocus(), [])
   const [snap, setSnap] = useState<Snapshot | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [stale, setStale] = useState(false)
@@ -276,7 +280,15 @@ function Loaded({
   const [filters, setFilters] = useState<ListFilters>(EMPTY_FILTERS)
   // R4: começa na preferência do casal e vale só até sair da tela.
   const [sort, setSort] = useState<ListSort>(settings.listDefaultSort)
-  const [overlay, setOverlay] = useState<Overlay>(null)
+  // Fase 7, R3: a Home pediu um item (a seta do cartão do lugar, os cartões do
+  // painel). Lido ao montar — o `Loaded` só monta com os dados, então o id já
+  // pode ser conferido — e apagado no efeito abaixo. Id que não está na Lista
+  // (a outra pessoa apagou) abre a tela sem ficha.
+  const [overlay, setOverlay] = useState<Overlay>(() => {
+    const id = peekListFocus()
+    return id !== null && list.items.some((i) => i.id === id) ? { kind: 'sheet', itemId: id } : null
+  })
+  useEffect(() => clearListFocus(), [])
   // R1 (Fase 5): o _Adicionar_ da barra pediu um item.
   useAddIntent('new-item', () => setOverlay({ kind: 'add' }))
   const [notice, setNotice] = useState<string | null>(null)

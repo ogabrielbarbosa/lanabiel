@@ -3,7 +3,8 @@
 
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { clearMapFocus, peekMapFocus } from '../app/mapFocus'
 import type { ListItem, ListMemory, ListPhoto } from '../domain/list'
 import type { ListApi } from './api'
 import { ItemSheet } from './ItemSheet'
@@ -119,10 +120,9 @@ describe('A16 — topo e informações do item (R16, R18)', () => {
     expect(screen.getByText('Adicionado · Gabriel · 12 mar 2026')).toBeInTheDocument()
   })
 
-  it('"Agendar de novo" e "Ver no globo" não existem', () => {
+  it('"Agendar de novo" não existe', () => {
     setup({ where: TOGETHER_SJC })
     expect(screen.queryByText(/Agendar de novo/)).toBeNull()
-    expect(screen.queryByText(/Ver no globo/)).toBeNull()
   })
 
   it('rodapé: a fazer → Marcar como feito (primário); feito → selo Feito; Editar nos dois', async () => {
@@ -428,5 +428,33 @@ describe('A22 — Agendar (Fase 5, R23)', () => {
     await user.click(screen.getByRole('button', { name: 'Agendar' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Não deu pra abrir o agendamento: projeto pausado')
     expect(screen.queryByRole('dialog', { name: 'Novo evento' })).toBeNull()
+  })
+})
+
+// A18 — .agent/Tasks/fase-7-mapa.md, R2 e R23: _Ver no globo_ leva à Home no item.
+describe('A18 — Ver no globo (Fase 7 R23)', () => {
+  afterEach(() => {
+    clearMapFocus()
+    window.history.replaceState(null, '', '/')
+  })
+
+  it('item geográfico: pede o foco no item e vai para /', async () => {
+    window.history.replaceState(null, '', '/lista')
+    const { user } = setup()
+    await user.click(screen.getByRole('button', { name: 'Ver no globo' }))
+    expect(peekMapFocus()).toEqual({ kind: 'item', id: DONE.id })
+    expect(window.location.pathname).toBe('/')
+  })
+
+  it('mídia não vira pin: sem o botão', () => {
+    setup({ item: listItems().find((i) => i.id === 'i-severance') })
+    expect(screen.getByRole('dialog', { name: 'Severance' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Ver no globo' })).toBeNull()
+  })
+
+  it('geográfico sem lugar não vira pin: sem o botão', () => {
+    setup({ item: { ...WANT, place: null } })
+    expect(screen.getByRole('dialog', { name: WANT.name })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Ver no globo' })).toBeNull()
   })
 })

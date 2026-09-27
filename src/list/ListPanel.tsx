@@ -240,12 +240,12 @@ function NearbyCard({ hidden, onOpen }: { hidden: readonly ListCategory[]; onOpe
             <>
               Sem registro de onde vocês estão hoje —{' '}
               <a
-                href="/"
+                href="/calendario"
                 className="ls-hint-link"
                 onClick={(event) => {
                   if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return
                   event.preventDefault()
-                  navigate('/')
+                  navigate('/calendario')
                 }}
               >
                 marque no Calendário

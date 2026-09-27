@@ -4,10 +4,12 @@
 // orçamento (R20c), a hospedagem (R20d), a memória (R23), _Adicionar fotos_
 // (R21) e o aviso da capa (R25). ADR 0005: prova-se renderizando.
 
-import { act, fireEvent, screen, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { clearCalendarFocus, peekCalendarFocus } from '../../app/calendarFocus'
+import { clearMapFocus, peekMapFocus } from '../../app/mapFocus'
+import { fakeMapEngine } from '../../map/fakeEngine'
 import { formatNumber, tripKm } from '../../domain/tripDerive'
 import type { TripsApi } from '../api'
 import { deferred, okWrite, seededTripsApi } from '../test/fakeApi'
@@ -29,6 +31,7 @@ import { TripDetail } from './TripDetail'
 
 afterEach(() => {
   clearCalendarFocus()
+  clearMapFocus()
   window.history.replaceState(null, '', '/')
 })
 
@@ -171,12 +174,12 @@ describe('A14 — futura (Lisboa, f3yqz)', () => {
 })
 
 describe('R14 — o topo', () => {
-  it('_Ver no calendário_ pede o mês da ida e vai para /', async () => {
+  it('_Ver no calendário_ pede o mês da ida e vai para /calendario', async () => {
     window.history.replaceState(null, '', `/viagens/${TRIP_ILHABELA_ID}`)
     renderInTrips(<TripDetail id={TRIP_ILHABELA_ID} />)
     await userEvent.click(screen.getByRole('button', { name: 'Ver no calendário' }))
     expect(peekCalendarFocus()).toEqual({ year: 2026, month: 7 })
-    expect(window.location.pathname).toBe('/')
+    expect(window.location.pathname).toBe('/calendario')
   })
 
   it('_Abrir_ do _No calendário_ faz o mesmo', async () => {
@@ -340,5 +343,64 @@ describe('R23 — memória', () => {
     expect(api.saveMemory).toHaveBeenCalledWith(COUPLE, TRIP_PARATY_ID, { rating: 4, body: 'Chuva e cachaça.' })
     expect(value.reload).toHaveBeenCalled()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+})
+
+// A18, A19 — .agent/Tasks/fase-7-mapa.md, R22: o _Mapa da viagem_ na engine,
+// enquadrado em origem e destino, sem interação; _Abrir no globo_.
+describe('A18/A19 — Mapa da viagem na engine (Fase 7 R22)', () => {
+  function renderWithMap(id: string, fail?: 'load_error') {
+    const fake = fakeMapEngine(fail ? { fail } : {})
+    const api = seededTripsApi({}, { mapEngine: fake.engine })
+    renderInTrips(<TripDetail id={id} />, tripsValue({ api }))
+    return fake
+  }
+
+  it('monta uma vez, plano e sem interação, enquadrando casa e destino', async () => {
+    const fake = renderWithMap(TRIP_ILHABELA_ID)
+    const map = section('Mapa da viagem').getByRole('img', { name: 'Mapa: SJC até Ilhabela' })
+    await waitFor(() => expect(map.querySelector('[data-pin="dest"]')).not.toBeNull())
+    expect(fake.mounts).toHaveLength(1)
+    const m = fake.mounts[0]
+    expect(m).toMatchObject({ interactive: false, projection: 'mercator' })
+    if (m.camera.kind !== 'bounds') throw new Error('câmera')
+    expect(m.camera.sw).toEqual({ lat: Math.min(CITY_SJC.lat, CITY_ILHABELA.lat), lng: Math.min(CITY_SJC.lng, CITY_ILHABELA.lng) })
+    expect(m.camera.ne).toEqual({ lat: Math.max(CITY_SJC.lat, CITY_ILHABELA.lat), lng: Math.max(CITY_SJC.lng, CITY_ILHABELA.lng) })
+    expect(m.camera.padding).toBeGreaterThan(0)
+    // Os rótulos são do app, por cima do mapa (I13).
+    expect(map).toHaveTextContent('SJC')
+    expect(map).toHaveTextContent('Ilhabela')
+    expect(map.querySelector('[data-pin="home"]')).not.toBeNull()
+    expect(map.querySelectorAll('[data-pin="item"]')).toHaveLength(1)
+  })
+
+  it('arco casa → destino: contínuo na feita, tracejado na planejada', async () => {
+    const done = renderWithMap(TRIP_ILHABELA_ID)
+    await waitFor(() => expect(done.arcs).toHaveLength(1))
+    expect(done.arcs[0]).toEqual([
+      { id: TRIP_ILHABELA_ID, from: expect.objectContaining({ lat: CITY_SJC.lat, lng: CITY_SJC.lng }), to: expect.objectContaining({ lat: CITY_ILHABELA.lat, lng: CITY_ILHABELA.lng }), dashed: false },
+    ])
+  })
+
+  it('planejada: o arco é tracejado', async () => {
+    const planned = renderWithMap(TRIP_LISBOA_ID)
+    await waitFor(() => expect(planned.arcs).toHaveLength(1))
+    expect(planned.arcs[0]).toEqual([expect.objectContaining({ id: TRIP_LISBOA_ID, dashed: true })])
+    expect(planned.arcs[0][0].to).toMatchObject({ lat: CITY_LISBOA.lat, lng: CITY_LISBOA.lng })
+  })
+
+  it('A18: _Abrir no globo_ pede a cidade do destino e vai para a Home', async () => {
+    window.history.replaceState(null, '', `/viagens/${TRIP_ILHABELA_ID}`)
+    renderWithMap(TRIP_ILHABELA_ID)
+    await userEvent.click(section('Mapa da viagem').getByRole('button', { name: 'Abrir no globo' }))
+    expect(peekMapFocus()).toEqual({ kind: 'city', cityId: TRIP_ILHABELA.cityId })
+    expect(window.location.pathname).toBe('/')
+  })
+
+  it('a engine falha: "O mapa não carregou." e a legenda segue', async () => {
+    renderWithMap(TRIP_ILHABELA_ID, 'load_error')
+    const map = section('Mapa da viagem')
+    expect(await map.findByText('O mapa não carregou.')).toBeInTheDocument()
+    expect(map.getByText('SJC → Ilhabela')).toBeInTheDocument()
   })
 })

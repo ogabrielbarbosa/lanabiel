@@ -45,6 +45,7 @@ import {
   ChevronRight,
   Check,
   CircleCheck,
+  Globe,
   ImagePlus,
   Link2,
   Pencil,
@@ -52,10 +53,13 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
+import { requestMapFocus } from '../app/mapFocus'
+import { navigate } from '../app/router'
 import { EventModal } from '../calendar/EventModal'
 import { loadModalEnv } from '../calendar/modalEnv'
 import type { ModalEnv } from '../calendar/modalEnv'
 import type { ListFailure } from '../data/list'
+import { pinOf } from '../domain/map'
 import { distanceKmExact } from '../domain/onboarding'
 import { LIST_LIMITS, formatDistance, isMediaCategory } from '../domain/list'
 import type { ListItem, ListPhoto, Rating } from '../domain/list'
@@ -275,6 +279,20 @@ function Sheet({
             {cityLine}
             {distance && <span className="ls-sheet-distance"> · {distance}</span>}
           </p>
+          {/* Fase 7 R23: só o que vira pin na Home (`pinOf`) tem onde abrir. */}
+          {pinOf(item) && (
+            <button
+              type="button"
+              className="ls-sheet-globe"
+              onClick={() => {
+                requestMapFocus({ kind: 'item', id: item.id })
+                navigate('/')
+              }}
+            >
+              <Globe size={12} aria-hidden="true" />
+              Ver no globo
+            </button>
+          )}
         </div>
       )}
       {isMediaCategory(item.category) && (

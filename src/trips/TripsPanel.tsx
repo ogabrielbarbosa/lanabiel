@@ -1,18 +1,20 @@
 // O painel _Pelo mundo, juntos_ (`lB4rw`, o mesmo nas duas vistas): o mapa
 // com os pins e os arcos, os destinos dos sonhos, os recordes e o "Há um ano".
 //
-// Spec: .agent/Tasks/fase-6-viagens.md — R9–R13 (A12) · ADR 0021 (o mapa)
+// Spec: .agent/Tasks/fase-6-viagens.md — R9–R13 (A12)
+//       .agent/Tasks/fase-7-mapa.md — R2, R22 (o mapa na engine, _Abrir globo_)
 //
-// O mapa é a imagem do `.pen` com pins por projeção equiretangular
-// (`project`, em fração da caixa → porcentagem no CSS). _Abrir globo_ fica
-// para a Fase 7 (seção 14). Bloco sem resposta some, em vez de mostrar zero.
+// O mapa é o da engine (ADR 0022), plano e sem interação, com os pins em React
+// por cima (`TripMap`). Bloco sem resposta some, em vez de mostrar zero.
 
 import type { ReactNode } from 'react'
 import { ChevronRight, Hourglass, PlaneTakeoff, Repeat, Route } from 'lucide-react'
+import { requestMapFocus } from '../app/mapFocus'
 import { navigate } from '../app/router'
 import { Avatar } from '../calendar/parts'
 import { shortCityName } from '../domain/calendar'
 import type { CalCity } from '../domain/calendar'
+import type { Camera } from '../domain/map'
 import { secondaryLine } from '../domain/list'
 import type { ListItem } from '../domain/list'
 import {
@@ -21,7 +23,6 @@ import {
   formatNumber,
   latestMemory,
   oneYearAgo,
-  project,
   tripDateRange,
   tripDays,
   tripRecords,
@@ -31,10 +32,10 @@ import {
 import { weekdayDayMonthLabel, shortMonthYear } from '../lib/date'
 import { CategoryTag, ItemPhoto } from '../list/parts'
 import '../list/list.css'
-import worldMap from './assets/world-map.jpg'
 import { coverPath, useTrips } from './context'
 import { tripPath } from './links'
 import { Cover } from './parts'
+import { TripMap } from './TripMap'
 
 /** R11: quantos sonhos aparecem. */
 const DREAMS = 3
@@ -109,54 +110,61 @@ function pinsOf(trips: ReturnType<typeof useTrips>['trips'], cities: ReturnType<
   return [...byCity.values()]
 }
 
-/** Posição em porcentagem da caixa (a imagem é o mundo inteiro, ADR 0021). */
-const pct = (lat: number, lng: number) => {
-  const p = project(lat, lng)
-  return { left: `${(p.x * 100).toFixed(3)}%`, top: `${(p.y * 100).toFixed(3)}%` }
-}
-
-/** O arco destino → casa, num SVG de 1000×500 (a proporção do mapa), bojo para o norte. */
-function arcPath(from: CalCity, to: CalCity): string {
-  const a = project(from.lat, from.lng)
-  const b = project(to.lat, to.lng)
-  const [x1, y1, x2, y2] = [a.x * 1000, a.y * 500, b.x * 1000, b.y * 500]
-  const dist = Math.hypot(x2 - x1, y2 - y1)
-  const cx = (x1 + x2) / 2
-  const cy = (y1 + y2) / 2 - dist * 0.28
-  return `M${x1.toFixed(1)} ${y1.toFixed(1)} Q${cx.toFixed(1)} ${cy.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`
+/**
+ * O mundo inteiro na caixa 2:1 (o `MFVF7`): de quase a Antártida ao norte da
+ * Groenlândia, sem folga — o `fitBounds` escolhe o zoom pela largura da caixa.
+ */
+const WORLD_CAMERA: Camera = {
+  kind: 'bounds',
+  sw: { lat: -56, lng: -170 },
+  ne: { lat: 72, lng: 178 },
+  minZoom: -2,
+  maxZoom: 2,
+  padding: 0,
 }
 
 function WorldCard() {
-  const { trips, cities, home, today } = useTrips()
+  const { api, trips, cities, home, today } = useTrips()
   const pins = pinsOf(trips, cities, today, home.id)
   const totals = tripTotals(trips, cities, home, today)
   const homeShort = shortCityName(home.name)
   return (
-    <Card title="Onde já estivemos">
-      <div className="tr-map" role="img" aria-label={`Mapa: ${pins.length} destinos e a casa (${homeShort})`}>
-        <img src={worldMap} alt="" className="tr-map-img" />
-        <svg className="tr-map-arcs" viewBox="0 0 1000 500" preserveAspectRatio="none" aria-hidden="true">
-          {pins.map((p) => (
-            <path
-              key={p.city.id}
-              d={arcPath(p.city, home)}
-              className={`tr-arc tr-arc--${p.kind}`}
-              data-arc={p.kind}
-              vectorEffect="non-scaling-stroke"
-            />
-          ))}
-        </svg>
-        {pins.map((p) => (
-          <span
-            key={p.city.id}
-            className={`tr-pin tr-pin--${p.kind}`}
-            data-pin={p.kind}
-            data-city={p.city.name}
-            style={pct(p.city.lat, p.city.lng)}
-          />
-        ))}
-        <span className="tr-pin tr-pin--home" data-pin="home" data-city={home.name} style={pct(home.lat, home.lng)} />
-      </div>
+    <Card
+      title="Onde já estivemos"
+      action={
+        <CardAction
+          label="Abrir globo"
+          onClick={() => {
+            requestMapFocus({ kind: 'world' })
+            navigate('/')
+          }}
+        />
+      }
+    >
+      <TripMap
+        engine={api.mapEngine}
+        camera={WORLD_CAMERA}
+        arcs={pins.map((p) => ({ id: p.city.id, from: p.city, to: home, dashed: p.kind === 'planned' }))}
+        label={`Mapa: ${pins.length} destinos e a casa (${homeShort})`}
+        className="tr-map"
+      >
+        {(place) => (
+          <>
+            {pins.map((p) => {
+              const style = place(p.city)
+              return (
+                style && (
+                  <span key={p.city.id} className={`tr-pin tr-pin--${p.kind}`} data-pin={p.kind} data-city={p.city.name} style={style} />
+                )
+              )
+            })}
+            {(() => {
+              const style = place(home)
+              return style && <span className="tr-pin tr-pin--home" data-pin="home" data-city={home.name} style={style} />
+            })()}
+          </>
+        )}
+      </TripMap>
       <div className="tr-legend">
         <span className="tr-legend-items">
           <span>

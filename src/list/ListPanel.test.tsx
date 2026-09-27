@@ -69,10 +69,11 @@ describe('A17 — onde o casal está hoje decide sugestão e "Perto de vocês"',
     expect(near).toHaveTextContent('Sem registro de onde vocês estão hoje — marque no Calendário.')
     // R23: o "marque no Calendário" leva ao Calendário, sem recarregar a página.
     const link = within(near).getByRole('link', { name: 'marque no Calendário' })
-    expect(link).toHaveAttribute('href', '/')
+    // Fase 7: `/` virou a Home; o Calendário mora em `/calendario`.
+    expect(link).toHaveAttribute('href', '/calendario')
     window.history.pushState(null, '', '/lista')
     await userEvent.click(link)
-    expect(window.location.pathname).toBe('/')
+    expect(window.location.pathname).toBe('/calendario')
     const suggestion = region(panel, 'Sugestão do momento')
     expect(suggestion).toHaveTextContent('Sem registro de onde vocês estão hoje.')
     // Sorteada de qualquer item não feito — o primeiro, com random = 0.

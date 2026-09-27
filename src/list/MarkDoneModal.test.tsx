@@ -29,7 +29,7 @@ function setup(api: Partial<ListApi> = {}, extra: { photos?: ListPhoto[]; me?: t
 const submit = () => screen.getByRole('button', { name: 'Marcar como feito' })
 
 describe('A15 — o formulário (R20)', () => {
-  it('subtítulo "{nome} · {Categoria} · {cidade}", data de hoje, Os dois, sem a legenda da Home', () => {
+  it('subtítulo "{nome} · {Categoria} · {cidade}", data de hoje, Os dois, e a legenda da Home (Fase 7 R23)', () => {
     setup()
     const dialog = screen.getByRole('dialog', { name: 'Marcar como feito' })
     expect(dialog).toHaveTextContent('Mocotó · Restaurante · São Paulo')
@@ -40,7 +40,7 @@ describe('A15 — o formulário (R20)', () => {
     expect(within(who).getByRole('button', { name: 'Os dois' })).toHaveAttribute('aria-pressed', 'true')
     expect(within(who).getByRole('button', { name: 'Gabriel' })).toHaveAttribute('aria-pressed', 'false')
     expect(within(who).getByRole('button', { name: 'Lana' })).toHaveAttribute('aria-pressed', 'false')
-    expect(dialog).not.toHaveTextContent('Última memória')
+    expect(dialog).toHaveTextContent('Vira a “Última memória” da Home')
     expect(dialog).toHaveTextContent('Gabriel escrevendo · Lana pode completar')
     expect(dialog).toHaveTextContent('0 de 10')
   })

@@ -1540,6 +1540,16 @@
   gap: 10px;
 }
 
+/* _Marcar como feito_: a legenda à esquerda dos botões (`Hint`, P0MzG). */
+.ls-done-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: auto;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
 /* --- responsivo (como as Configurações) ---------------------------------- */
 
 @media (max-width: 1099px) {
@@ -1683,6 +1693,33 @@
 
 .ls-sheet-distance {
   color: var(--accent);
+}
+
+/* _Ver no globo_ (`Globe Link`, gFTh5): texto 12 no acento, com o globo. */
+.ls-sheet-globe {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ls-sheet-globe:hover {
+  text-decoration: underline;
+}
+
+.ls-sheet-globe:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .ls-sheet-field {

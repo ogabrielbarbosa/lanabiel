@@ -216,3 +216,19 @@ propósito).
 Não verificado: o visual do mapa real (A1, parte do A20) e, com ele, o
 enquadramento dos níveis na engine de verdade, os pins sobre o satélite e o
 terreno no zoom de cidade. Tudo isso depende de um token `pk.`.
+
+## Fechamento (2026-09-27)
+
+Com o token `pk.` no `.env.local`, o mapa carrega nas duas receitas, sem erro de
+console. O Gabriel olhou e **reprovou o visual** ("não tá bom") e pediu para
+fechar a fase e fazer o merge. O que o agente viu comparando com `eocRt`:
+- `standard` (Standard Satellite, `lightPreset: dusk`): escura e apagada, longe
+  do `.pen`.
+- `custom` (raster `mapbox.satellite` + saturação/contraste): terra viva e
+  verde, mais perto; o mar sai quase preto (no `.pen` é turquesa) e demora ~3–4 s
+  a mais para aparecer.
+
+Dívida (A1, parte do A20): acertar a receita — mar turquesa (camada de água por
+cima ou `raster-hue-rotate`/`raster-color` nas áreas de água), halo verde-rosado
+mais claro, luzes de cidade no zoom de SJC — e comparar os cinco frames lado a
+lado. Nada no código amarra a receita: é `src/map/style.ts` e o adaptador.

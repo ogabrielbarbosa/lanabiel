@@ -4,7 +4,7 @@
 
 - **Data:** 2026-09-27
 - **Autor:** Gabriel Barbosa (com Claude)
-- **Status:** 🟡 Implementada e verificada (2026-09-27), menos o visual do mapa real — **A1 e parte do A20 esperam um token público (`pk.`) do Mapbox**; as 8 decisões da seção 13 foram tomadas pelo agente e aceitas pelo Gabriel; execução e verificação no ledger
+- **Status:** 🟡 Implementada e verificada (2026-09-27), **com o visual do mapa reprovado** — A1 (a receita lado a lado com o `.pen`) foi olhada pelo Gabriel com o token `pk.` e não passou ("não tá bom"); fica como dívida registrada no ledger, e a fase fecha a pedido dele. As 8 decisões da seção 13 foram aceitas pelo Gabriel
 - **Research (Gate 0):** N/A. A fase está desenhada (5 frames da Home + os mapas das Viagens) e a engine foi escolhida no brainstorm de 2026-09-27 (Mapbox GL JS v3). O risco que a pesquisa cobriria — _o satélite real chega perto do `.pen`?_ — vira a **tarefa 1 do plano** (protótipo descartável comparado lado a lado), antes de qualquer tela
 - **ADR necessário?** Sim, dois no mesmo PR: **0022** (engine do mapa: Mapbox GL JS v3 com satélite, terreno 3D e atmosfera — supersede o item _Engine do mapa_ do backlog, que escolhia MapLibre + OpenFreeMap, e o [0021](../Decisions/0021-mapas-das-viagens-sem-engine.md)) e **0023** (a Home ocupa `/` e o Calendário passa a `/calendario` — muda o que o [0013](../Decisions/0013-casca-e-navegacao-por-caminho.md) pôs na raiz)
 

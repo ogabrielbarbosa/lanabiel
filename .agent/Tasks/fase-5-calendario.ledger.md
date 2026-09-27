@@ -291,3 +291,50 @@ tokens da timeline (só `--danger` é usado fora dele). Os dois ficam para a
 passada no navegador.
 
 ---
+
+## Dívida do painel paga (orquestrador)
+
+`nowSummary` usa a cidade curta no título ("Juntos em SJC há 4 dias", como o
+frame) e no "Em {cidade} desde"; `Countdown` ganhou `kind: 'trip' | 'home' |
+'meet'`. O painel parou de trocar texto e de adivinhar o ícone pelo fim do
+rótulo. Prova: 415 passando em `src/domain src/calendar`.
+
+## T12 · Lista (Agendar) e export v3
+
+Concluído. Prova: `npx vitest run src` 768 passando no fim da T12; typecheck,
+lint e build limpos.
+
+Ruling (do agente, aceito): a Lista recebe a `CalendarApi` por um campo novo
+`calendar` na `ListApi` (o `listApi(db)` monta `calendarApi(db)`). Não mexe no
+`Shell`, no `App` nem nas props do `ListScreen`. Custo: nenhum.
+
+Ruling (do agente, aceito): o `EventModal` do _Agendar_ entra NO LUGAR do
+detalhe, não por cima: os dois diálogos escutam Esc no `document`, e empilhados
+um Esc fecharia os dois. Fechar volta ao detalhe, e salvar volta com "Agendado
+para {d mmm}" no rodapé do detalhe. Custo se errado: empilhar exige tratar o Esc
+do `CalDialog`.
+
+Ruling (do agente, aceito): o evento sai no export sem o próprio `id`, e o
+vínculo vai como o NOME do item. Evento cuja cidade ou item não é achado
+derruba o export com a causa, como as estadias. Custo: um import futuro não
+deduplica evento por id.
+
+Ajuste da checagem de I12: o 💋 também é lido por `src/settings/api.ts` e
+`exportAll.ts`, porque o export sai pelas Configurações. Nenhum dos dois mostra o
+número na tela. O `grep` do fechamento aceita esses dois caminhos.
+
+## R1 · O _Adicionar_ da barra (orquestrador)
+
+`src/app/addIntent.ts`: a barra registra o pedido (`requestAdd`) e navega; a tela
+de destino o consome com `useAddIntent` quando já tem os dados lidos, e consumir
+apaga. O botão (`NVoXy`: 44px, gradiente 135° `#7FD8C4 → #F4A3B4`, ícone
+`#08102A`) abre um menu com _Novo evento_ e _Item na lista_, fechável por Esc ou
+clique fora. Prova: 3 testes novos em `Shell.test.tsx`; `npx vitest run src`
+771 passando; typecheck, lint e build limpos.
+
+Ruling: o pedido é um valor em memória, não um parâmetro na URL. O ADR 0013 põe
+estado de tela fora do caminho enquanto não houver biblioteca de rotas. Custo se
+errado: recarregar a página no meio do pedido perde o pedido (a pessoa toca de
+novo).
+
+---

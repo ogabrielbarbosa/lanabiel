@@ -201,6 +201,68 @@
   outline-offset: 2px;
 }
 
+/* O _Adicionar_ (`Add Button`, NVoXy): 44px, gradiente 135° aqua → rosa,
+   ícone escuro. As cores são as do .pen, não tema: o botão é igual nos dois. */
+.shell-add {
+  position: relative;
+}
+
+.shell-add-button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #7fd8c4, #f4a3b4);
+  box-shadow: 0 8px 24px #7fd8c466, inset 0 1px 1px #ffffff80;
+  color: #08102a;
+  cursor: pointer;
+}
+
+.shell-add-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* A barra fica à direita da tela: o menu abre para a esquerda, alinhado ao pé. */
+.shell-add-menu {
+  position: absolute;
+  right: calc(100% + 14px);
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+  padding: 6px;
+  border-radius: 16px;
+  background: var(--glass);
+  border: 1px solid var(--glass-stroke-soft);
+  box-shadow: 0 30px 80px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
+  backdrop-filter: blur(60px);
+  -webkit-backdrop-filter: blur(60px);
+}
+
+.shell-add-menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.shell-add-menu button:hover,
+.shell-add-menu button:focus-visible {
+  background: var(--glass-soft);
+  outline: none;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -232,5 +294,11 @@
 
   .shell-nav-group {
     flex-direction: row;
+  }
+
+  /* Com a barra no rodapé, o menu do _Adicionar_ abre para cima. */
+  .shell-add-menu {
+    right: 0;
+    bottom: calc(100% + 14px);
   }
 }

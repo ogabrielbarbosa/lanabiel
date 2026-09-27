@@ -22,7 +22,7 @@ function mainNav() {
 }
 
 describe('A13 (Fase 3) e A19 (Fase 4) — a barra mostra só destinos que existem', () => {
-  it('Calendário, Lista e Configurações, nessa ordem, e nada de Home, Viagens ou Adicionar', () => {
+  it('Calendário, Lista e Configurações, nessa ordem, e nada de Home nem Viagens', () => {
     renderShell()
     const links = [...mainNav().querySelectorAll('a')].map((a) => a.textContent)
     expect(links).toEqual(['Calendário', 'Lista', 'Configurações'])
@@ -79,5 +79,38 @@ describe('A12 — rotas', () => {
       await new Promise((r) => setTimeout(r, 20))
     })
     expect(await screen.findByRole('heading', { name: 'Cidades', level: 2 })).toBeInTheDocument()
+  })
+})
+
+describe('A21 (Fase 5) — o Adicionar da barra', () => {
+  function addButton() {
+    return within(mainNav()).getByRole('button', { name: 'Adicionar' })
+  }
+
+  it('abre o seletor com evento e item, e Esc fecha', async () => {
+    window.history.replaceState(null, '', '/configuracoes/perfil-do-casal')
+    renderShell()
+    await userEvent.click(addButton())
+    const menu = screen.getByRole('menu', { name: 'Adicionar' })
+    expect(within(menu).getAllByRole('menuitem').map((b) => b.textContent)).toEqual(['Novo evento', 'Item na lista'])
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+  })
+
+  it('Novo evento vai para o Calendário e abre o modal, de qualquer rota', async () => {
+    window.history.replaceState(null, '', '/lista')
+    renderShell()
+    await userEvent.click(addButton())
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Novo evento' }))
+    expect(window.location.pathname).toBe('/')
+    expect(await screen.findByRole('dialog', { name: 'Novo evento' })).toBeInTheDocument()
+  })
+
+  it('Item na lista vai para a Lista e abre o modal de adicionar', async () => {
+    renderShell()
+    await userEvent.click(addButton())
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Item na lista' }))
+    expect(window.location.pathname).toBe('/lista')
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
   })
 })

@@ -30,6 +30,7 @@ import {
   Sparkles,
   X,
 } from 'lucide-react'
+import { useAddIntent } from '../app/addIntent'
 import { navigate } from '../app/router'
 import type { City } from '../data/cities'
 import { SIGNED_URL_SECONDS } from '../data/list'
@@ -276,6 +277,8 @@ function Loaded({
   // R4: começa na preferência do casal e vale só até sair da tela.
   const [sort, setSort] = useState<ListSort>(settings.listDefaultSort)
   const [overlay, setOverlay] = useState<Overlay>(null)
+  // R1 (Fase 5): o _Adicionar_ da barra pediu um item.
+  useAddIntent('new-item', () => setOverlay({ kind: 'add' }))
   const [notice, setNotice] = useState<string | null>(null)
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set())
   const searchRef = useRef<HTMLInputElement>(null)

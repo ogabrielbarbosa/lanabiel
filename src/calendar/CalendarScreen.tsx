@@ -21,6 +21,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { useAddIntent } from '../app/addIntent'
 import type { DataResult } from '../data/result'
 import type { SettingsData } from '../data/settings'
 import { countDrawn } from '../domain/calendar'
@@ -267,6 +268,8 @@ function Loaded({
   const [view, setView] = useState<'month' | 'year'>(settings.calendarDefaultView)
   const [selectedDay, setSelectedDay] = useState(today)
   const [modal, setModal] = useState<CalendarModal | null>(null)
+  // R1: o _Adicionar_ da barra pediu um evento — abre com os dados já lidos.
+  useAddIntent('new-event', () => setModal({ kind: 'newEvent', day: today }))
 
   const people = useMemo(() => peopleOf(ctx, cities, avatars), [ctx, cities, avatars])
   const me = people && (people[1].profileId === ctx.me.profileId ? people[1] : people[2].profileId === ctx.me.profileId ? people[2] : null)

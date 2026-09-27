@@ -8,6 +8,7 @@ import type { CalCity } from '../../domain/calendar'
 import type { SettingsData } from '../../data/settings'
 import type { ListCounts, ListExportData } from '../../data/listSummary'
 import type { ListItem } from '../../domain/list'
+import type { Trip } from '../../domain/trips'
 import type { SettingsApi } from '../api'
 
 export const SJC: City = { id: 'c-sjc', name: 'São José dos Campos', stateCode: 'SP', lat: -23.1791, lng: -45.8872 }
@@ -228,6 +229,64 @@ export function calendarExportData(): CalendarExportData {
   }
 }
 
+export const TRIP_EVENT_UUID = 'b1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d'
+export const PHOTO_UUID = 'c0ffee00-1234-4567-89ab-cdef01234567'
+
+/**
+ * Uma viagem a Lisboa com uma linha de cada coisa, com UUIDs reais nos ids de
+ * perfil e de casal (o export não pode deixar nenhum escapar). O item do
+ * roteiro aponta para o item "Paraty" da `listExportData()`, e uma memória é
+ * de quem já saiu do casal (`EX_UUID`).
+ */
+export function tripsExportData(): Trip[] {
+  return [
+    {
+      id: TRIP_EVENT_UUID,
+      title: 'Lisboa, Portugal',
+      cityId: LISBOA.id,
+      startsOn: '2026-10-01',
+      endsOn: '2026-10-09',
+      note: 'Primeira vez na Europa',
+      coverPhotoId: 'photo-1',
+      lodging: {
+        name: 'Casa do Largo',
+        address: null,
+        checkIn: '2026-10-01T15:00',
+        checkOut: null,
+        url: null,
+        code: null,
+        cents: 320_000,
+        paid: false,
+      },
+      departures: [
+        { profileId: GABRIEL_UUID, originCode: 'GRU', note: null },
+        { profileId: LANA_UUID, originCode: 'POA', note: 'voo POA → GRU → LIS' },
+      ],
+      days: [{ day: '2026-10-02', title: 'Alfama' }],
+      itinerary: [
+        { id: 'it-1', day: '2026-10-02', at: '09:30', title: 'Castelo', kind: 'cidade', note: null, listItemId: ITEM_PARATY, position: 0 },
+      ],
+      prep: [{ id: 'pp-1', kind: 'passagens', label: 'Passagens', detail: 'TAP', done: true, position: 0 }],
+      budget: [{ id: 'b-1', label: 'Passagens', plannedCents: 980_000, spentCents: 980_000, position: 0 }],
+      memories: [
+        { profileId: LANA_UUID, rating: 5, body: 'Pastéis!', writtenOn: '2026-10-10' },
+        { profileId: EX_UUID, rating: 3, body: 'Não fui', writtenOn: '2026-10-11' },
+      ],
+      photos: [
+        {
+          id: 'photo-1',
+          path: `${COUPLE_UUID}/trip/${PHOTO_UUID}.webp`,
+          takenOn: '2026-10-02',
+          caption: 'Alfama',
+          favorite: true,
+          addedBy: GABRIEL_UUID,
+          createdAt: '2026-10-10T12:00:00Z',
+        },
+      ],
+    },
+  ]
+}
+
 export function listCounts(overrides: Partial<ListCounts['byCategory']> = {}): ListCounts {
   const byCategory = { pais: 7, cidade: 2, restaurante: 0, parque: 1, comida: 0, experiencia: 0, filme: 3, serie: 0, ...overrides }
   return { total: Object.values(byCategory).reduce((a, b) => a + b, 0), byCategory }
@@ -272,6 +331,11 @@ export function fakeApi(data: SettingsData = settingsData(), overrides: Partial<
     loadListCounts: vi.fn(async () => ({ status: 'ok' as const, rows: listCounts() })),
     loadListExport: vi.fn(async () => ({ status: 'ok' as const, rows: listExportData() })),
     loadCalendarExport: vi.fn(async () => ({ status: 'ok' as const, rows: calendarExportData() })),
+    // A viagem a Lisboa (1–9 out 2026) ainda não aconteceu em 25/9: 0 feitas por padrão.
+    loadTrips: vi.fn(async () => ({
+      status: 'ok' as const,
+      rows: { trips: tripsExportData(), events: new Map() },
+    })),
     loadOpenInvite: vi.fn(async () => ({ status: 'ok' as const, rows: null })),
     createInvite: vi.fn(async () => ({ status: 'created' as const, inviteId: 'inv-2', code: 'ABC123', expiresAt: '2026-10-02T00:00:00Z' })),
     sendInvite: vi.fn(async () => ({ status: 'send_failed' as const, cause: 'sem Resend' })),

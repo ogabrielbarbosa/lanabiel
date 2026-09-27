@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { addYears, localDateOf, shortDayMonth, shortMonth, shortMonthYear, weekdayShortLower } from './date'
+import { addYears, localDateOf, localDateOfEpoch, shortDayMonth, shortMonth, shortMonthYear, weekdayShortLower } from './date'
 
 describe('localDateOf', () => {
   // O Node relê `TZ` a cada `Date` criado depois da troca.
@@ -49,5 +49,12 @@ describe('addYears', () => {
   it('29 de fevereiro num ano comum vira 28', () => {
     expect(addYears('2028-02-29', -1)).toBe('2027-02-28')
     expect(addYears('2028-02-29', -4)).toBe('2024-02-29')
+  })
+})
+
+describe('localDateOfEpoch', () => {
+  it('o dia local do instante (lastModified de uma foto)', () => {
+    const ms = new Date(2026, 6, 14, 23, 50).getTime()
+    expect(localDateOfEpoch(ms)).toBe('2026-07-14')
   })
 })

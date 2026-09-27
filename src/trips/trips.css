@@ -1,0 +1,92 @@
+/* Viagens (Fase 6) — `trips.css`, o arquivo da feature (a Grade, a Linha do
+   tempo, o painel e a Nova viagem vêm da T4 e ESTENDEM este arquivo; o
+   detalhe mora em `detail/trip-detail.css`, da T5).
+
+   Aqui, só os estados da rota (T3): carregando, erro de leitura (A17) e a
+   viagem que não está aqui (R1). Tokens de `index.css`, como `.cal-*`. */
+
+.trips-route {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: calc(100dvh - 32px);
+}
+
+.trips-route-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 560px;
+  padding: 20px;
+  border-radius: 22px;
+  background: var(--glass);
+  border: 1px solid var(--glass-stroke-soft);
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.trips-route-state p {
+  margin: 0;
+}
+
+.trips-route-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--glass-stroke-soft);
+  border-radius: 999px;
+  background: var(--glass);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.trips-route-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.trips-notice {
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--glass-soft);
+  border: 1px solid var(--glass-stroke-soft);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.trips-skeleton {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.trips-skeleton span {
+  height: 180px;
+  border-radius: 22px;
+  background: var(--glass);
+  animation: trips-pulse 1.4s ease-in-out infinite;
+}
+
+.trips-skeleton span:first-child {
+  grid-column: 1 / -1;
+  height: 240px;
+}
+
+@keyframes trips-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trips-skeleton span {
+    animation: none;
+  }
+}

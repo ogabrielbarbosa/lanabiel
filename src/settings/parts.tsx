@@ -411,3 +411,17 @@ export function ListTotal({ counts }: { counts: DataResult<ListCounts> | null })
   }
   return <dd>{formatThousands(counts.rows.total)}</dd>
 }
+
+/**
+ * "Viagens" (Fase 6, R28): as feitas, no painel e na Zona sensível. Como
+ * `ListTotal`: lendo mostra …, falha mostra — com a causa no `title` (um zero
+ * diria que não há viagem).
+ */
+export function TripTotal({ count }: { count: DataResult<number> | null }) {
+  if (count === null) return <dd aria-busy="true">…</dd>
+  if (count.status !== 'ok') {
+    const cause = count.status === 'error' ? count.cause : 'sua sessão expirou'
+    return <dd title={`Não deu pra contar as viagens: ${cause}`}>—</dd>
+  }
+  return <dd>{formatThousands(count.rows)}</dd>
+}

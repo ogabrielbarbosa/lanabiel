@@ -74,4 +74,26 @@ test:db` ficam para o Gabriel. Custo se eu estiver errado: a `main` fica com
 código que lê tabelas que o online ainda não tem, até o push — as Viagens
 mostram o erro de leitura, o resto do app não é afetado.
 
+**Atualização (mesma noite):** o Gabriel autorizou o push no chat, e ele foi
+aplicado (`Applying migration 20260927120000_trips.sql… Finished supabase db
+push`). Os tipos passam a vir do `types:gen --linked`; o `test:db` roda no
+fechamento.
+
+---
+## T3 · Dados, rota e casca
+
+Concluído. Prova: typecheck e lint limpos, `npm run test` 37 arquivos / 1013
+testes, `npm run build` limpo. `database.types.ts` saiu de um Postgres + pg-meta
+descartáveis e o orquestrador confirmou com `npm run types:gen` (online, já
+migrado): arquivo **idêntico**.
+
+Ruling (do implementador, aceitos): qualquer `/viagens/<segmento>` é o detalhe
+(id lixo mostra o R1, maiúsculas viram minúsculas); rascunho normalizado antes
+de validar (opcional em branco vira `null`); capa que não pôde ser apontada é
+apagada (linha e arquivo); apagar foto é arquivo → linha, como a seção 7 pede;
+export v4 grava foto como `trip/<uuid>.webp`, sem o `couple_id`; o resumo das
+Configurações conta as feitas com `doneTrips`; upload e redução extraídos de
+`data/list.ts` para `data/media.ts`, sem mudar a Lista. Custo: cada um é local e
+reversível.
+
 ---

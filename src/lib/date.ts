@@ -130,3 +130,11 @@ export function addYears(iso: string, amount: number): string {
   const day = Number(iso.slice(8, 10))
   return isoOf(year, month, month === 2 && day === 29 && !isLeapYear(year) ? 28 : day)
 }
+
+/**
+ * A data LOCAL de um instante em milissegundos (`File.lastModified`, Fase 6
+ * R21: o `taken_on` da foto). Como `localDateOf`, pelo fuso do aparelho.
+ */
+export function localDateOfEpoch(ms: number): string {
+  return toISODate(new Date(ms))
+}

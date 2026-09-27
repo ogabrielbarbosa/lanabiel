@@ -1,14 +1,16 @@
 // A casca do app: a barra de navegação (`Navbar`, PajKz) e a rota.
 //
 // Spec: .agent/Tasks/fase-3-configuracoes.md, R1–R4 · .agent/Tasks/fase-4-lista.md, R1
-// ADR:  .agent/Decisions/0013-casca-e-navegacao-por-caminho.md
+//       .agent/Tasks/fase-6-viagens.md, R1
+// ADR:  .agent/Decisions/0013-casca-e-navegacao-por-caminho.md · 0020-rota-com-parametro-sem-biblioteca.md
 //
 // A barra mostra só destinos que existem (R1). A Lista entrou na Fase 4, entre
 // Calendário e Configurações; o Calendário desenhado substituiu a timeline
-// antiga na Fase 5. Home e Viagens entram com as fases deles.
+// antiga na Fase 5; as Viagens entraram na Fase 6, depois da Lista (R1 da
+// spec da Fase 6, o nó `d98FB` do Navbar). A Home entra com a fase dela.
 
 import { useEffect, useRef, useState } from 'react'
-import { CalendarHeart, CalendarPlus, ListChecks, ListPlus, Plus, Settings } from 'lucide-react'
+import { CalendarHeart, CalendarPlus, ListChecks, ListPlus, Plane, Plus, Settings } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { CalendarApi } from '../calendar/api'
 import { CalendarScreen } from '../calendar/CalendarScreen'
@@ -16,6 +18,8 @@ import type { ListApi } from '../list/api'
 import { ListScreen } from '../list/ListScreen'
 import type { SettingsApi } from '../settings/api'
 import { SettingsScreen } from '../settings/SettingsScreen'
+import type { TripsApi } from '../trips/api'
+import { TripsRoute } from '../trips/TripsRoute'
 import { requestAdd } from './addIntent'
 import type { AddIntent } from './addIntent'
 import { canonicalPath, navigate, parseRoute, usePathname } from './router'
@@ -30,6 +34,8 @@ export interface ShellProps {
   api: SettingsApi
   /** O que a Lista pede ao mundo. Injetado, como `api`. */
   listApi: ListApi
+  /** O que as Viagens pedem ao mundo. Injetado, como `api`. */
+  tripsApi: TripsApi
   /** A conta mudou de estágio (saiu do casal, apagou o espaço). */
   onStageChanged?: () => void
 }
@@ -38,13 +44,15 @@ const NAV: { name: Route['name']; label: string; path: string; icon: LucideIcon 
   { name: 'calendar', label: 'Calendário', path: '/', icon: CalendarHeart },
   // `list-checks`: o ícone do destino Lista no Navbar do design (PajKz).
   { name: 'list', label: 'Lista', path: '/lista', icon: ListChecks },
+  // `plane`: o ícone do destino Viagens no Navbar (nó `d98FB`, PajKz).
+  { name: 'trips', label: 'Viagens', path: '/viagens', icon: Plane },
 ]
 
 // Recarregar do zero é o jeito mais curto de o portão reavaliar o estágio: a
 // sessão continua, e ele recomeça pelo banco.
 const reloadApp = () => window.location.assign('/')
 
-export function Shell({ calendarApi, api, listApi, onStageChanged = reloadApp }: ShellProps) {
+export function Shell({ calendarApi, api, listApi, tripsApi, onStageChanged = reloadApp }: ShellProps) {
   const pathname = usePathname()
   const route = parseRoute(pathname)
   const appearance = useAppearance()
@@ -60,7 +68,13 @@ export function Shell({ calendarApi, api, listApi, onStageChanged = reloadApp }:
         <ul className="shell-nav-group">
           {NAV.map(({ name, label, path, icon: Icon }) => (
             <li key={name}>
-              <NavLink path={path} label={label} current={route?.name === name} icon={Icon} />
+              <NavLink
+                path={path}
+                label={label}
+                // O detalhe (`trip`) acende o mesmo destino da Grade.
+                current={route?.name === name || (name === 'trips' && route?.name === 'trip')}
+                icon={Icon}
+              />
             </li>
           ))}
         </ul>
@@ -85,6 +99,11 @@ export function Shell({ calendarApi, api, listApi, onStageChanged = reloadApp }:
       ) : route?.name === 'list' ? (
         <main className="shell-main">
           <ListScreen api={listApi} />
+        </main>
+      ) : route?.name === 'trips' || route?.name === 'trip' ? (
+        <main className="shell-main">
+          {/* Uma instância só para Grade e Detalhe: navegar entre os dois não relê. */}
+          <TripsRoute api={tripsApi} view={route} />
         </main>
       ) : (
         <main className="shell-main">

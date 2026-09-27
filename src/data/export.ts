@@ -23,14 +23,23 @@
 //       agregado, `[{ day, count }]` — o arquivo é a única saída dele fora da
 //       tela do Calendário (I12). As cidades das estadias passam a levar
 //       `country_code` e `region`: agora há cidades de fora do Brasil.
+//   4 — Fase 6: + `trips` (R28). Cada viagem com o que o evento diz (título,
+//       destino resolvido, datas, nota — o evento também está em
+//       `calendar_events`) e o que é dela: hospedagem, capa, saídas e
+//       memórias por `slot`, títulos dos dias, roteiro (o vínculo com a Lista
+//       pelo NOME do item, como no Calendário), preparação, orçamento e as
+//       fotos como CAMINHO dentro da pasta do casal (`trip/<uuid>.webp`, sem
+//       o `<couple_id>/` da frente). Nenhum id de viagem, de linha ou de
+//       perfil; nenhuma imagem.
 
 import type { CalCity } from '../domain/calendar'
+import type { Trip } from '../domain/trips'
 import type { CalendarExportData } from './calendar'
 import type { SettingsData } from './settings'
 import type { City } from './cities'
 import type { ListExportData } from './listSummary'
 
-export const EXPORT_VERSION = 3
+export const EXPORT_VERSION = 4
 
 interface ExportCity {
   name: string
@@ -44,16 +53,21 @@ const city = (c: City): ExportCity => ({ name: c.name, state_code: c.stateCode, 
 /** Cidade de estadia e de evento: pode ser de fora do Brasil (Fase 5). */
 const calCity = (c: CalCity) => ({ ...city(c), region: c.region, country_code: c.countryCode })
 
+/** `<couple_id>/trip/x.webp` → `trip/x.webp`: o caminho dentro da pasta do casal, sem o id dele. */
+const inCoupleFolder = (path: string) => path.slice(path.indexOf('/') + 1)
+
 /**
- * Monta o documento. Estadias e eventos só trazem `city_id`; a cidade é
- * resolvida por `citiesById`, que a camada de dados preenche com a leitura de
- * `cities` (IBGE e do mundo). Cidade que não resolve é erro — não um buraco
- * silencioso no arquivo. O mesmo vale para o item da Lista de um evento.
+ * Monta o documento. Estadias, eventos e viagens só trazem `city_id`; a cidade
+ * é resolvida por `citiesById`, que a camada de dados preenche com a leitura
+ * de `cities` (IBGE e do mundo). Cidade que não resolve é erro — não um buraco
+ * silencioso no arquivo. O mesmo vale para o item da Lista de um evento ou de
+ * um item de roteiro.
  */
 export function buildExport(
   data: SettingsData,
   list: ListExportData,
   calendar: CalendarExportData,
+  trips: readonly Trip[],
   citiesById: ReadonlyMap<string, CalCity>,
   exportedAt: string,
 ): { status: 'ok'; json: string } | { status: 'error'; cause: string } {
@@ -103,6 +117,59 @@ export function buildExport(
       note: e.note,
       list_item: listItem,
       created_by_slot: slot(e.createdBy),
+    })
+  }
+
+  const tripDocs = []
+  for (const t of trips) {
+    const c = citiesById.get(t.cityId)
+    if (!c) return { status: 'error', cause: `cidade ${t.cityId} de uma viagem não foi lida` }
+    const itinerary = []
+    for (const i of t.itinerary) {
+      let listItem = null
+      if (i.listItemId !== null) {
+        listItem = itemName.get(i.listItemId) ?? null
+        if (listItem === null) return { status: 'error', cause: `item ${i.listItemId} de um roteiro não foi lido` }
+      }
+      itinerary.push({ day: i.day, at: i.at, title: i.title, kind: i.kind, note: i.note, list_item: listItem, position: i.position })
+    }
+    const cover = t.coverPhotoId === null ? null : (t.photos.find((p) => p.id === t.coverPhotoId)?.path ?? null)
+    tripDocs.push({
+      title: t.title,
+      city: calCity(c),
+      starts_on: t.startsOn,
+      ends_on: t.endsOn,
+      note: t.note,
+      cover: cover === null ? null : inCoupleFolder(cover),
+      lodging: {
+        name: t.lodging.name,
+        address: t.lodging.address,
+        check_in: t.lodging.checkIn,
+        check_out: t.lodging.checkOut,
+        url: t.lodging.url,
+        code: t.lodging.code,
+        cents: t.lodging.cents,
+        paid: t.lodging.paid,
+      },
+      departures: t.departures.map((d) => ({ slot: slot(d.profileId), origin_code: d.originCode, note: d.note })),
+      days: t.days.map((d) => ({ day: d.day, title: d.title })),
+      itinerary,
+      prep: t.prep.map((p) => ({ kind: p.kind, label: p.label, detail: p.detail, done: p.done, position: p.position })),
+      budget: t.budget.map((b) => ({
+        label: b.label,
+        planned_cents: b.plannedCents,
+        spent_cents: b.spentCents,
+        position: b.position,
+      })),
+      memories: t.memories.map((m) => ({ slot: slot(m.profileId), rating: m.rating, body: m.body, written_on: m.writtenOn })),
+      photos: t.photos.map((p) => ({
+        path: inCoupleFolder(p.path),
+        taken_on: p.takenOn,
+        caption: p.caption,
+        favorite: p.favorite,
+        added_by_slot: slot(p.addedBy),
+        created_at: p.createdAt,
+      })),
     })
   }
 
@@ -170,6 +237,7 @@ export function buildExport(
       .map((item) => ({ item: item.id, count: list.photoCounts.get(item.id)! })),
     calendar_events: events,
     day_kisses: calendar.kisses.map((k) => ({ day: k.day, count: k.count })),
+    trips: tripDocs,
   }
   return { status: 'ok', json: JSON.stringify(document, null, 2) }
 }

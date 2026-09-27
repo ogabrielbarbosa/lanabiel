@@ -31,6 +31,7 @@ import {
   updateProfileSettings,
 } from '../data/settings'
 import type { SettingsCouple } from '../data/settings'
+import { loadTrips } from '../data/trips'
 
 type Db = SupabaseClient<Database>
 
@@ -67,6 +68,8 @@ export interface SettingsApi {
   loadListExport: () => ReturnType<typeof loadListExport>
   /** Fase 5, R24: eventos e 💋 inteiros (agregado por dia), só para o export. */
   loadCalendarExport: () => ReturnType<typeof loadCalendarExport>
+  /** Fase 6: as viagens inteiras — o resumo conta as feitas (R28) e o export as leva. */
+  loadTrips: () => ReturnType<typeof loadTrips>
   loadOpenInvite: () => ReturnType<typeof loadOpenInvite>
   createInvite: (input: Parameters<typeof createInvite>[1]) => ReturnType<typeof createInvite>
   sendInvite: (inviteId: string) => ReturnType<typeof sendInvite>
@@ -114,6 +117,7 @@ export function settingsApi(db: Db): SettingsApi {
     loadListCounts: () => loadListCounts(db),
     loadListExport: () => loadListExport(db),
     loadCalendarExport: () => loadCalendarExport(db),
+    loadTrips: () => loadTrips(db),
     loadOpenInvite: () => loadOpenInvite(db),
     createInvite: (input) => createInvite(db, input),
     sendInvite: (inviteId) => sendInvite(db, inviteId),

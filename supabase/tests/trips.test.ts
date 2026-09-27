@@ -8,7 +8,16 @@
 import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { DEFAULT_PREP, EMPTY_LODGING, ITINERARY_KINDS, PREP_KINDS, TRIP_LIMITS } from '../../src/domain/trips'
-import type { Lodging } from '../../src/domain/trips'
+import {
+  budgetToInsert,
+  dayTitleToRow,
+  departureToRow,
+  itineraryToInsert,
+  lodgingToColumns,
+  memoryToRow,
+  photoToInsert,
+  prepToInsert,
+} from '../../src/data/tripRow'
 import { CASE_TRIP, TRIP_VALIDATION_CASES } from '../../src/domain/tripValidationCases'
 import type { TripValidationCase } from '../../src/domain/tripValidationCases'
 import { admin, anonClient, buildScenario, CITY, deleteUserAndCouple, signIn, sql, userFactory } from './harness'
@@ -127,24 +136,11 @@ const SEPARATED: ShortStay[] = [
 // ---------------------------------------------------------------------------
 // Um caso da tabela → a escrita que ele representa, no casal A, pelo Gabriel.
 //
-// O mapeamento camel → snake é local ao teste por ora: `src/data/tripRow.ts`
-// (T3) ainda não existe. Quando existir, estes mapeadores devem ser trocados
-// pelos dele — como o calendar.test.ts usa `eventDraftToInsert`.
+// O mapeamento camel → snake é o de `src/data/tripRow.ts`, o MESMO que a
+// fronteira de dados usa — como o calendar.test.ts usa `eventDraftToInsert`.
+// Um bug de mapeamento aparece aqui e lá, em vez de ser mascarado.
 // ---------------------------------------------------------------------------
-function lodgingColumns(l: Lodging) {
-  return {
-    lodging_name: l.name,
-    lodging_address: l.address,
-    lodging_check_in: l.checkIn,
-    lodging_check_out: l.checkOut,
-    lodging_url: l.url,
-    lodging_code: l.code,
-    lodging_cents: l.cents,
-    lodging_paid: l.paid,
-  }
-}
-
-const base = () => ({ trip_id: caseTrip, couple_id: scene.coupleA })
+const key = () => ({ tripId: caseTrip, coupleId: scene.coupleA })
 
 /** `ok` se o banco aceitou (e desfaz), ou o SQLSTATE e a regra da recusa. */
 async function tryCase(c: TripValidationCase): Promise<{ code: string; rule: string }> {
@@ -155,7 +151,7 @@ async function tryCase(c: TripValidationCase): Promise<{ code: string; rule: str
       const d = c.draft
       res = await asGabriel
         .from('trip_itinerary_items')
-        .insert({ ...base(), day: d.day, at: d.at, title: d.title, kind: d.kind, note: d.note, list_item_id: d.listItemId })
+        .insert(itineraryToInsert(key(), d))
       undo = () => root.from('trip_itinerary_items').delete().eq('trip_id', caseTrip)
       break
     }
@@ -163,7 +159,7 @@ async function tryCase(c: TripValidationCase): Promise<{ code: string; rule: str
       const d = c.draft
       const inserted = await asGabriel
         .from('trip_prep_items')
-        .insert({ ...base(), kind: d.kind, label: d.label, detail: d.detail, done: d.done })
+        .insert(prepToInsert(key(), d))
         .select('id')
       res = inserted
       // Os cinco padrão ficam: só sai a linha que o caso inseriu.
@@ -175,18 +171,18 @@ async function tryCase(c: TripValidationCase): Promise<{ code: string; rule: str
       const d = c.draft
       res = await asGabriel
         .from('trip_budget_lines')
-        .insert({ ...base(), label: d.label, planned_cents: d.plannedCents, spent_cents: d.spentCents })
+        .insert(budgetToInsert(key(), d))
       undo = () => root.from('trip_budget_lines').delete().eq('trip_id', caseTrip)
       break
     }
     case 'memory': {
-      res = await asGabriel.from('trip_memories').insert({ ...base(), rating: c.draft.rating, body: c.draft.body })
+      res = await asGabriel.from('trip_memories').insert(memoryToRow(key(), scene.gabriel.id, c.draft))
       undo = () => root.from('trip_memories').delete().eq('trip_id', caseTrip)
       break
     }
     case 'lodging': {
-      res = await asGabriel.from('trips').update(lodgingColumns(c.draft)).eq('event_id', caseTrip)
-      undo = () => root.from('trips').update(lodgingColumns(EMPTY_LODGING)).eq('event_id', caseTrip)
+      res = await asGabriel.from('trips').update(lodgingToColumns(c.draft)).eq('event_id', caseTrip)
+      undo = () => root.from('trips').update(lodgingToColumns(EMPTY_LODGING)).eq('event_id', caseTrip)
       break
     }
     case 'departure': {
@@ -194,17 +190,19 @@ async function tryCase(c: TripValidationCase): Promise<{ code: string; rule: str
       // `PERSON` é o Gabriel.
       res = await asGabriel
         .from('trip_departures')
-        .insert({ ...base(), profile_id: scene.gabriel.id, origin_code: d.originCode, note: d.note })
+        .insert(departureToRow(key(), { ...d, profileId: scene.gabriel.id }))
       undo = () => root.from('trip_departures').delete().eq('trip_id', caseTrip)
       break
     }
     case 'dayTitle': {
-      res = await asGabriel.from('trip_days').insert({ ...base(), day: '2027-01-10', title: c.draft })
+      res = await asGabriel.from('trip_days').insert(dayTitleToRow(key(), '2027-01-10', c.draft))
       undo = () => root.from('trip_days').delete().eq('trip_id', caseTrip)
       break
     }
     case 'caption': {
-      res = await asGabriel.from('trip_photos').insert({ ...base(), path: photoPath(scene.coupleA), caption: c.draft })
+      res = await asGabriel
+        .from('trip_photos')
+        .insert(photoToInsert(key(), { path: photoPath(scene.coupleA), takenOn: null, caption: c.draft }))
       undo = () => root.from('trip_photos').delete().eq('trip_id', caseTrip)
       break
     }

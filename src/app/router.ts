@@ -1,10 +1,10 @@
-// A navegação do app: caminho na barra, sem biblioteca (ADR 0013).
+// A navegação do app: caminho na barra, sem biblioteca (ADR 0013, 0020).
 //
-// O app tem hoje três áreas (Calendário, Lista e Configurações) e nove abas;
-// nenhuma rota tem parâmetro além do slug da aba, e nenhuma carrega dado por
-// rota. O item aberto na Lista é estado da tela, não caminho (Fase 4, seção 5).
-// Enquanto for assim, ~50 linhas sobre `history` bastam. O ADR diz quando
-// trocar por biblioteca.
+// O app tem hoje quatro áreas (Calendário, Lista, Viagens e Configurações) e
+// nove abas. Uma rota tem parâmetro: o detalhe da viagem, `/viagens/<id>`
+// (Fase 6, ADR 0020) — o parâmetro é só identidade, e nenhuma rota carrega
+// dado. O item aberto na Lista é estado da tela, não caminho (Fase 4, seção
+// 5). O ADR 0020 diz quando trocar por biblioteca.
 
 import { useSyncExternalStore } from 'react'
 import { isSettingsTab } from '../domain/settings'
@@ -13,9 +13,15 @@ import type { SettingsTab } from '../domain/settings'
 export type Route =
   | { name: 'calendar' }
   | { name: 'list' }
+  | { name: 'trips' }
+  /** `id` = o do evento `viagem` (ADR 0019), em minúsculas. */
+  | { name: 'trip'; id: string }
   | { name: 'settings'; tab: SettingsTab }
 
 export const SETTINGS_DEFAULT_TAB: SettingsTab = 'perfil-do-casal'
+
+/** O formato de um uuid, sem caixa (ADR 0020). */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
  * Caminho → rota. `null` quando o caminho não existe: quem chama decide para
@@ -26,6 +32,12 @@ export function parseRoute(pathname: string): Route | null {
   const path = pathname.replace(/\/+$/, '') || '/'
   if (path === '/' || path === '/calendario') return { name: 'calendar' }
   if (path === '/lista') return { name: 'list' }
+  if (path === '/viagens') return { name: 'trips' }
+  // R1: qualquer segmento é o detalhe — um id que não é viagem do casal (ou
+  // nem é uuid) mostra "Essa viagem não está aqui.", em vez de sumir para o
+  // Calendário. O uuid em maiúsculas é o mesmo id: `canonicalPath` o baixa.
+  const trip = /^\/viagens\/([A-Za-z0-9-]+)$/.exec(path)
+  if (trip) return { name: 'trip', id: UUID.test(trip[1]) ? trip[1].toLowerCase() : trip[1] }
   const match = /^\/configuracoes\/([a-z-]+)$/.exec(path)
   if (match && isSettingsTab(match[1])) return { name: 'settings', tab: match[1] }
   return null
@@ -35,13 +47,18 @@ export function parseRoute(pathname: string): Route | null {
 export function canonicalPath(pathname: string): string | null {
   const path = pathname.replace(/\/+$/, '') || '/'
   if (path === '/configuracoes') return `/configuracoes/${SETTINGS_DEFAULT_TAB}`
-  if (parseRoute(path) === null) return '/'
-  return path === pathname ? null : path
+  const route = parseRoute(path)
+  if (route === null) return '/'
+  // `/viagens/<UUID>` → minúsculas: um endereço só por viagem.
+  const canonical = route.name === 'trip' ? pathFor(route) : path
+  return canonical === pathname ? null : canonical
 }
 
 export function pathFor(route: Route): string {
   if (route.name === 'calendar') return '/'
   if (route.name === 'list') return '/lista'
+  if (route.name === 'trips') return '/viagens'
+  if (route.name === 'trip') return `/viagens/${route.id}`
   return `/configuracoes/${route.tab}`
 }
 

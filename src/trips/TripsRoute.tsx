@@ -8,11 +8,13 @@
 // casal (apagada pela outra pessoa, de outro casal, inventado) é um ESTADO da
 // tela, não um redirecionamento (ADR 0020): _"Essa viagem não está aqui."_.
 
+import { useState } from 'react'
 import { ArrowLeft, RotateCw } from 'lucide-react'
 import { navigate } from '../app/router'
 import type { TripsApi } from './api'
-import { TripsContext, useTripsData } from './context'
+import { TripsContext, useTrips, useTripsData } from './context'
 import { TripDetail } from './detail/TripDetail'
+import { TripModal } from './TripModal'
 import { TripsScreen } from './TripsScreen'
 import './trips.css'
 
@@ -85,10 +87,23 @@ export function TripsRoute({ api, view }: TripsRouteProps) {
         ) : missing ? (
           <NotHere />
         ) : (
-          <TripDetail id={view.id} />
+          <EditableDetail id={view.id} />
         )}
       </div>
     </TripsContext.Provider>
+  )
+}
+
+/** O Detalhe com o lápis do herói ligado ao _Editar viagem_ (R26). */
+function EditableDetail({ id }: { id: string }) {
+  const { tripById } = useTrips()
+  const [editing, setEditing] = useState(false)
+  const trip = tripById(id)
+  return (
+    <>
+      <TripDetail id={id} onEditTrip={() => setEditing(true)} />
+      {editing && trip && <TripModal mode="edit" trip={trip} onClose={() => setEditing(false)} />}
+    </>
   )
 }
 

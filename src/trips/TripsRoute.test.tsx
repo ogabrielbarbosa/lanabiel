@@ -166,3 +166,15 @@ describe('seção 8 — URLs assinadas só do que a tela pede, num lote', () => 
     expect(screen.getByTestId('count')).toHaveTextContent('1')
   })
 })
+
+describe('R26 — o lápis do Detalhe abre o Editar viagem', () => {
+  it('toca no lápis → diálogo "Editar viagem" com o nome da viagem; Cancelar fecha', async () => {
+    renderTripsRoute(seededTripsApi(), { name: 'trip', id: TRIP_ILHABELA_ID })
+    await userEvent.click(await screen.findByRole('button', { name: 'Editar viagem' }))
+    const dialog = screen.getByRole('dialog', { name: 'Editar viagem' })
+    expect(dialog).toBeInTheDocument()
+    expect(screen.getByLabelText('Nome da viagem')).toHaveValue(TRIP_ILHABELA.title)
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('dialog', { name: 'Editar viagem' })).not.toBeInTheDocument()
+  })
+})

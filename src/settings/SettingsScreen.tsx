@@ -11,13 +11,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { ChevronRight, Lock } from 'lucide-react'
 import type { SettingsData } from '../data/settings'
+import type { ListCounts } from '../data/listSummary'
 import type { DataResult } from '../data/result'
 import { SETTINGS_TABS } from '../domain/settings'
 import type { SettingsTab } from '../domain/settings'
 import { navigate } from '../app/router'
 import type { AppearanceControl } from '../app/useAppearance'
 import type { SettingsApi } from './api'
-import { TAB_META, useWrites } from './context'
+import { TAB_META, tabLead, useWrites } from './context'
 import type { TabContext } from './context'
 import { Button } from './parts'
 import { RightPanel } from './RightPanel'
@@ -58,6 +59,20 @@ export function SettingsScreen({ tab, api, appearance, onStageChanged }: Setting
   }, [api, version])
 
   const reload = useCallback(() => setVersion((v) => v + 1), [])
+
+  // R26: a contagem da Lista vem à parte. Falhar aqui NÃO derruba a tela —
+  // é um número do resumo (mostra —), não um valor que alguém vá editar
+  // achando que é o gravado. Relida junto com o resto (`version`).
+  const [listCounts, setListCounts] = useState<DataResult<ListCounts> | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    void api.loadListCounts().then((value) => {
+      if (!cancelled) setListCounts(value)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [api, version])
 
   // URLs assinadas das fotos (1 h). Relidas quando os caminhos mudam.
   const [urls, setUrls] = useState<{ avatars: Record<string, string | null>; cover: string | null }>({
@@ -120,6 +135,7 @@ export function SettingsScreen({ tab, api, appearance, onStageChanged }: Setting
         partner: data.couple.members.find((m) => m.profileId !== me.profileId) ?? null,
         today,
         writes,
+        listCounts,
         update: (fn) => setData((d) => (d ? fn(d) : d)),
         reload,
         urls: { avatar: (id) => urls.avatars[id] ?? null, cover: urls.cover },
@@ -171,13 +187,13 @@ export function SettingsScreen({ tab, api, appearance, onStageChanged }: Setting
           <section className="st-section" aria-labelledby="st-section-title">
             <div className="st-section-head">
               <h2 id="st-section-title">{TAB_META[tab].label}</h2>
-              <p>{TAB_META[tab].lead}</p>
+              <p>{tabLead(tab, listCounts)}</p>
             </div>
             {body}
           </section>
         </div>
       </div>
-      {data && <RightPanel data={data} today={today} urls={urls} />}
+      {data && <RightPanel data={data} today={today} urls={urls} listCounts={listCounts} />}
     </div>
   )
 }

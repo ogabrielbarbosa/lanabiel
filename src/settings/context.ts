@@ -17,7 +17,10 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { SettingsData, SettingsMember } from '../data/settings'
+import type { ListCounts } from '../data/listSummary'
+import type { DataResult } from '../data/result'
 import type { SettingsTab } from '../domain/settings'
+import { formatThousands } from '../domain/settings'
 import type { AppearanceControl } from '../app/useAppearance'
 import type { SettingsApi } from './api'
 
@@ -26,11 +29,22 @@ export const TAB_META: Record<SettingsTab, { label: string; icon: LucideIcon; le
   'meu-perfil': { label: 'Meu perfil', icon: UserRound, lead: 'Só você vê e edita isto.' },
   cidades: { label: 'Cidades', icon: MapPin, lead: 'Onde cada um mora define se um dia conta como juntos em casa ou viajando.' },
   calendario: { label: 'Calendário', icon: CalendarHeart, lead: 'Como o mês aparece.' },
-  lista: { label: 'Lista', icon: ListChecks, lead: 'Como a lista aparece e o que o app sugere.' },
+  lista: { label: 'Lista', icon: ListChecks, lead: 'Como os itens aparecem e o que o app sugere.' },
   notificacoes: { label: 'Notificações', icon: Bell, lead: 'Quem é avisado, de quê, e por onde.' },
   aparencia: { label: 'Aparência', icon: Palette, lead: 'Como o app se parece.' },
   'dados-e-privacidade': { label: 'Dados e privacidade', icon: ShieldCheck, lead: 'O que existe e quem alcança.' },
   'zona-sensivel': { label: 'Zona sensível', icon: TriangleAlert, lead: 'Coisas que não dá pra desfazer.' },
+}
+
+/**
+ * Subtítulo da aba (frame MrIGB): "Como os {total} itens aparecem…". Sem a
+ * contagem (lendo ou falhou), fica sem o número — nunca um zero que não se sabe.
+ */
+export function tabLead(tab: SettingsTab, listCounts: DataResult<ListCounts> | null): string {
+  if (tab !== 'lista' || listCounts?.status !== 'ok') return TAB_META[tab].lead
+  const total = listCounts.rows.total
+  if (total === 1) return 'Como o 1 item aparece e o que o app sugere.'
+  return `Como os ${formatThousands(total)} itens aparecem e o que o app sugere.`
 }
 
 /** Mensagem de uma falha de escrita, para mostrar junto do controle. */
@@ -91,6 +105,12 @@ export interface TabContext {
   partner: SettingsMember | null
   today: string
   writes: Writes
+  /**
+   * Contagem da Lista (R26), lida à parte de `loadSettings`: é número de
+   * resumo, não valor editável — a falha dela mostra — e não derruba a tela.
+   * `null` enquanto lê.
+   */
+  listCounts: DataResult<ListCounts> | null
   /** Aplica o que o banco devolveu. */
   update: (fn: (data: SettingsData) => SettingsData) => void
   /** Relê tudo — depois de um conflito ("este espaço mudou"). */

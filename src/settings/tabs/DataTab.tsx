@@ -113,7 +113,7 @@ function PhotoCards({ api, ctx }: { api: TabContext['api']; ctx: TabContext }) {
           {formatThousands(stats.rows.count)}
           {stats.rows.truncated ? '+' : ''}
         </p>
-        <p className="st-hint">Fotos de perfil e do casal</p>
+        <p className="st-hint">Fotos de perfil, do casal e da lista</p>
       </Card>
       <Card className="st-metric-card">
         <p className="st-row-hint">

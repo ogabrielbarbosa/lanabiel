@@ -1,9 +1,11 @@
 // Lista (MrIGB). Preferências do CASAL, lidas pela Fase 4. As chaves de
-// categoria são as de `list_items.category` (ADR 0003, I6). Sem contadores por
-// chip até a lista existir.
+// categoria são as de `list_items.category` (ADR 0003, I6). Cada chip mostra
+// quantos itens há na categoria (Fase 4, R26) num selo à parte, como no frame
+// ("Países" + "7"); sem a contagem (lendo ou falhou), só o nome: o chip
+// continua sendo o controle.
 
 import { ArrowDownAZ, Clock, Shapes, Sparkles } from 'lucide-react'
-import { LIST_CATEGORIES, LIST_CATEGORY_LABEL } from '../../domain/settings'
+import { LIST_CATEGORIES, LIST_CATEGORY_LABEL, formatThousands } from '../../domain/settings'
 import type { ListCategory } from '../../domain/settings'
 import type { CoupleSettings } from '../../data/settings'
 import { Card, FieldError, Segmented, Toggle } from '../parts'
@@ -15,6 +17,7 @@ export function ListTab(ctx: TabContext) {
   const cs = data.coupleSettings
   const hidden = new Set(cs.hiddenCategories)
   const visible = LIST_CATEGORIES.length - hidden.size
+  const counts = ctx.listCounts?.status === 'ok' ? ctx.listCounts.rows.byCategory : null
 
   function toggleCategory(category: ListCategory) {
     const next = hidden.has(category)
@@ -81,6 +84,12 @@ export function ListTab(ctx: TabContext) {
               >
                 <span className="st-chip-dot" aria-hidden="true" />
                 {LIST_CATEGORY_LABEL[category]}
+                {counts && (
+                  <>
+                    {' '}
+                    <span className="st-chip-count">{formatThousands(counts[category])}</span>
+                  </>
+                )}
               </button>
             )
           })}

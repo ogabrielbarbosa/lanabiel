@@ -1,0 +1,2695 @@
+/* Lista (Fase 4), fiel aos frames `B3rwp` (Todos), `DXg1A` (Filtro sem
+   resultados) e `ltlFV` (Painel), lidos no .pen em 2026-09-26. Fundo, texto e
+   vidro só com os tokens de src/app/app.css.
+
+   As cores de CATEGORIA são tokens do .pen (`cat-*`, com valor claro e
+   escuro) que a casca ainda não declarava: ficam aqui, no mesmo formato do
+   bloco de tema de app.css, até alguém fora da Lista precisar delas. Cada
+   elemento de categoria lê `--cat` pela classe `.ls-cat--{categoria}`. */
+
+:root,
+:root[data-theme='dark'] {
+  --cat-pais: #9ccbf2;
+  --cat-cidade: #f7c59f;
+  --cat-restaurante: #eda88a;
+  --cat-parque: #7fd8c4;
+  --cat-comida: #f6e3a1;
+  --cat-experiencia: #cbe68e;
+  --cat-filme: #f4a3b4;
+  --cat-serie: #c3b3f2;
+}
+
+:root[data-theme='light'] {
+  --cat-pais: #3d8bd4;
+  --cat-cidade: #d9822b;
+  --cat-restaurante: #c8683f;
+  --cat-parque: #1fa184;
+  --cat-comida: #c9951c;
+  --cat-experiencia: #6e9b1e;
+  --cat-filme: #d9546f;
+  --cat-serie: #7e62d6;
+}
+
+.ls-cat--pais { --cat: var(--cat-pais); }
+.ls-cat--cidade { --cat: var(--cat-cidade); }
+.ls-cat--restaurante { --cat: var(--cat-restaurante); }
+.ls-cat--parque { --cat: var(--cat-parque); }
+.ls-cat--comida { --cat: var(--cat-comida); }
+.ls-cat--experiencia { --cat: var(--cat-experiencia); }
+.ls-cat--filme { --cat: var(--cat-filme); }
+.ls-cat--serie { --cat: var(--cat-serie); }
+
+.ls-cat-icon {
+  flex: none;
+  color: var(--cat, var(--text-secondary));
+}
+
+.ls-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cat, var(--text-tertiary));
+}
+
+/* --- layout -------------------------------------------------------------- */
+
+.ls {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  min-height: calc(100dvh - 32px);
+}
+
+.ls-area {
+  flex: 1;
+  min-width: 0;
+  max-width: 912px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 8px 40px 24px;
+}
+
+.ls p {
+  margin: 0;
+}
+
+/* --- cabeçalho (Header, Fg8Su) ------------------------------------------- */
+
+.ls-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.ls-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ls-kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.ls-kicker svg {
+  flex: none;
+  color: var(--emphasis);
+}
+
+.ls-title h1 {
+  margin: 0;
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: -1.8px;
+  line-height: 1.05;
+}
+
+.ls-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ls-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 280px;
+  max-width: 100%;
+  height: 40px;
+  padding: 0 8px 0 14px;
+  border-radius: 999px;
+  background: var(--glass);
+  border: 1px solid var(--glass-stroke-soft);
+  box-shadow: inset 0 1px 1px var(--glass-shine);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  color: var(--text-secondary);
+}
+
+.ls-search:focus-within {
+  border-color: var(--accent);
+}
+
+.ls-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.ls-search input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.ls-search input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.ls-search kbd {
+  flex: none;
+  padding: 3px 7px;
+  border-radius: 8px;
+  background: var(--glass-strong);
+  color: var(--text-tertiary);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* --- botões ("Primary Button" i4rXyf, "Ghost Button", "Icon Button" PJpJ8) */
+
+.ls-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: none;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--glass-stroke-soft);
+  border-radius: 999px;
+  background: var(--glass);
+  box-shadow: inset 0 1px 1px var(--glass-shine);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ls-btn:hover:not(:disabled) {
+  background: var(--glass-hover);
+}
+
+.ls-btn:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.ls-btn--primary {
+  padding: 0 18px 0 14px;
+  border-color: transparent;
+  background: var(--accent-gradient);
+  box-shadow: 0 8px 24px var(--accent-glow), inset 0 1px 1px var(--glass-shine);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.ls-btn--primary:hover:not(:disabled) {
+  background: var(--accent-gradient);
+  filter: brightness(1.05);
+}
+
+.ls-btn--wide {
+  flex: 1;
+}
+
+.ls-icon-btn {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.ls-icon-btn:hover {
+  background: var(--glass-soft);
+  color: var(--text-primary);
+}
+
+.ls-icon-btn--glass {
+  background: var(--glass);
+  border: 1px solid var(--glass-stroke-soft);
+  box-shadow: inset 0 1px 1px var(--glass-shine);
+  color: var(--text-primary);
+}
+
+.ls-icon-btn--40 {
+  width: 40px;
+  height: 40px;
+}
+
+.ls-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.ls-link:hover {
+  color: var(--text-primary);
+}
+
+.ls :is(button, select, input):focus-visible,
+.ls-dialog :is(button, select, input):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.ls-hint {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-tertiary);
+}
+
+.ls-meta {
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+.ls-meta--small {
+  font-size: 12px;
+}
+
+.ls-emphasis {
+  flex: none;
+  color: var(--emphasis);
+}
+
+.ls-notice {
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--glass-soft);
+  border: 1px solid var(--glass-stroke-soft);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.ls-notice--error {
+  background: var(--danger-soft);
+  color: var(--text-primary);
+}
+
+/* --- chips de categoria (Chip Z7mBtN / Chip Active mJKgM) ---------------- */
+
+.ls-chips {
+  display: flex;
+  gap: 8px;
+  margin: 0 -8px 0 -4px;
+  padding: 4px 8px 6px 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.ls-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.ls-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  padding: 9px 14px;
+  border: 1px solid var(--glass-stroke-soft);
+  border-radius: 999px;
+  background: var(--glass);
+  box-shadow: inset 0 1px 1px var(--glass-shine);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.ls-chip > svg {
+  color: var(--cat, var(--text-secondary));
+}
+
+.ls-chip:hover {
+  background: var(--glass-hover);
+}
+
+.ls-chip-count {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.ls-chip[aria-pressed='true'] {
+  background: var(--glass-hover);
+  border-color: var(--accent);
+  box-shadow: 0 0 18px var(--accent-glow), inset 0 1px 1px var(--glass-shine);
+  font-weight: 600;
+}
+
+.ls-chip[aria-pressed='true']:not([class*='ls-cat--']) > svg {
+  color: var(--accent);
+}
+
+.ls-chip[aria-pressed='true'] .ls-chip-count {
+  color: var(--text-secondary);
+}
+
+/* --- filtros (Filters spKzo) --------------------------------------------- */
+
+.ls-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.ls-segmented {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--glass-soft);
+  border: 1px solid var(--glass-stroke-soft);
+}
+
+.ls-segmented button {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.ls-segmented button[aria-pressed='true'] {
+  background: var(--glass-hover);
+  box-shadow: inset 0 1px 1px var(--glass-shine), 0 0 14px var(--accent-glow);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.ls-who {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ls-who-options {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--glass-soft);
+  border: 1px solid var(--glass-stroke-soft);
+}
+
+.ls-who-person,
+.ls-who-both {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ls-who-person {
+  width: 28px;
+  padding: 0;
+}
+
+.ls-who-both {
+  padding: 0 8px 0 6px;
+}
+
+.ls-who-person[aria-pressed='true'],
+.ls-who-both[aria-pressed='true'] {
+  background: var(--glass-hover);
+  border-color: var(--accent-glow);
+  color: var(--text-primary);
+}
+
+.ls-sort {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--glass-soft);
+  border: 1px solid var(--glass-stroke-soft);
+  color: var(--text-secondary);
+}
+
+.ls-sort select {
+  appearance: none;
+  border: 0;
+  padding: 0 18px 0 0;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.ls-sort select option {
+  background: var(--bg-mid);
+  color: var(--text-primary);
+}
+
+.ls-sort-chevron {
+  position: absolute;
+  right: 12px;
+  pointer-events: none;
+  color: var(--text-tertiary);
+}
+
+/* --- seções (Em destaque, Tudo) ------------------------------------------ */
+
+.ls-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 8px;
+  min-width: 0;
+}
+
+.ls-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.ls-section-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ls-section-head h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+}
+
+.ls-arrows {
+  display: flex;
+  gap: 6px;
+}
+
+/* Destaque Card (vg3JO): 300 × 184, foto com degradê embaixo. */
+.ls-featured {
+  display: flex;
+  gap: 14px;
+  margin: 0;
+  padding: 0 0 4px;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.ls-featured::-webkit-scrollbar {
+  display: none;
+}
+
+.ls-featured li {
+  flex: 0 0 300px;
+  max-width: 82%;
+  scroll-snap-align: start;
+}
+
+.ls-feature {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 184px;
+  padding: 0;
+  border: 1px solid var(--glass-stroke);
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--glass);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ls-feature-photo {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+}
+
+/* O degradê do frame (#050818 → transparente) vira sombra do tema. */
+.ls-feature-scrim {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px;
+  background: linear-gradient(180deg, transparent 40%, var(--glass-dark) 100%);
+}
+
+.ls-feature-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ls-feature-badge {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-stroke);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: var(--emphasis);
+}
+
+.ls-feature-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.ls-feature-name {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+
+.ls-feature-place {
+  font-size: 12px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Category Tag (DwK4I). */
+.ls-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--glass-strong);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.ls-tag--glass {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: var(--text-primary);
+}
+
+/* --- foto ou fundo da categoria ----------------------------------------- */
+
+.ls-photo {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--glass-soft);
+}
+
+.ls-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Sem foto (ou sem URL assinada): a cor da categoria, bem suave, e o ícone. */
+.ls-photo--empty {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(120% 90% at 30% 20%, color-mix(in srgb, var(--cat) 38%, transparent), transparent 70%),
+    color-mix(in srgb, var(--cat) 14%, var(--glass-soft));
+}
+
+.ls-photo-icon {
+  color: var(--cat);
+  opacity: 0.8;
+}
+
+/* --- grade e List Card (jjOX2) ------------------------------------------- */
+
+.ls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ls-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  padding: 8px;
+  border-radius: 24px;
+  background: var(--glass);
+  border: 1px solid var(--glass-stroke-soft);
+  box-shadow: 0 14px 36px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.ls-card:hover,
+.ls-card:focus-within {
+  background: var(--glass-hover);
+  border-color: var(--accent);
+  box-shadow: 0 18px 40px var(--accent-glow), inset 0 1px 1px var(--glass-shine);
+}
+
+.ls-card-photo {
+  flex: none;
+  height: 124px;
+}
+
+.ls-card-emphasis {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--glass-dark);
+  box-shadow: 0 0 12px var(--accent-glow);
+  color: var(--emphasis);
+}
+
+.ls-card-done {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px 4px 7px;
+  border-radius: 999px;
+  background: var(--glass-dark);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ls-card-done svg {
+  color: var(--accent);
+}
+
+/* Hover Scrim + Hover Actions do componente: aparecem no hover e no foco. */
+.ls-card-actions {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  background: color-mix(in srgb, var(--bg-deep) 50%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+
+.ls-card:hover .ls-card-actions,
+.ls-card-actions:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ls-card-action {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--glass-stroke);
+  border-radius: 999px;
+  background: var(--glass-strong);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: inset 0 1px 1px var(--glass-shine);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.ls-card-action[aria-pressed='true'] {
+  color: var(--emphasis);
+}
+
+.ls-card-action--static {
+  cursor: inherit;
+}
+
+/* O título é o botão que abre o detalhe; o ::after estende o alvo ao card. */
+.ls-card-open {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ls-card-open::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 24px;
+}
+
+.ls-card-open:focus-visible {
+  outline: none;
+}
+
+.ls-card:has(.ls-card-open:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.ls-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  padding: 0 4px 4px;
+  min-width: 0;
+}
+
+.ls-card-name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.ls-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: 12px;
+}
+
+.ls-card-cat {
+  flex: none;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.ls-card-place {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-tertiary);
+}
+
+.ls-card-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 2px;
+}
+
+.ls-card-who {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.ls-card-who > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ls-card-status {
+  flex: none;
+  color: var(--text-tertiary);
+}
+
+.ls-card-status--done {
+  color: var(--accent);
+}
+
+/* --- avatares ------------------------------------------------------------ */
+
+.ls-avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--person, var(--glass-strong));
+  box-shadow: 0 0 0 1.5px var(--glass-stroke);
+  color: var(--on-accent);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.ls-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Casal / Juntos (TRoUw): 33 × 22, avatares sobrepostos e o coração. */
+.ls-couple {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  width: 33px;
+  height: 22px;
+}
+
+.ls-couple .ls-avatar + .ls-avatar {
+  margin-left: -3px;
+}
+
+.ls-couple-heart {
+  position: absolute;
+  left: 9px;
+  top: 7px;
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 999px;
+  background: var(--heart);
+  box-shadow: 0 0 0 1.5px var(--bg-deep), 0 0 8px var(--heart);
+  color: var(--on-accent);
+}
+
+/* --- estados vazios (Empty State icP1Q) ---------------------------------- */
+
+.ls-empty {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  min-height: 440px;
+  padding: 40px 24px;
+  border-radius: 32px;
+  background: var(--glass-soft);
+  border: 1px solid var(--glass-stroke-soft);
+  text-align: center;
+}
+
+.ls-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 88px;
+  height: 88px;
+  border-radius: 999px;
+  background: var(--glass);
+  border: 1px solid var(--glass-stroke-soft);
+  box-shadow: 0 0 40px color-mix(in srgb, var(--cat) 25%, transparent), inset 0 1px 1px var(--glass-shine);
+  color: var(--cat);
+}
+
+.ls-empty-icon--accent {
+  --cat: var(--accent);
+}
+
+.ls-empty-text {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 420px;
+}
+
+.ls-empty-text h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.6px;
+}
+
+.ls-empty-text p {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.ls-empty-filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ls-empty-filters li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px 5px 10px;
+  border-radius: 999px;
+  background: var(--glass-strong);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.ls-empty-filters button {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.ls-empty-filters button:hover {
+  color: var(--text-primary);
+}
+
+.ls-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+/* --- esqueleto e erro ---------------------------------------------------- */
+
+.ls-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.ls-skeleton-chips {
+  display: flex;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.ls-skeleton-chips span {
+  flex: none;
+  width: 104px;
+  height: 38px;
+  border-radius: 999px;
+  background: var(--glass);
+}
+
+.ls-skeleton-card {
+  height: 220px;
+  border-radius: 24px;
+  background: var(--glass);
+  border: 1px solid var(--glass-stroke-soft);
+  animation: ls-pulse 1.4s ease-in-out infinite;
+}
+
+.ls-skeleton-chips span {
+  animation: ls-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes ls-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.ls-load-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 22px;
+  background: var(--glass);
+  border: 1px solid var(--glass-stroke-soft);
+  font-size: 14px;
+}
+
+/* --- painel da direita (Right Panel hWcCy, ltlFV) ------------------------ */
+
+.ls-panel {
+  flex: 0 0 clamp(340px, 29vw, 424px);
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: 24px 20px;
+  border-radius: 36px;
+  background: var(--glass);
+  border: 1px solid var(--glass-stroke-soft);
+  box-shadow: 0 30px 80px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
+  backdrop-filter: blur(60px);
+  -webkit-backdrop-filter: blur(60px);
+  scrollbar-width: thin;
+}
+
+.ls-panel-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+}
+
+.ls-panel-date {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+
+.ls-panel-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.8px;
+}
+
+/* Glass Card (btuiH). */
+.ls-panel-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 24px;
+  background: var(--glass);
+  border: 1px solid var(--glass-stroke-soft);
+  box-shadow: 0 18px 48px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
+}
+
+.ls-panel-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.ls-panel-card-head h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+/* Progresso. */
+.ls-progress-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.ls-progress-numbers {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.ls-progress-numbers strong {
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: -2px;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.ls-progress-numbers span {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.ls-progress-pct {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.6px;
+}
+
+.ls-track {
+  display: block;
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--track);
+  overflow: hidden;
+}
+
+.ls-track > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--cat, var(--accent));
+}
+
+.ls-track--main {
+  height: 8px;
+  margin-top: -2px;
+  overflow: visible;
+}
+
+.ls-track--main > span {
+  background: var(--accent-gradient);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.ls-progress-cats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 4px 0 0;
+  list-style: none;
+}
+
+.ls-progress-cats li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.ls-progress-cat-name {
+  flex: 0 0 92px;
+  color: var(--text-secondary);
+}
+
+.ls-progress-cat-count {
+  flex: 0 0 34px;
+  text-align: right;
+  font-weight: 600;
+}
+
+/* Sugestão do momento. */
+.ls-suggestion {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ls-suggestion-photo {
+  height: 160px;
+}
+
+.ls-suggestion-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--glass-dark);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ls-suggestion-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ls-suggestion-name {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+}
+
+.ls-suggestion-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.ls-suggestion-context {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-tertiary);
+}
+
+.ls-suggestion-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Perto de vocês. */
+.ls-where {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: var(--glass-soft);
+}
+
+.ls-where-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ls-where-sub {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.ls-nearby,
+.ls-recent {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Place Quick Card (apt2z). */
+.ls-quick {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 12px 7px 7px;
+  border: 1px solid var(--glass-stroke-soft);
+  border-radius: 18px;
+  background: var(--glass);
+  box-shadow: inset 0 1px 1px var(--glass-shine);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ls-quick:hover {
+  background: var(--glass-hover);
+}
+
+.ls-quick-thumb {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+}
+
+.ls-quick-thumb .ls-photo-icon,
+.ls-recent-thumb .ls-photo-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.ls-quick-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ls-quick-name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
+.ls-quick-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.ls-quick-cat {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* Region Item (LptF9). */
+.ls-recent-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ls-recent-row:hover {
+  background: var(--glass-soft);
+}
+
+.ls-recent-thumb {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+}
+
+.ls-recent-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.ls-recent-name {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ls-recent-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ls-recent-note {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* --- sobrepostos (modal e painel lateral do detalhe) --------------------- */
+
+.ls-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  background: color-mix(in srgb, var(--bg-deep) 60%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.ls-overlay--sheet {
+  justify-content: flex-end;
+  align-items: stretch;
+}
+
+.ls-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: min(560px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: 24px;
+  border-radius: 28px;
+  background: var(--glass-dark);
+  border: 1px solid var(--glass-stroke-soft);
+  box-shadow: 0 30px 80px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  color: var(--text-primary);
+  font-family: var(--font);
+  outline: none;
+}
+
+.ls-dialog--sheet {
+  width: min(480px, 100%);
+  max-height: none;
+}
+
+.ls-dialog-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.ls-dialog-head h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.6px;
+}
+
+.ls-dialog-sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.ls-dialog-foot {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* --- responsivo (como as Configurações) ---------------------------------- */
+
+@media (max-width: 1099px) {
+  .ls-panel {
+    display: none;
+  }
+
+  .ls-area {
+    max-width: none;
+  }
+}
+
+@media (hover: none) {
+  /* Sem hover, as ações do card ficam à mão num canto, sem o véu. */
+  .ls-card-actions {
+    inset: 8px auto auto 8px;
+    background: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .ls-card-action--static {
+    display: none;
+  }
+}
+
+@media (max-width: 759px) {
+  .ls-area {
+    padding: 12px 0 24px;
+  }
+
+  .ls-title h1 {
+    font-size: 32px;
+  }
+
+  .ls-controls {
+    width: 100%;
+  }
+
+  .ls-search {
+    flex: 1;
+    width: auto;
+  }
+
+  .ls-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .ls-empty {
+    min-height: 0;
+  }
+}
+
+/* === ItemSheet + MarkDone (T8) === */
+
+/* --- corações (detalhe e Marcar como feito) ------------------------------ */
+
+.ls-hearts {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.ls-heart {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--glass-stroke-soft);
+  border-radius: 999px;
+  background: var(--glass-soft);
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.ls-heart--on {
+  color: var(--heart);
+  border-color: color-mix(in srgb, var(--heart) 40%, transparent);
+}
+
+.ls-heart:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.ls-dialog .ls-heart:focus-visible,
+.ls-dialog :is(textarea, a):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* --- detalhe do item (caszk) --------------------------------------------- */
+
+.ls-sheet-photo {
+  position: relative;
+  height: 200px;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.ls-sheet-done-on {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--glass-dark);
+  border: 1px solid var(--glass-stroke-soft);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.ls-sheet-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ls-sheet-place {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--glass-soft);
+  border: 1px solid var(--glass-stroke-soft);
+}
+
+.ls-sheet-place p {
+  margin: 0;
+}
+
+.ls-sheet-address {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.ls-sheet-distance {
+  color: var(--accent);
+}
+
+.ls-sheet-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ls-sheet-field p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.ls-sheet-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+.ls-sheet-link {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  color: var(--accent);
+}
+
+.ls-sheet-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.ls-sheet-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--glass-soft);
+  border: 1px solid var(--glass-stroke-soft);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ls-sheet-done svg {
+  color: var(--accent);
+}
+
+.ls-sheet-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.ls-sheet-confirm p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.ls-sheet-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.ls-md-danger {
+  border-color: transparent;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.ls-md-danger:hover:not(:disabled) {
+  background: var(--danger-soft);
+  filter: brightness(1.1);
+}
+
+/* --- a nossa memória (YmDIZ) --------------------------------------------- */
+
+.ls-memory {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ls-memory-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ls-memory-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.ls-memory-photos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ls-memory-thumb {
+  position: relative;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--glass-soft);
+  cursor: pointer;
+}
+
+.ls-memory-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ls-memory-more {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--bg-deep) 55%, transparent);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ls-memory-add {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ls-memory-add .ls-link:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ls-memory-entry {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--glass-soft);
+  border: 1px solid var(--glass-stroke-soft);
+}
+
+.ls-memory-entry-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.ls-memory-entry-body p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+}
+
+.ls-memory-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.ls-memory-edit {
+  align-self: flex-start;
+  font-size: 12px;
+}
+
+.ls-memory-edit-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.ls-memory-edit-foot .ls-meta {
+  margin-right: auto;
+}
+
+.ls-memory-write {
+  align-self: flex-start;
+}
+
+/* --- galeria em tela cheia ----------------------------------------------- */
+
+.ls-gallery {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: color-mix(in srgb, var(--bg-deep) 92%, transparent);
+  color: var(--text-primary);
+}
+
+.ls-gallery-head,
+.ls-gallery-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ls-gallery-foot {
+  justify-content: center;
+}
+
+.ls-gallery-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+}
+
+.ls-gallery-stage img {
+  max-width: min(100%, 1200px);
+  max-height: 100%;
+  min-width: 0;
+  object-fit: contain;
+  border-radius: 16px;
+}
+
+.ls-gallery-empty {
+  font-size: 14px;
+  color: var(--text-tertiary);
+}
+
+/* --- Marcar como feito (AX49x) ------------------------------------------- */
+
+.ls-done-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ls-done-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ls-md-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ls-md-field-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.ls-md-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+.ls-md-input,
+.ls-md-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border: 1px solid var(--glass-stroke-soft);
+  border-radius: 14px;
+  background: var(--glass-soft);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  color-scheme: inherit;
+}
+
+.ls-md-input {
+  height: 40px;
+}
+
+.ls-md-textarea {
+  resize: vertical;
+  min-height: 72px;
+  line-height: 1.45;
+}
+
+.ls-md-input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.ls-md-error {
+  font-size: 12px;
+  color: var(--danger);
+}
+
+.ls-done-who {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ls-done-who button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--glass-stroke-soft);
+  border-radius: 999px;
+  background: var(--glass-soft);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.ls-done-who button[aria-pressed='true'] {
+  background: var(--glass-strong);
+  border-color: var(--glass-stroke);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.ls-done-who button svg {
+  color: var(--heart);
+}
+
+.ls-done-photos {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ls-done-photo {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--glass-soft);
+  border: 1px solid var(--glass-stroke-soft);
+}
+
+.ls-done-photo--bad {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 1px var(--danger);
+}
+
+.ls-done-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ls-done-photo-name {
+  display: block;
+  padding: 8px;
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  word-break: break-all;
+}
+
+.ls-done-photo .ls-icon-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+}
+
+.ls-done-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  aspect-ratio: 1;
+  border: 1px dashed var(--glass-stroke);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ls-done-add:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ls-done-memory {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ls-done-memory-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ls-done-rating {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--glass-soft);
+  border: 1px solid var(--glass-stroke-soft);
+}
+
+.ls-done-rating > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ls-done-rating-label {
+  font-size: 12px;
+  color: var(--heart);
+}
+
+@media (max-width: 759px) {
+  .ls-done-row {
+    grid-template-columns: 1fr;
+  }
+
+  .ls-done-photos {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* === fim ItemSheet + MarkDone === */
+
+/* === AddItemModal (T7) === */
+/* Modal de adicionar/editar (`yxsBu` e os outros 7): 900 px, duas colunas. */
+
+.ls-dialog:has(.ls-add) {
+  width: min(900px, 100%);
+}
+
+.ls-add {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ls-add-fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ls-add-fieldset:disabled {
+  opacity: 0.7;
+}
+
+.ls-add-step {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ls-add-step-label,
+.ls-add-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+
+.ls-add-tiles {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ls-add-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 82px;
+  padding: 10px 4px;
+  border-radius: 16px;
+  border: 1px solid var(--glass-stroke-soft);
+  background: var(--glass-soft);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ls-add-tile:hover:not(:disabled) {
+  background: var(--glass-hover);
+}
+
+.ls-add-tile:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.ls-add-tile-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--glass);
+  color: var(--cat, var(--text-secondary));
+}
+
+.ls-add-tile[aria-pressed='true'] {
+  background: var(--glass-hover);
+  border-color: var(--cat, var(--accent));
+  color: var(--text-primary);
+  font-weight: 600;
+  opacity: 1;
+}
+
+.ls-add-tile[aria-pressed='true'] .ls-add-tile-icon {
+  background: var(--cat, var(--accent));
+  color: var(--on-accent);
+}
+
+.ls-add-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 24px;
+  align-items: start;
+}
+
+.ls-add-form,
+.ls-add-side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.ls-add-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ls-add-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ls-add-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-stroke-soft);
+  background: var(--glass);
+  color: var(--text-secondary);
+}
+
+.ls-add-input:focus-within {
+  border-color: var(--accent);
+}
+
+.ls-add-input--search > svg {
+  color: var(--accent);
+}
+
+.ls-add-input--area {
+  align-items: flex-start;
+  padding-top: 11px;
+  padding-bottom: 8px;
+}
+
+.ls-add-input--short {
+  max-width: 200px;
+}
+
+.ls-add-input.is-invalid {
+  border-color: var(--danger);
+}
+
+.ls-add-input.is-readonly {
+  background: var(--glass-soft);
+}
+
+.ls-add-input > svg {
+  flex: none;
+}
+
+.ls-add-input :is(input, textarea) {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  resize: vertical;
+}
+
+.ls-add-input :is(input, textarea):focus {
+  outline: none;
+}
+
+.ls-add-input :is(input, textarea)::placeholder,
+.ls-add-highlight-new input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.ls-add-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-tertiary);
+}
+
+.ls-add-error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--danger);
+}
+
+.ls-add-link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* --- busca de lugar ------------------------------------------------------ */
+
+.ls-add-combo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ls-add-results {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-stroke-soft);
+  background: var(--glass);
+}
+
+.ls-add-results[hidden] {
+  display: none;
+}
+
+.ls-add-results ul {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ls-add-option,
+.ls-add-chosen {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.ls-add-option:hover,
+.ls-add-option[aria-selected='true'] {
+  background: var(--glass-hover);
+  color: var(--accent);
+}
+
+.ls-add-option--city .ls-add-option-label {
+  color: var(--text-secondary);
+}
+
+.ls-add-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.ls-add-option-label {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.ls-add-option-detail {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.ls-add-chosen {
+  cursor: default;
+  border: 1px solid var(--glass-stroke-soft);
+  background: var(--glass-hover);
+}
+
+.ls-add-chosen-check {
+  color: var(--accent);
+}
+
+.ls-add-credit,
+.ls-add-fallback,
+.ls-add-empty,
+.ls-add-searching {
+  margin: 0;
+  padding: 2px 10px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.ls-add-credit {
+  text-align: right;
+}
+
+.ls-add-fallback {
+  color: var(--emphasis);
+}
+
+/* --- chips (plataforma, cidades que interessam) -------------------------- */
+
+.ls-add-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ls-add-highlight {
+  gap: 8px;
+}
+
+.ls-add-remove {
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--text-tertiary);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ls-add-remove:hover {
+  color: var(--text-primary);
+}
+
+.ls-add-highlight-new input {
+  width: 120px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.ls-add-highlight-new input:focus {
+  outline: none;
+}
+
+/* --- coluna da direita: foto, prévia do pin, ênfase ----------------------- */
+
+.ls-add-photo {
+  position: relative;
+  height: 140px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.ls-add-photo-change {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--glass-dark);
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ls-add-photo-change:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.ls-add-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ls-add-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ls-add-preview--media {
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--glass-stroke-soft);
+  background: var(--glass-soft);
+}
+
+.ls-add-preview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.ls-add-preview-head > svg {
+  color: var(--accent);
+}
+
+.ls-add-map {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 150px;
+  border-radius: 16px;
+  border: 1px solid var(--glass-stroke-soft);
+  background:
+    radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--cat, var(--accent)) 25%, transparent) 0 32px, transparent 33px),
+    var(--glass-soft);
+}
+
+.ls-add-map-pin {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--glass-strong);
+  color: var(--cat, var(--accent));
+}
+
+.ls-add-map-label {
+  max-width: 90%;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--glass-dark);
+  color: var(--text-primary);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ls-add-emphasis {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--glass-stroke-soft);
+  background: var(--glass-soft);
+}
+
+.ls-add-emphasis-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--emphasis) 14%, transparent);
+  color: var(--emphasis);
+}
+
+.ls-add-emphasis-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.ls-add-emphasis-sub {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.ls-add-switch {
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--track);
+  cursor: pointer;
+}
+
+.ls-add-switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  transition: transform 0.15s ease;
+}
+
+.ls-add-switch[aria-checked='true'] {
+  background: var(--emphasis);
+}
+
+.ls-add-switch[aria-checked='true'] .ls-add-switch-knob {
+  transform: translateX(16px);
+  background: var(--on-accent);
+}
+
+/* --- rodapé ---------------------------------------------------------------- */
+
+.ls-add-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+}
+
+.ls-add-who {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.ls-add-actions {
+  display: inline-flex;
+  gap: 10px;
+}
+
+@media (max-width: 759px) {
+  .ls-add-tiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .ls-add-body,
+  .ls-add-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* === fim AddItemModal === */

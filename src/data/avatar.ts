@@ -40,7 +40,20 @@ export function prepareCover(file: File): Promise<PrepareResult> {
   return prepareImage(file, { kind: 'fit', maxSide: COVER_MAX_SIDE, maxBytes: COVER_MAX_BYTES })
 }
 
-type Shape = { kind: 'square'; side: number; maxBytes: number } | { kind: 'fit'; maxSide: number; maxBytes: number }
+/** A foto do item da Lista (Fase 4, R15): 800 px no lado maior — é o card. */
+export const ITEM_PHOTO_MAX_SIDE = 800
+/** As fotos do feito (Fase 4, R20): 1600 px, como a capa — abrem em tela cheia. */
+export const MEMORY_PHOTO_MAX_SIDE = 1600
+
+export function prepareItemPhoto(file: File): Promise<PrepareResult> {
+  return prepareImage(file, { kind: 'fit', maxSide: ITEM_PHOTO_MAX_SIDE, maxBytes: COVER_MAX_BYTES })
+}
+
+export function prepareMemoryPhoto(file: File): Promise<PrepareResult> {
+  return prepareImage(file, { kind: 'fit', maxSide: MEMORY_PHOTO_MAX_SIDE, maxBytes: COVER_MAX_BYTES })
+}
+
+type Shape ={ kind: 'square'; side: number; maxBytes: number } | { kind: 'fit'; maxSide: number; maxBytes: number }
 
 async function prepareImage(file: File, shape: Shape): Promise<PrepareResult> {
   if (!file.type.startsWith('image/')) return { status: 'not_image' }

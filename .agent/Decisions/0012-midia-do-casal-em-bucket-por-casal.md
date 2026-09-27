@@ -23,6 +23,9 @@ dia em que essa sai do casal, porque a leitura depende de dividir casal.
 
 - Bucket privado **`couple-media`**, caminho `<couple_id>/<tipo>/<uuid>.<ext>`.
   Nesta fase só `tipo = cover`; `memory` e `trip` são das Fases 4 e 6.
+  _(2026-09-26, Fase 4: entra também `item`, a foto de capa de cada item da
+  Lista — ver [`fase-4-lista.md`](../Tasks/fase-4-lista.md). Mesmas policies,
+  nada novo no Storage.)_
 - Policies de select/insert/update/delete em `storage.objects` quando a primeira
   pasta ∈ `private.my_couple_ids()` — a mesma função que corta as tabelas.
 - `couples.cover_path` com `CHECK` de que aponta para `<id>/cover/…`.

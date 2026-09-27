@@ -37,7 +37,7 @@ Use `/adr <título>`. Template: [`0000-template.md`](./0000-template.md).
 | --- | ------ | ---- | ---- |
 | [0001](./0001-supabase-com-rls-por-casal.md) | Supabase com RLS por casal, em vez de `localStorage` | persistência, autenticação | 2026-09-25 |
 | [0002](./0002-estadia-por-pessoa-estado-derivado.md) | Estadia por pessoa; estado do casal derivado, nunca gravado | domínio (timeline), schema | 2026-09-25 |
-| [0003](./0003-lista-tabela-unica-com-check-por-categoria.md) | Lista em tabela única, com `CHECK` por categoria | schema (lista de desejos) | 2026-09-25 |
+| [0003](./0003-lista-tabela-unica-com-check-por-categoria.md) | Lista em tabela única, com `CHECK` por categoria (revisado em 2026-09-26: os 8 modais, `done_on`, `done_with` por perfil) | schema (lista de desejos) | 2026-09-25 |
 | [0004](./0004-login-com-senha-e-oauth.md) | Login com senha e OAuth, sem link mágico | autenticação (Fase 1) | 2026-09-26 |
 | [0005](./0005-interface-se-prova-em-jsdom.md) | Comportamento de interface se prova em jsdom | ferramental de teste | 2026-09-26 |
 | [0006](./0006-email-transacional-por-resend-em-edge-function.md) | E-mail transacional por Resend, numa edge function que não usa `service_role` | e-mail, edge functions (Fase 2) | 2026-09-26 |
@@ -48,6 +48,8 @@ Use `/adr <título>`. Template: [`0000-template.md`](./0000-template.md).
 | [0012](./0012-midia-do-casal-em-bucket-por-casal.md) | Mídia do casal em bucket próprio, com pasta por casal | Storage, autorização (Fase 3) | 2026-09-26 |
 | [0013](./0013-casca-e-navegacao-por-caminho.md) | Casca do app e navegação por caminho, sem biblioteca de rotas | cliente, navegação (Fase 3) | 2026-09-26 |
 | [0014](./0014-testes-de-integracao-no-projeto-online.md) | Testes de integração contra o projeto online, enquanto o app não abre (supersede em parte o 0010) | verificação (Fase 3) | 2026-09-26 |
+| [0015](./0015-lista-sem-realtime-reler-ao-voltar.md) | Lista sem realtime: reler ao voltar ao foco e depois de cada escrita própria | fluxo de dados do cliente (Fase 4) | 2026-09-26 |
+| [0016](./0016-busca-de-lugares-pelo-photon-osm.md) | Busca de lugares pelo Photon (OSM), com o resultado guardado no item | dependência externa, geografia da Lista (Fase 4) | 2026-09-26 |
 
 ## Backlog — discutido, sem código
 
@@ -58,6 +60,5 @@ re-discutidos do zero.
 | ------- | ---------------------- | ------- |
 | SMTP customizado no Auth (Resend) | Confirmação de e-mail no cadastro e _Esqueci minha senha_; ADR novo sobre o [0004](./0004-login-com-senha-e-oauth.md) | O envio de e-mail do produto saiu do backlog e virou [0006](./0006-email-transacional-por-resend-em-edge-function.md) em 2026-09-26, com domínio pronto no Resend. O mesmo domínio destrava o SMTP do Auth, mas ligá-lo muda o fluxo da Fase 1 e reabre a busca de convite por e-mail ([0008](./0008-convite-portador-e-um-casal-por-pessoa.md)) — não entra de carona na Fase 2. |
 | Agendador de notificações | `pg_cron` vs. edge function agendada; ADR na Fase 2 ou 3 | Descoberto num toggle das Configurações: _"Lembrar do aniversário de namoro · Todo dia 17, às 9h, pros dois"_. Não aparece em nenhuma tela como fluxo, mas exige agendado no servidor. |
-| Realtime (Postgres Changes) | Se a escrita de um aparece na tela do outro sem recarregar; ADR na Fase 4 | Não muda migration nenhuma e pode ser ligado depois. Decidir antes de ter duas telas escrevendo seria decidir no escuro. |
 | Engine do mapa | MapLibre GL JS v5 + OpenFreeMap; ADR na Fase 7 (Home) | Verificado: `projection: {type:'globe'}` com `sky.atmosphere-blend` dá o globo do design, e os tiles da OpenFreeMap não pedem chave nem cobram. Mas não amarra nada antes da Fase 7 — o design do globo é imagem estática, então nenhuma fase anterior depende da escolha. |
 | Materializar os períodos | View materializada ou cache dos períodos derivados | Otimização antes do problema. Dois usuários e alguns milhares de dias não justificam. Reabrir quando a lentidão for medida, não suposta — ver [0002](./0002-estadia-por-pessoa-estado-derivado.md). |

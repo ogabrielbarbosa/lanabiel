@@ -13,6 +13,7 @@ import { avatarUrl, prepareAvatar, prepareCover, uploadAvatar } from '../data/av
 import { loadCitiesByIds, searchCities } from '../data/cities'
 import { createInvite, loadOpenInvite, sendInvite } from '../data/invites'
 import { endMySession, listMySessions } from '../data/sessions'
+import { loadListCounts, loadListExport } from '../data/listSummary'
 import {
   cancelInvite,
   coverUrl,
@@ -58,6 +59,10 @@ export interface SettingsApi {
   listSessions: () => ReturnType<typeof listMySessions>
   endSession: (sessionId: string) => ReturnType<typeof endMySession>
   loadPhotoStats: (couple: SettingsCouple) => ReturnType<typeof loadPhotoStats>
+  /** R26: total e contagem por categoria da Lista. */
+  loadListCounts: () => ReturnType<typeof loadListCounts>
+  /** R27: itens, memórias e contagem de fotos, para o export. */
+  loadListExport: () => ReturnType<typeof loadListExport>
   loadOpenInvite: () => ReturnType<typeof loadOpenInvite>
   createInvite: (input: Parameters<typeof createInvite>[1]) => ReturnType<typeof createInvite>
   sendInvite: (inviteId: string) => ReturnType<typeof sendInvite>
@@ -102,6 +107,8 @@ export function settingsApi(db: Db): SettingsApi {
     listSessions: () => listMySessions(db),
     endSession: (sessionId) => endMySession(db, sessionId),
     loadPhotoStats: (couple) => loadPhotoStats(db, couple),
+    loadListCounts: () => loadListCounts(db),
+    loadListExport: () => loadListExport(db),
     loadOpenInvite: () => loadOpenInvite(db),
     createInvite: (input) => createInvite(db, input),
     sendInvite: (inviteId) => sendInvite(db, inviteId),

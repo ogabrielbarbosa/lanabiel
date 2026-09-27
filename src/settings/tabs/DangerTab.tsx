@@ -9,7 +9,7 @@ import { coupleLabel, formatThousands } from '../../domain/settings'
 import { effectiveEndForCounting } from '../../domain/coupleState'
 import type { Stay } from '../../domain/coupleState'
 import { addDays } from '../../lib/date'
-import { Button, Card, Dialog, FieldError } from '../parts'
+import { Button, Card, Dialog, FieldError, ListTotal } from '../parts'
 import { failureMessage } from '../context'
 import type { TabContext } from '../context'
 import { exportAll } from '../exportAll'
@@ -78,7 +78,7 @@ export function DangerTab(ctx: TabContext) {
           </div>
           <div>
             <dt>itens na lista</dt>
-            <dd>—</dd>
+            <ListTotal counts={ctx.listCounts} />
           </div>
           <div>
             <dt>viagens</dt>

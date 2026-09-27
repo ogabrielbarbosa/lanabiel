@@ -1,0 +1,153 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "R",
+    "osm_id": 1774221,
+    "osm_key": "place",
+    "osm_value": "village",
+    "type": "city",
+    "name": "Göreme",
+    "county": "Nevşehir Merkez",
+    "state": "Nevşehir",
+    "country": "Türkiye",
+    "postcode": "50180",
+    "countrycode": "TR",
+    "extra": {
+     "admin_level": "7"
+    },
+    "extent": [
+     34.7614865,
+     38.7191331,
+     34.857851,
+     38.612116
+    ]
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     34.8296234,
+     38.642089
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "R",
+    "osm_id": 14405251,
+    "osm_key": "landuse",
+    "osm_value": "residential",
+    "type": "locality",
+    "name": "Göreme",
+    "city": "Göreme",
+    "county": "Nevşehir Merkez",
+    "state": "Nevşehir",
+    "country": "Türkiye",
+    "postcode": "50180",
+    "countrycode": "TR",
+    "extent": [
+     34.8216889,
+     38.6514895,
+     34.8359433,
+     38.6391905
+    ]
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     34.8286284,
+     38.6453061
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "R",
+    "osm_id": 252585,
+    "osm_key": "boundary",
+    "osm_value": "national_park",
+    "type": "other",
+    "name": "Göreme Millî Parkı",
+    "city": "Göreme",
+    "county": "Nevşehir Merkez",
+    "state": "Nevşehir",
+    "country": "Türkiye",
+    "countrycode": "TR",
+    "extent": [
+     34.7829513,
+     38.6980414,
+     34.9212586,
+     38.6023963
+    ]
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     34.8545451,
+     38.6499774
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "N",
+    "osm_id": 427711469,
+    "osm_key": "amenity",
+    "osm_value": "restaurant",
+    "type": "house",
+    "name": "Göreme",
+    "street": "Ranta-Kastellin tie",
+    "locality": "Kastelli",
+    "district": "Oulunsuu",
+    "city": "Oulu",
+    "state": "Pohjois-Pohjanmaa",
+    "country": "Suomi",
+    "postcode": "90230",
+    "countrycode": "FI"
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     25.5341572,
+     65.0086567
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "W",
+    "osm_id": 1183558909,
+    "osm_key": "shop",
+    "osm_value": "kiosk",
+    "type": "house",
+    "name": "Göreme",
+    "street": "Clevischer Ring",
+    "district": "Mülheim",
+    "city": "Köln",
+    "state": "Nordrhein-Westfalen",
+    "country": "Deutschland",
+    "postcode": "51063",
+    "countrycode": "DE",
+    "extent": [
+     7.0068106,
+     50.9665961,
+     7.0068892,
+     50.9665338
+    ]
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     7.0068499,
+     50.966565
+    ]
+   }
+  }
+ ]
+}

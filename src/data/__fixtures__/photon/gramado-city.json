@@ -1,0 +1,161 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "R",
+    "osm_id": 242571,
+    "osm_key": "place",
+    "osm_value": "municipality",
+    "type": "city",
+    "name": "Gramado",
+    "state": "Rio Grande do Sul",
+    "country": "Brasil",
+    "postcode": "95670-000",
+    "countrycode": "BR",
+    "extra": {
+     "admin_level": "8"
+    },
+    "extent": [
+     -50.9882711,
+     -29.2832639,
+     -50.8009236,
+     -29.5016465
+    ]
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -50.8737019,
+     -29.3792858
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "R",
+    "osm_id": 242635,
+    "osm_key": "place",
+    "osm_value": "municipality",
+    "type": "city",
+    "name": "Gramado dos Loureiros",
+    "state": "Rio Grande do Sul",
+    "country": "Brasil",
+    "postcode": "99605-000",
+    "countrycode": "BR",
+    "extra": {
+     "admin_level": "8"
+    },
+    "extent": [
+     -53.0160991,
+     -27.384,
+     -52.8096976,
+     -27.5052168
+    ]
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -52.9183699,
+     -27.4439526
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "R",
+    "osm_id": 242555,
+    "osm_key": "place",
+    "osm_value": "municipality",
+    "type": "city",
+    "name": "Gramado Xavier",
+    "state": "Rio Grande do Sul",
+    "country": "Brasil",
+    "postcode": "96875-000",
+    "countrycode": "BR",
+    "extra": {
+     "admin_level": "8"
+    },
+    "extent": [
+     -52.7302585,
+     -29.2136169,
+     -52.5007832,
+     -29.3762992
+    ]
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -52.5785872,
+     -29.2702991
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "R",
+    "osm_id": 344685,
+    "osm_key": "place",
+    "osm_value": "city",
+    "type": "city",
+    "name": "Granada",
+    "county": "Comarca de la Vega de Granada",
+    "state": "Andalucía",
+    "country": "España",
+    "countrycode": "ES",
+    "extra": {
+     "admin_level": "8"
+    },
+    "extent": [
+     -3.7003616,
+     37.2250172,
+     -3.4963241,
+     37.1367032
+    ]
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     -3.5995337,
+     37.1734995
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "R",
+    "osm_id": 123059,
+    "osm_key": "place",
+    "osm_value": "village",
+    "type": "city",
+    "name": "Gramat",
+    "county": "Lot",
+    "state": "Occitanie",
+    "country": "France",
+    "postcode": "46500",
+    "countrycode": "FR",
+    "extra": {
+     "admin_level": "8"
+    },
+    "extent": [
+     1.6556895,
+     44.8158174,
+     1.7691381,
+     44.7125552
+    ]
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     1.723394,
+     44.7789948
+    ]
+   }
+  }
+ ]
+}

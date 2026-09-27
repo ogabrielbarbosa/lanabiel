@@ -1,0 +1,34 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "osm_type": "R",
+    "osm_id": 382313,
+    "osm_key": "place",
+    "osm_value": "country",
+    "type": "country",
+    "name": "日本",
+    "country": "日本",
+    "countrycode": "JP",
+    "extra": {
+     "admin_level": "2"
+    },
+    "extent": [
+     122.7141754,
+     45.7112046,
+     154.205541,
+     20.2145811
+    ]
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     139.2394179,
+     36.5748441
+    ]
+   }
+  }
+ ]
+}

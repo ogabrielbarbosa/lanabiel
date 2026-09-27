@@ -110,10 +110,15 @@ export interface LatLng {
  * Configurações vira rodoviário.
  */
 export function distanceKm(a: LatLng, b: LatLng): number {
+  return Math.round(distanceKmExact(a, b))
+}
+
+/** A mesma linha reta, sem arredondar — a Lista mostra "1,2 km" perto de casa. */
+export function distanceKmExact(a: LatLng, b: LatLng): number {
   const rad = (deg: number) => (deg * Math.PI) / 180
   const dLat = rad(b.lat - a.lat)
   const dLng = rad(b.lng - a.lng)
   const h =
     Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2
-  return Math.round(2 * 6371 * Math.asin(Math.sqrt(h)))
+  return 2 * 6371 * Math.asin(Math.sqrt(h))
 }

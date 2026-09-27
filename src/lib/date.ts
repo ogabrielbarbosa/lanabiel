@@ -91,3 +91,32 @@ export function longDateBR(iso: string): string {
   const date = parseISODate(iso)
   return `${date.getDate()} de ${MONTHS_PT[date.getMonth()].toLowerCase()} de ${date.getFullYear()}`
 }
+
+const MONTHS_SHORT_PT = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
+
+/** `'2026-07-18'` → `'18 jul'` — o selo "Feito · 18 jul" e o "até 30 set". */
+export function shortDayMonth(iso: string): string {
+  return `${dayOfMonth(iso)} ${MONTHS_SHORT_PT[Number(iso.slice(5, 7)) - 1]}`
+}
+
+/**
+ * A data LOCAL de um timestamp (`timestamptz` do banco). `created_at`
+ * `'2026-09-26T01:30:00Z'` é dia 25 em SJC — cortar os 10 primeiros
+ * caracteres daria o dia em UTC e faria um item de 22h contar como "amanhã".
+ */
+export function localDateOf(timestamp: string): string {
+  return toISODate(new Date(timestamp))
+}
+
+/** `'2026-07-18'` → `'18 jul 2026'` ("Feito em 18 jul 2026", na Lista). */
+export function dayMonthYear(iso: string): string {
+  return `${shortDayMonth(iso)} ${iso.slice(0, 4)}`
+}
+
+const WEEKDAYS_SHORT_CAP = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+
+/** `'2026-07-18'` → `'Sáb, 18 jul 2026'` (a data da memória, na Lista). */
+export function weekdayDayMonthYear(iso: string): string {
+  return `${WEEKDAYS_SHORT_CAP[parseISODate(iso).getDay()]}, ${dayMonthYear(iso)}`
+}
+

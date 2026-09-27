@@ -10,6 +10,12 @@ describe('parseRoute', () => {
     expect(parseRoute('/calendario/')).toEqual({ name: 'calendar' })
   })
 
+  it('A19 — /lista é a Lista, sem parâmetro', () => {
+    expect(parseRoute('/lista')).toEqual({ name: 'list' })
+    expect(parseRoute('/lista/')).toEqual({ name: 'list' })
+    expect(parseRoute('/lista/abc')).toBeNull()
+  })
+
   it('as nove abas por slug', () => {
     expect(parseRoute('/configuracoes/cidades')).toEqual({ name: 'settings', tab: 'cidades' })
     expect(parseRoute('/configuracoes/zona-sensivel')).toEqual({ name: 'settings', tab: 'zona-sensivel' })
@@ -18,7 +24,7 @@ describe('parseRoute', () => {
   it('slug inexistente e caminho desconhecido não são rota', () => {
     expect(parseRoute('/configuracoes/cidade')).toBeNull()
     expect(parseRoute('/configuracoes')).toBeNull()
-    expect(parseRoute('/lista')).toBeNull()
+    expect(parseRoute('/listas')).toBeNull()
   })
 })
 
@@ -33,6 +39,7 @@ describe('canonicalPath', () => {
   })
   it('caminho canônico não muda', () => {
     expect(canonicalPath('/')).toBeNull()
+    expect(canonicalPath('/lista')).toBeNull()
     expect(canonicalPath('/configuracoes/lista')).toBeNull()
   })
   it('barra no fim sai', () => expect(canonicalPath('/configuracoes/lista/')).toBe('/configuracoes/lista'))
@@ -40,5 +47,6 @@ describe('canonicalPath', () => {
 
 it('pathFor', () => {
   expect(pathFor({ name: 'calendar' })).toBe('/')
+  expect(pathFor({ name: 'list' })).toBe('/lista')
   expect(pathFor({ name: 'settings', tab: 'aparencia' })).toBe('/configuracoes/aparencia')
 })

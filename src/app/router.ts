@@ -1,7 +1,8 @@
 // A navegação do app: caminho na barra, sem biblioteca (ADR 0013).
 //
-// O app tem hoje duas áreas (Calendário e Configurações) e nove abas; nenhuma
-// rota tem parâmetro além do slug da aba, e nenhuma carrega dado por rota.
+// O app tem hoje três áreas (Calendário, Lista e Configurações) e nove abas;
+// nenhuma rota tem parâmetro além do slug da aba, e nenhuma carrega dado por
+// rota. O item aberto na Lista é estado da tela, não caminho (Fase 4, seção 5).
 // Enquanto for assim, ~50 linhas sobre `history` bastam. O ADR diz quando
 // trocar por biblioteca.
 
@@ -11,6 +12,7 @@ import type { SettingsTab } from '../domain/settings'
 
 export type Route =
   | { name: 'calendar' }
+  | { name: 'list' }
   | { name: 'settings'; tab: SettingsTab }
 
 export const SETTINGS_DEFAULT_TAB: SettingsTab = 'perfil-do-casal'
@@ -23,6 +25,7 @@ export const SETTINGS_DEFAULT_TAB: SettingsTab = 'perfil-do-casal'
 export function parseRoute(pathname: string): Route | null {
   const path = pathname.replace(/\/+$/, '') || '/'
   if (path === '/' || path === '/calendario') return { name: 'calendar' }
+  if (path === '/lista') return { name: 'list' }
   const match = /^\/configuracoes\/([a-z-]+)$/.exec(path)
   if (match && isSettingsTab(match[1])) return { name: 'settings', tab: match[1] }
   return null
@@ -37,7 +40,9 @@ export function canonicalPath(pathname: string): string | null {
 }
 
 export function pathFor(route: Route): string {
-  return route.name === 'calendar' ? '/' : `/configuracoes/${route.tab}`
+  if (route.name === 'calendar') return '/'
+  if (route.name === 'list') return '/lista'
+  return `/configuracoes/${route.tab}`
 }
 
 const listeners = new Set<() => void>()

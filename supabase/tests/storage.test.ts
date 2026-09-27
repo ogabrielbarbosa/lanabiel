@@ -116,3 +116,30 @@ describe('A6 — mídia do casal, pasta por casal', () => {
     expect(error?.code).toBe('23514')
   })
 })
+
+// Critério A7 (lado do Storage) — .agent/Tasks/fase-4-lista.md, seção 10.
+// As pastas `item/` (foto do item) e `memory/` (fotos do feito) da Lista não
+// ganharam policy nova: as de `couple-media` já cortam pela primeira pasta.
+// Isto prova que cortam também nelas. Só pastas dos casais `@test.local`.
+describe('A7 (Fase 4) — fotos da Lista, na pasta do próprio casal', () => {
+  const inFolder = (coupleId: string, kind: 'item' | 'memory') => `${coupleId}/${kind}/${crypto.randomUUID()}.webp`
+
+  for (const kind of ['item', 'memory'] as const) {
+    it(`${kind}/: sobe na pasta do próprio casal, e a outra pessoa lê`, async () => {
+      const path = inFolder(scene.coupleA, kind)
+      mediaPaths.push(path)
+      const { error } = await asGabriel.storage.from('couple-media').upload(path, JPEG, { contentType: 'image/jpeg' })
+      expect(error).toBeNull()
+      const { data, error: readError } = await asLana.storage.from('couple-media').download(path)
+      expect(readError).toBeNull()
+      expect(data).not.toBeNull()
+    })
+
+    it(`${kind}/: ninguém sobe na pasta de outro casal`, async () => {
+      const path = inFolder(scene.coupleB, kind)
+      mediaPaths.push(path) // se tivesse entrado, sai no afterAll
+      const { error } = await asGabriel.storage.from('couple-media').upload(path, JPEG, { contentType: 'image/jpeg' })
+      expect(error).not.toBeNull()
+    })
+  }
+})

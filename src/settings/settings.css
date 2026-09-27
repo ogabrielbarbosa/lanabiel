@@ -974,6 +974,26 @@
   background: var(--text-tertiary);
 }
 
+/* Contagem da categoria (Fase 4, R26): selo discreto ao lado do nome.
+   inline-block não herda o riscado do chip desligado — o número continua
+   legível. */
+.st-chip-count {
+  display: inline-block;
+  min-width: 20px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--glass-hover);
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.st-chip[aria-pressed='true'] .st-chip-count {
+  color: var(--text-secondary);
+}
+
 /* As cores de categoria do .pen (`cat-*`) são as mesmas nos dois temas em
    matiz; aqui só marcam o chip ligado. */
 .st-chip[aria-pressed='true'] .st-chip-dot {

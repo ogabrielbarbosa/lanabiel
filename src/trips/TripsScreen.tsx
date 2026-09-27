@@ -15,7 +15,6 @@ import {
   Building2,
   CalendarDays,
   CalendarHeart,
-  CalendarRange,
   CircleCheck,
   CircleDashed,
   Clock3,
@@ -216,9 +215,9 @@ function GridView({ onNew, today }: { onNew: () => void; today: string }) {
                   group.length > 0 && (
                     <div key={g} className="tr-chips">
                       {group.map((o) => {
-                        const Icon =
-                          o.filter.kind === 'all' ? CalendarDays : o.filter.kind === 'year' ? CalendarRange : o.filter.kind === 'br' ? MapPin : Globe
-                        const small = o.filter.kind === 'br' || o.filter.kind === 'abroad'
+                        // No .pen só Brasil e Exterior têm ícone; o de Todas
+                        // e o dos anos estão desligados (`enabled: false`).
+                        const Icon = o.filter.kind === 'br' ? MapPin : o.filter.kind === 'abroad' ? Globe : null
                         return (
                           <button
                             key={o.id}
@@ -227,7 +226,7 @@ function GridView({ onNew, today }: { onNew: () => void; today: string }) {
                             aria-pressed={o.id === active?.id}
                             onClick={() => setFilterId(o.id)}
                           >
-                            <Icon size={small ? 12 : 14} aria-hidden="true" />
+                            {Icon && <Icon size={12} aria-hidden="true" />}
                             {o.label}
                           </button>
                         )

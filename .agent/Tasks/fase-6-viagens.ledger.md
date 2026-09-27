@@ -97,3 +97,79 @@ Configurações conta as feitas com `doneTrips`; upload e redução extraídos d
 reversível.
 
 ---
+## Integração no online (A1–A7)
+
+`npm run test:db` depois do push: `Test Files 13 passed (13) · Tests 425
+passed | 4 skipped (429)`, exit 0 — inclui `supabase/tests/trips.test.ts`. Os 4
+pulados são os A17/A18 da Fase 2 (sem `MAILPIT_URL`).
+
+---
+## T3b · Harness visual de desenvolvimento
+
+Concluído. `http://localhost:5173/viagens?preview` monta a casca de verdade com
+uma `TripsApi` em memória semeada com a copy e as imagens dos 7 frames
+(`src/dev/previewSeed.ts`, o inventado marcado). Prova: typecheck/build limpos;
+`grep` de marcadores do harness em `dist/` sem resultado; nenhuma requisição ao
+Supabase no preview.
+
+Ruling (orquestrador): harness só de DEV, carregado por `import()` dinâmico
+atrás de `import.meta.env.DEV`. Existe porque a Fase 5 fechou com "fidelidade
+visual não vista renderizada", e aqui o pedido é "idêntico ao Pencil"; os falsos
+de teste importam `vitest` e não rodam no navegador. Custo se eu estiver errado:
+~1 kLoC de seed para manter; apagar `src/dev/` e o ramo do `main.tsx` desfaz.
+
+Ruling (do implementador): o seed tem 8 viagens feitas, não as 14 do design —
+os números do topo da Grade divergem do frame por dado, não por desenho.
+
+---
+## T4 · Grade, Linha do tempo, Painel e Nova viagem
+
+Concluído. Prova: `vitest --project ui src/trips` 4 arquivos / 68 testes (53
+novos, A10–A13, A17); `npm run test` 40 / 1066; typecheck, lint e build limpos.
+Conferência visual no harness a 1440×900 contra `TakeScreenshot` do Pencil:
+posições medidas com `getBoundingClientRect` batem com os nós a 1–2 px (a
+coluna tem 844 em vez de 848 por causa da barra de rolagem do painel).
+
+Ruling (do implementador, aceitos): `CityPicker` ganhou `initialQuery` opcional
+(o _Planejar_ do R11); as capas são assinadas num lote só na tela; editar grava
+só o que mudou, e falha numa escrita secundária mantém o modal aberto dizendo o
+que foi salvo; cartão sem capa usa o gradiente dos dois brilhos do frame; os
+corações dos cartões feitos ficaram 10 px (no frame eles vazam a borda).
+
+Diferenças deliberadas do frame: o Destino usa o ícone do `CityPicker`; a
+_Capa_ da Nova viagem mostra só a prévia escolhida (as três fotos do frame são
+fotos da viagem, que existem só na edição); os checkboxes do _Da lista_ saem
+(o bloco é só leitura, seção 13 decisão 6); _Abrir globo_ e o aviso à Lana
+não aparecem (seção 14).
+
+---
+## T5 · Detalhe, Galeria e editores
+
+Concluído. Prova: `vitest --project ui src/trips/detail` 50 passando; `npm run
+test` 44 / 1116; typecheck, lint e build limpos. No harness a 1440×900, posições
+medidas com `getBoundingClientRect` batem com o `Peoa7`/`f3yqz`/`pUXaX`.
+
+Ruling (do implementador, aceitos): ícone da nota pela estação no destino; o
+_Compartilhar_ da galeria virou _Mais opções_ com _Apagar foto_ (R22 pede o
+apagar no menu); "foto do/da" pela última letra do nome (o perfil não guarda
+gênero); quadro com ícone no lugar da foto da hospedagem (não há dado); foto em
+tela cheia com `contain`; janela de 11 miniaturas assinadas por vez.
+
+Ruling (orquestrador): exceção ao "um CSS por feature" — as Viagens têm
+`trips.css` e `detail/trip-detail.css`, como o Calendário tem dois; dois agentes
+escreveram em paralelo e os dois arquivos são de telas diferentes. Custo:
+nenhum funcional.
+
+## Integração e conferência visual (orquestrador)
+
+O lápis do herói abre o `TripModal` em modo edição (`EditableDetail` em
+`TripsRoute.tsx`), com teste de rota. Comparando no harness com o export dos
+frames, duas correções:
+
+- os chips _Todas_ e de ano não têm ícone no `.pen` (`enabled: false`); só
+  _Brasil_ e _Exterior_;
+- o _Mapa da viagem_ com recorte mínimo de 24° ampliava o mapa pontilhado ~4×.
+  Ruling: mínimo de 60° só no detalhe (`TRIP_MAP_MIN_DEG`). Custo: viagem curta
+  fica com os pins juntos; é o trade-off do ADR 0021 até a Fase 7.
+
+---

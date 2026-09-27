@@ -21,6 +21,11 @@ import { usePhotoUrls, useTrips } from '../context'
 import { calendarStripLabel, toneStyle } from './format'
 import { AppLink, Card, HeartsText } from './parts'
 
+// Recorte mínimo do Mapa da viagem. A imagem tem ~3,8 px por grau; abaixo de
+// ~60° os pontos do mapa pontilhado viram bolas (medido no harness com
+// SJC → Ilhabela). O custo é a viagem curta ficar com os pins juntos — ADR 0021.
+const TRIP_MAP_MIN_DEG = 60
+
 // ---------------------------------------------------------------------------
 // Memórias (R18, R23)
 // ---------------------------------------------------------------------------
@@ -344,7 +349,7 @@ export function TripMapCard({
     return [item]
   })
   const points = [home, ...(dest ? [dest] : [])]
-  const crop = cropFor(points, { aspect: MAP_ASPECT, padDeg: 8 })
+  const crop = cropFor(points, { aspect: MAP_ASPECT, padDeg: 8, minWidthDeg: TRIP_MAP_MIN_DEG })
   const pos = (p: { lat: number; lng: number }) => crop.project(p)
   const h = pos(home)
   const d = dest ? pos(dest) : null

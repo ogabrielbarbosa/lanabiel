@@ -22,7 +22,7 @@ As preferências do Calendário que a Fase 3 gravou (`calendar_default_view`, `w
 
 É a primeira vez que o Gabriel abre `/` depois do deploy. O casal não tem nenhuma estadia. A tela lê em paralelo as estadias, os eventos, os dois integrantes com as cidades-casa, `couple_settings`, o casal (`started_on`), os 💋 do mês visível e as cidades referenciadas. Enquanto isso mostra esqueleto. A leitura volta `ok` com zero estadias, então a grade aparece sem faixa nenhuma, e acima dela o cartão _"Onde vocês estão hoje?"_. Ele escolhe _Separados_, deixa _Desde_ em hoje e _Até_ vazio, e toca _Criar no calendário_. O cliente chama `paint_stays` com duas entradas: Gabriel em São José dos Campos e Lana em Marau, as duas a partir de hoje e em aberto. As faixas _Separados · SJC e Marau_ aparecem da semana de hoje até a borda da tela.
 
-Ele toca _Novo evento_ e escolhe **Visita**. _Quem viaja: Gabriel_. O _Destino_ já vem _"Marau, RS · casa da Lana"_. _Ida_: sex, 30 out, 19:20. _Volta_: ter, 3 nov, 21:05. _Vínculo com a lista_: ele digita "vin" e escolhe _Vinícola em Marau_. O bloco _Período automático_ calcula no cliente, com a mesma `paintStays` que o banco espelha: _"Gabriel viaja · 30 out → 3 nov · 5d"_, a tira de duas semanas com o antes e o depois, _"+5 dias juntos no ano"_ e _"Separados em novembro: 26 → 23 dias"_. Ele toca _Salvar evento_. O cliente chama `create_event(evento, pintar = true)`. A RPC, numa transação só, grava o evento e pinta o Gabriel em Marau de 30/10 a 3/11. A estadia aberta dele em SJC é partida em duas: até 29/10 e a partir de 4/11, ainda em aberto. Na grade, a semana de 30 out ganha a faixa _Gabriel em Marau_ e o chip do evento.
+Ele toca _Novo evento_ e escolhe **Visita**. _Quem viaja: Gabriel_. O _Destino_ já vem _"Marau, RS · casa da Lana"_. _Ida_: sex, 30 out, 19:20. _Volta_: ter, 3 nov, 21:05. _Vínculo com a lista_: ele digita "vin" e escolhe _Vinícola em Marau_. O bloco _Período automático_ calcula no cliente, com a mesma `paintStays` que o banco espelha: _"Gabriel viaja · 30 out → 3 nov · 5d"_, a tira de duas semanas com o antes e o depois, _"+5 dias juntos no ano"_ e _"Separados em novembro: 30 → 27 dias"_. Ele toca _Salvar evento_. O cliente chama `create_event(evento, pintar = true)`. A RPC, numa transação só, grava o evento e pinta o Gabriel em Marau de 30/10 a 3/11. A estadia aberta dele em SJC é partida em duas: até 29/10 e a partir de 4/11, ainda em aberto. Na grade, a semana de 30 out ganha a faixa _Gabriel em Marau_ e o chip do evento.
 
 Em Lisboa, meses depois, a Lana cria uma **Viagem** para os dois. No _Destino_ ela digita "Lisboa". O IBGE não acha nada, e o Photon (`layer=city`) devolve _Lisboa · Portugal_. Ela escolhe. O cliente grava a cidade em `cities` como uma linha **do casal** (`couple_id`, `osm_ref = 'R5400890'`), ou reaproveita a que já existe com essa `osm_ref`, e usa o `id` dela no evento. A faixa amarela _Lisboa_ é derivada: os dois na mesma cidade, que não é a casa de nenhum.
 
@@ -161,14 +161,14 @@ export interface Occurrence { event: CalendarEvent | null /* null = aniversário
   day: string; endDay: string; title: string; years: number | null }
 
 export function paintStays(stays: readonly Stay[], entries: readonly PaintEntry[], newId: () => string): Stay[]  // I3
-export function entriesForPeriod(choice: PeriodChoice, members: MembersBySlot, from: string, to: string | null): PaintEntry[]
+export function entriesForPeriod(draft: PeriodDraft, members: MembersBySlot): PaintEntry[]
 export function entriesForEdit(old: Run, next: PeriodDraft, members: MembersBySlot): PaintEntry[]   // "volta pra casa"
 export function entriesForEvent(event: EventDraft, members: MembersBySlot): PaintEntry[]            // o mesmo que create_event faz
 export function runs(stays, members, from: string, to: string): Run[]                                 // I4, cortados na janela
 export function runAround(day: string, stays, members): Run                                          // bordas reais, to = null se em aberto
 export function bandOf(state: CoupleState, members: MembersBySlot): Band
 export function countDrawn(from: string, to: string, stays, members): Record<Band, number>             // I5
-export function bandLabel(run: Run, names: NamesBySlot, cities: CityMap): string                      // I9
+export function bandLabel(run: Run, names: NamesBySlot, cities: CityMap, members: MembersBySlot): string  // I9
 export function shortCityName(name: string): string                                                  // I9
 export function nowSummary(today, stays, members, events, cities): NowSummary                          // R12.1, I10
 export function personStatus(profileId, day, stays, members): { cityId: string | null;

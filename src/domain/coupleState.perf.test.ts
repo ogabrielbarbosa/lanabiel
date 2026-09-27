@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { addDays } from '../lib/date'
+import { runs } from './calendar'
 import { countStates } from './coupleState'
 import type { Member, Stay } from './coupleState'
 
@@ -42,5 +43,20 @@ describe('orçamento da derivação', () => {
     expect(counts.together + counts.apart + counts.unknown).toBe(365)
     console.log(`  derivação de 365 dias sobre ${stays.length} estadias: ${elapsed.toFixed(1)} ms`)
     expect(elapsed).toBeLessThan(80)
+  })
+
+  it('runs sobre um ano com 200 estadias fica abaixo de 50 ms (seção 8 da Fase 5)', () => {
+    // 100 por pessoa: o ano da visão Ano com uma troca a cada ~3,6 dias.
+    const stays = [...buildYear(A, '2026-01-01').slice(0, 100), ...buildYear(B, '2026-01-01').slice(0, 100)]
+    expect(stays).toHaveLength(200)
+    const members = { 1: MEMBERS[0], 2: MEMBERS[1] } as const
+
+    const started = performance.now()
+    const result = runs(stays, members, '2026-01-01', '2026-12-31')
+    const elapsed = performance.now() - started
+
+    expect(result.length).toBeGreaterThan(0)
+    console.log(`  runs de 365 dias sobre ${stays.length} estadias: ${elapsed.toFixed(1)} ms`)
+    expect(elapsed).toBeLessThan(50)
   })
 })

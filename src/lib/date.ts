@@ -120,3 +120,18 @@ export function weekdayDayMonthYear(iso: string): string {
   return `${WEEKDAYS_SHORT_CAP[parseISODate(iso).getDay()]}, ${dayMonthYear(iso)}`
 }
 
+
+/** Dia da semana de uma data ISO: 0 = domingo … 6 = sábado (horário local). */
+export function weekdayOf(iso: string): number {
+  return parseISODate(iso).getDay()
+}
+
+/** Ano bissexto no calendário gregoriano — sem `Date`, só aritmética. */
+export function isLeapYear(year: number): boolean {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0
+}
+
+/** `(2026, 9, 1)` → `'2026-09-01'`. Mês 1-based, como na própria string ISO. */
+export function isoOf(year: number, month: number, day: number): string {
+  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}

@@ -82,7 +82,8 @@ export const EVENT_VALIDATION_CASES: EventValidationCase[] = [
   { name: 'título com 80', draft: { ...date, title: 'a'.repeat(80) }, failsOn: null },
   { name: 'nota com 280', draft: { ...date, note: 'a'.repeat(280) }, failsOn: null },
   { name: 'local com 80', draft: { ...date, place: 'a'.repeat(80) }, failsOn: null },
-  { name: 'viagem de 366 dias corridos', draft: { ...visit, startsOn: '2026-01-01', endsOn: '2026-12-31' }, failsOn: null },
+  // 2026 não é bissexto: 01/01/2026 → 01/01/2027 são 366 dias inclusivos (`ends_on - starts_on = 365`).
+  { name: 'viagem de 366 dias corridos', draft: { ...visit, startsOn: '2026-01-01', endsOn: '2027-01-01' }, failsOn: null },
   { name: 'visita de um dia só', draft: { ...visit, endsOn: visit.startsOn }, failsOn: null },
 
   // Tamanhos
@@ -99,7 +100,7 @@ export const EVENT_VALIDATION_CASES: EventValidationCase[] = [
   { name: 'solo sem viajante', draft: { ...visit, travelerId: null }, failsOn: 'travelerId' },
   { name: 'os dois com viajante', draft: { ...visit, travelers: 'both' }, failsOn: 'travelerId' },
   { name: 'volta antes da ida', draft: { ...visit, endsOn: '2026-10-29' }, failsOn: 'endsOn' },
-  { name: 'viagem de 367 dias corridos', draft: { ...visit, startsOn: '2026-01-01', endsOn: '2027-01-01' }, failsOn: 'endsOn' },
+  { name: 'viagem de 367 dias corridos', draft: { ...visit, startsOn: '2026-01-01', endsOn: '2027-01-02' }, failsOn: 'endsOn' },
 
   // Os outros tipos
   { name: 'date com destino', draft: { ...date, cityId: CITY }, failsOn: 'cityId' },

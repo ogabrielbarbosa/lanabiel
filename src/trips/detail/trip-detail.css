@@ -1163,39 +1163,13 @@ button.td-day-title:hover {
   font-size: 12px;
 }
 
-/* --- Mapa da viagem (ADR 0021) ------------------------------------------ */
+/* --- Mapa da viagem (Fase 7 R22: a engine + pins por cima) --------------- */
 
 .td-map-box {
-  position: relative;
   height: 300px;
-  overflow: hidden;
   border-radius: 20px;
   background: #0b1432;
   box-shadow: inset 0 0 0 1px var(--glass-stroke-soft);
-}
-
-.td-map-img {
-  position: absolute;
-  max-width: none;
-  object-fit: fill;
-  pointer-events: none;
-  user-select: none;
-}
-
-.td-map-svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-.td-map-svg path {
-  fill: none;
-  stroke: #f6e3a1;
-  stroke-width: 2;
-  stroke-linecap: round;
-  filter: drop-shadow(0 0 4px #f6e3a1);
 }
 
 .td-map-home,

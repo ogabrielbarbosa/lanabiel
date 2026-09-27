@@ -27,7 +27,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
-import { Check, Heart, ImagePlus, X } from 'lucide-react'
+import { Check, Heart, House, ImagePlus, X } from 'lucide-react'
 import { CATEGORY_LABELS, LIST_LIMITS, isMediaCategory, ratingLabel } from '../domain/list'
 import type { ListItem, Rating } from '../domain/list'
 import { failureMessage, useList } from './context'
@@ -175,6 +175,11 @@ export function MarkDoneModal({ item, onClose, onDone }: MarkDoneModalProps) {
       onClose={() => !saving && onClose()}
       footer={
         <>
+          {/* Fase 7 R23 (`Hint`, P0MzG): a memória aparece na Home. */}
+          <span className="ls-done-hint">
+            <House size={13} aria-hidden="true" />
+            Vira a “Última memória” da Home
+          </span>
           <button type="button" className="ls-btn" disabled={saving} onClick={onClose}>
             Cancelar
           </button>

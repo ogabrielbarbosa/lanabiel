@@ -54,7 +54,9 @@ Use `/adr <título>`. Template: [`0000-template.md`](./0000-template.md).
 | [0018](./0018-periodo-se-grava-pintando-estadias.md) | Período se grava pintando estadias; o evento pinta uma vez | fluxo de dados (`stays`), RPCs (Fase 5) | 2026-09-26 |
 | [0019](./0019-viagem-e-o-evento-estendido-por-trips.md) | A viagem é o evento `viagem` dos dois, estendido 1:1 por `trips` | schema, Viagens (Fase 6) | 2026-09-27 |
 | [0020](./0020-rota-com-parametro-sem-biblioteca.md) | Rota com parâmetro (`/viagens/:id`) sem biblioteca de rotas (supera o gatilho do 0013) | cliente, navegação (Fase 6) | 2026-09-27 |
-| [0021](./0021-mapas-das-viagens-sem-engine.md) | Mapas das Viagens sem engine: projeção sobre a imagem do `.pen`, até a Fase 7 | cliente, Viagens (Fase 6) | 2026-09-27 |
+| [0021](./0021-mapas-das-viagens-sem-engine.md) | Mapas das Viagens sem engine: projeção sobre a imagem do `.pen`, até a Fase 7 (superseded pelo 0022) | cliente, Viagens (Fase 6) | 2026-09-27 |
+| [0022](./0022-engine-do-mapa-mapbox.md) | Engine do mapa: Mapbox GL JS v3, com satélite, terreno 3D e atmosfera (supersede o 0021 e o item do backlog) | cliente, dependência externa (Fase 7) | 2026-09-27 |
+| [0023](./0023-home-na-raiz-calendario-em-calendario.md) | A Home ocupa `/`; o Calendário passa a `/calendario` | cliente, navegação (Fase 7) | 2026-09-27 |
 
 ## Backlog — discutido, sem código
 
@@ -65,5 +67,5 @@ re-discutidos do zero.
 | ------- | ---------------------- | ------- |
 | SMTP customizado no Auth (Resend) | Confirmação de e-mail no cadastro e _Esqueci minha senha_; ADR novo sobre o [0004](./0004-login-com-senha-e-oauth.md) | O envio de e-mail do produto saiu do backlog e virou [0006](./0006-email-transacional-por-resend-em-edge-function.md) em 2026-09-26, com domínio pronto no Resend. O mesmo domínio destrava o SMTP do Auth, mas ligá-lo muda o fluxo da Fase 1 e reabre a busca de convite por e-mail ([0008](./0008-convite-portador-e-um-casal-por-pessoa.md)) — não entra de carona na Fase 2. |
 | Agendador de notificações | `pg_cron` vs. edge function agendada; ADR na Fase 2 ou 3 | Descoberto num toggle das Configurações: _"Lembrar do aniversário de namoro · Todo dia 17, às 9h, pros dois"_. Não aparece em nenhuma tela como fluxo, mas exige agendado no servidor. |
-| Engine do mapa | MapLibre GL JS v5 + OpenFreeMap; ADR na Fase 7 (Home) | Verificado: `projection: {type:'globe'}` com `sky.atmosphere-blend` dá o globo do design, e os tiles da OpenFreeMap não pedem chave nem cobram. Mas não amarra nada antes da Fase 7 — o design do globo é imagem estática, então nenhuma fase anterior depende da escolha. |
+| Engine do mapa | ~~MapLibre GL JS v5 + OpenFreeMap~~ — **resolvido no [0022](./0022-engine-do-mapa-mapbox.md)** (Mapbox GL JS v3) | O OpenFreeMap não tem satélite nem relevo, e o design é satélite 3D. Fica aqui como registro do que foi considerado. |
 | Materializar os períodos | View materializada ou cache dos períodos derivados | Otimização antes do problema. Dois usuários e alguns milhares de dias não justificam. Reabrir quando a lentidão for medida, não suposta — ver [0002](./0002-estadia-por-pessoa-estado-derivado.md). |

@@ -7,13 +7,16 @@
 // A barra mostra só destinos que existem (R1). A Lista entrou na Fase 4, entre
 // Calendário e Configurações; o Calendário desenhado substituiu a timeline
 // antiga na Fase 5; as Viagens entraram na Fase 6, depois da Lista (R1 da
-// spec da Fase 6, o nó `d98FB` do Navbar). A Home entra com a fase dela.
+// spec da Fase 6, o nó `d98FB` do Navbar). A Home entrou na Fase 7, em `/`,
+// e empurrou o Calendário para `/calendario` (ADR 0023).
 
 import { useEffect, useRef, useState } from 'react'
-import { CalendarHeart, CalendarPlus, ListChecks, ListPlus, Plane, Plus, Settings } from 'lucide-react'
+import { CalendarHeart, CalendarPlus, House, ListChecks, ListPlus, Plane, Plus, Settings } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { CalendarApi } from '../calendar/api'
 import { CalendarScreen } from '../calendar/CalendarScreen'
+import type { HomeApi } from '../home/api'
+import { HomeScreen } from '../home/HomeScreen'
 import type { ListApi } from '../list/api'
 import { ListScreen } from '../list/ListScreen'
 import type { SettingsApi } from '../settings/api'
@@ -36,12 +39,16 @@ export interface ShellProps {
   listApi: ListApi
   /** O que as Viagens pedem ao mundo. Injetado, como `api`. */
   tripsApi: TripsApi
+  /** O que a Home pede ao mundo (e a engine do mapa). Injetado, como `api`. */
+  homeApi: HomeApi
   /** A conta mudou de estágio (saiu do casal, apagou o espaço). */
   onStageChanged?: () => void
 }
 
 const NAV: { name: Route['name']; label: string; path: string; icon: LucideIcon }[] = [
-  { name: 'calendar', label: 'Calendário', path: '/', icon: CalendarHeart },
+  // `house`: o primeiro destino do Navbar (PajKz) — a Home, em `/` (ADR 0023).
+  { name: 'home', label: 'Home', path: '/', icon: House },
+  { name: 'calendar', label: 'Calendário', path: '/calendario', icon: CalendarHeart },
   // `list-checks`: o ícone do destino Lista no Navbar do design (PajKz).
   { name: 'list', label: 'Lista', path: '/lista', icon: ListChecks },
   // `plane`: o ícone do destino Viagens no Navbar (nó `d98FB`, PajKz).
@@ -52,7 +59,7 @@ const NAV: { name: Route['name']; label: string; path: string; icon: LucideIcon 
 // sessão continua, e ele recomeça pelo banco.
 const reloadApp = () => window.location.assign('/')
 
-export function Shell({ calendarApi, api, listApi, tripsApi, onStageChanged = reloadApp }: ShellProps) {
+export function Shell({ calendarApi, api, listApi, tripsApi, homeApi, onStageChanged = reloadApp }: ShellProps) {
   const pathname = usePathname()
   const route = parseRoute(pathname)
   const appearance = useAppearance()
@@ -105,9 +112,15 @@ export function Shell({ calendarApi, api, listApi, tripsApi, onStageChanged = re
           {/* Uma instância só para Grade e Detalhe: navegar entre os dois não relê. */}
           <TripsRoute api={tripsApi} view={route} />
         </main>
-      ) : (
+      ) : route?.name === 'calendar' ? (
         <main className="shell-main">
           <CalendarScreen api={calendarApi} />
+        </main>
+      ) : (
+        // `home`, e o instante antes de `canonicalPath` levar um caminho
+        // desconhecido para `/`.
+        <main className="shell-main">
+          <HomeScreen api={homeApi} />
         </main>
       )}
     </div>
@@ -158,7 +171,7 @@ function AddButton() {
       </button>
       {open && (
         <div className="shell-add-menu" role="menu" aria-label="Adicionar">
-          <button type="button" role="menuitem" onClick={() => choose('new-event', '/')}>
+          <button type="button" role="menuitem" onClick={() => choose('new-event', '/calendario')}>
             <CalendarPlus size={16} aria-hidden="true" />
             Novo evento
           </button>

@@ -10,6 +10,10 @@
 //   · `seededTripsApi()` — o acervo de `fixtures.ts` já lido (as cinco
 //     viagens, a Lista, as estadias, as cidades). Escritas idem.
 //
+// Os mapas montam numa `fakeMapEngine()` nova por api; para inspecionar o que
+// a tela pediu (`mounts`, `arcs`), passe a sua: `seededTripsApi({}, { mapEngine:
+// fake.engine })`.
+//
 // Relógio fixo em `TODAY` (2026-09-25). `signedUrls` devolve
 // `https://signed/<path>` para qualquer caminho (`signedUrlOf`); `avatarUrl`,
 // `null` (inicial sobre a cor). `loadCities` devolve as de `TRIP_CITIES` que
@@ -23,6 +27,7 @@ import { vi } from 'vitest'
 import type { SettingsData } from '../../data/settings'
 import type { ListItem } from '../../domain/list'
 import type { Trip } from '../../domain/trips'
+import { fakeMapEngine } from '../../map/fakeEngine'
 import { settingsData } from '../../settings/test/fixtures'
 import type { TripsApi, TripWrite, TripsData } from '../api'
 import { ALL_TRIPS, TODAY, TRIP_CITIES, TRIP_LIST_ITEMS, signedUrlOf, tripsContextData, tripsData } from './fixtures'
@@ -40,6 +45,7 @@ export function fakeTripsApi(overrides: Partial<TripsApi> = {}): TripsApi {
   const empty: TripsData = { trips: [], events: new Map() }
   return {
     today: () => TODAY,
+    mapEngine: fakeMapEngine().engine,
     loadContext: vi.fn<TripsApi['loadContext']>(async () => ({ status: 'ok', rows: settingsData({ stays: [] }) })),
     loadTrips: vi.fn<TripsApi['loadTrips']>(async () => ({ status: 'ok', rows: empty })),
     loadListItems: vi.fn<TripsApi['loadListItems']>(async () => ({ status: 'ok', rows: [] })),

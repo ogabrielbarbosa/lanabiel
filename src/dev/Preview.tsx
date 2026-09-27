@@ -3,6 +3,7 @@
 // Como usar: `npm run dev` e abra
 //
 //     http://localhost:5173/viagens?preview
+//     http://localhost:5173/?preview          (a Home, Fase 7 — `previewHomeApi.ts`)
 //
 // O app sobe com a casca de verdade (`Shell`, a barra lateral) e as Viagens
 // servidas por uma `TripsApi` EM MEMÓRIA semeada com o que os frames do
@@ -33,6 +34,7 @@ import type { CalendarApi } from '../calendar/api'
 import type { ListApi } from '../list/api'
 import type { SettingsApi } from '../settings/api'
 import { PATH_URLS, PREVIEW_TODAY, STAYS, eventOf, settingsSeed } from './previewSeed'
+import { previewHomeApi } from './previewHomeApi'
 import { previewStore, previewTripsApi } from './previewTripsApi'
 
 const UNAVAILABLE = { status: 'error', cause: 'indisponível no preview' } as const
@@ -54,6 +56,8 @@ function stubApi<T extends object>(impl: Partial<T>): T {
 
 const store = previewStore()
 const tripsApi = previewTripsApi(store)
+// A Home com o mapa de verdade (Mapbox) e o cenário da spec da Fase 7, seção 2.
+const homeApi = previewHomeApi(store, tripsApi)
 const context = () => Promise.resolve({ status: 'ok' as const, rows: settingsSeed(STAYS) })
 const calCities = (ids: readonly string[]) =>
   Promise.resolve({
@@ -123,6 +127,7 @@ export default function Preview() {
       api={settingsApi}
       listApi={listApi}
       tripsApi={tripsApi}
+      homeApi={homeApi}
       // Sem portão de sessão aqui: "mudou de estágio" só volta ao início.
       onStageChanged={() => window.location.assign('/viagens')}
     />

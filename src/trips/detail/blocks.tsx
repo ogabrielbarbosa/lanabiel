@@ -11,20 +11,18 @@ import { runs } from '../../domain/calendar'
 import type { Band, CalCity, Run } from '../../domain/calendar'
 import { CATEGORY_LABELS } from '../../domain/list'
 import type { ListItem } from '../../domain/list'
-import { cropFor, dateRangeLabel, formatNumber, inItineraryDay, itemsLabel, tripDates, tripKm, tripRating } from '../../domain/tripDerive'
+import { dateRangeLabel, formatNumber, inItineraryDay, itemsLabel, tripDates, tripKm, tripRating } from '../../domain/tripDerive'
 import type { Trip, TripMemory } from '../../domain/trips'
 import { shortDayMonth, shortMonth, shortMonthYear } from '../../lib/date'
+import { requestMapFocus } from '../../app/mapFocus'
+import { navigate } from '../../app/router'
+import type { Camera } from '../../domain/map'
 import { CATEGORY_ICONS } from '../../list/categories'
-import worldMap from '../assets/world-map.jpg'
+import { TripMap } from '../TripMap'
 import type { TripPerson } from '../context'
 import { usePhotoUrls, useTrips } from '../context'
 import { calendarStripLabel, toneStyle } from './format'
 import { AppLink, Card, HeartsText } from './parts'
-
-// Recorte mínimo do Mapa da viagem. A imagem tem ~3,8 px por grau; abaixo de
-// ~60° os pontos do mapa pontilhado viram bolas (medido no harness com
-// SJC → Ilhabela). O custo é a viagem curta ficar com os pins juntos — ADR 0021.
-const TRIP_MAP_MIN_DEG = 60
 
 // ---------------------------------------------------------------------------
 // Memórias (R18, R23)
@@ -318,11 +316,30 @@ export function CalendarStripCard({ trip, destName, planned, onOpen }: { trip: T
 }
 
 // ---------------------------------------------------------------------------
-// Mapa da viagem (R10b, ADR 0021)
+// Mapa da viagem (Fase 6 R10b, Fase 7 R22)
 // ---------------------------------------------------------------------------
 
-/** A caixa do mapa no frame: 392×300. */
-const MAP_ASPECT = 392 / 300
+/**
+ * Teto do zoom do enquadramento: numa viagem curta (SJC → Ilhabela, ~80 km) o
+ * `fitBounds` desceria ao nível de rua e o mapa perderia o "onde" — 7 mostra a
+ * região em volta. Folga de 56 px para os rótulos caberem.
+ */
+const TRIP_MAP_MAX_ZOOM = 7
+const TRIP_MAP_PADDING = 56
+
+/** Origem e destino com folga (R22); sem destino, a casa. */
+function tripMapCamera(points: readonly { lat: number; lng: number }[]): Camera {
+  const lats = points.map((p) => p.lat)
+  const lngs = points.map((p) => p.lng)
+  return {
+    kind: 'bounds',
+    sw: { lat: Math.min(...lats), lng: Math.min(...lngs) },
+    ne: { lat: Math.max(...lats), lng: Math.max(...lngs) },
+    minZoom: -2,
+    maxZoom: TRIP_MAP_MAX_ZOOM,
+    padding: TRIP_MAP_PADDING,
+  }
+}
 
 export function TripMapCard({
   trip,
@@ -348,68 +365,68 @@ export function TripMapCard({
     seen.add(item.id)
     return [item]
   })
-  const points = [home, ...(dest ? [dest] : [])]
-  const crop = cropFor(points, { aspect: MAP_ASPECT, padDeg: 8, minWidthDeg: TRIP_MAP_MIN_DEG })
-  const pos = (p: { lat: number; lng: number }) => crop.project(p)
-  const h = pos(home)
-  const d = dest ? pos(dest) : null
+  const { api } = useTrips()
   const km = dest ? Math.round(tripKm(home, dest)) : null
   const destName = dest?.name ?? trip.title
-
-  // Uma curva suave de casa ao destino (o arco do frame), em fração da caixa.
-  const path = d
-    ? (() => {
-        const mx = (h.x + d.x) / 2
-        const my = (h.y + d.y) / 2
-        const dx = d.x - h.x
-        const dy = d.y - h.y
-        const bend = 0.18
-        return `M ${h.x * 392} ${h.y * 300} Q ${(mx - dy * bend) * 392} ${(my + dx * bend) * 300} ${d.x * 392} ${d.y * 300}`
-      })()
-    : null
-
-  const imgStyle: CSSProperties = {
-    width: `${100 / crop.frame.w}%`,
-    height: `${100 / crop.frame.h}%`,
-    left: `${(-crop.frame.x / crop.frame.w) * 100}%`,
-    top: `${(-crop.frame.y / crop.frame.h) * 100}%`,
-  }
-  const at = (p: { x: number; y: number }): CSSProperties => ({ left: `${p.x * 100}%`, top: `${p.y * 100}%` })
+  const at = (style: CSSProperties | null, extra?: CSSProperties) => (style ? { ...style, ...extra } : null)
 
   return (
-    <Card title="Mapa da viagem" labelledBy={`td-map-${trip.id}`} className="td-map">
-      <div className="td-map-box" role="img" aria-label={`Mapa: ${originLabel} até ${destName}`}>
-        <img className="td-map-img" src={worldMap} alt="" style={imgStyle} />
-        {path && (
-          <svg className="td-map-svg" viewBox="0 0 392 300" preserveAspectRatio="none" aria-hidden="true">
-            <path d={path} />
-          </svg>
-        )}
-        <span className="td-map-home" style={at(h)} aria-hidden="true" />
-        <span className="td-map-label td-map-label--home" style={at(h)} aria-hidden="true">
-          {originLabel}
-        </span>
-        {pins.map((item) => {
-          const Icon = CATEGORY_ICONS[item.category]
-          const p = pos({ lat: item.place!.lat, lng: item.place!.lng })
-          if (p.x < 0 || p.x > 1 || p.y < 0 || p.y > 1) return null
+    <Card
+      title="Mapa da viagem"
+      labelledBy={`td-map-${trip.id}`}
+      className="td-map"
+      action={{
+        label: 'Abrir no globo',
+        onClick: () => {
+          requestMapFocus({ kind: 'city', cityId: trip.cityId })
+          navigate('/')
+        },
+      }}
+    >
+      <TripMap
+        engine={api.mapEngine}
+        camera={tripMapCamera([home, ...(dest ? [dest] : [])])}
+        arcs={dest ? [{ id: trip.id, from: home, to: dest, dashed: !done }] : []}
+        label={`Mapa: ${originLabel} até ${destName}`}
+        className="td-map-box"
+      >
+        {(place) => {
+          const h = place(home)
+          const d = dest ? place(dest) : null
           return (
-            <span key={item.id} className="td-map-pin td-map-pin--item" style={{ ...at(p), ...toneStyle(`cat-${item.category}`) }} title={item.name} aria-hidden="true">
-              <Icon size={12} />
-            </span>
+            <>
+              {h && (
+                <>
+                  <span className="td-map-home" style={h} data-pin="home" />
+                  <span className="td-map-label td-map-label--home" style={h}>
+                    {originLabel}
+                  </span>
+                </>
+              )}
+              {pins.map((item) => {
+                const Icon = CATEGORY_ICONS[item.category]
+                const style = at(place({ lat: item.place!.lat, lng: item.place!.lng }), toneStyle(`cat-${item.category}`))
+                if (!style) return null
+                return (
+                  <span key={item.id} className="td-map-pin td-map-pin--item" style={style} title={item.name} data-pin="item">
+                    <Icon size={12} />
+                  </span>
+                )
+              })}
+              {d && (
+                <>
+                  <span className={`td-map-pin td-map-pin--dest ${done ? 'is-done' : 'is-planned'}`} style={d} data-pin="dest">
+                    {done ? <CircleCheck size={15} /> : <PlaneLanding size={15} />}
+                  </span>
+                  <span className="td-map-label td-map-label--dest" style={d}>
+                    {destName}
+                  </span>
+                </>
+              )}
+            </>
           )
-        })}
-        {d && (
-          <>
-            <span className={`td-map-pin td-map-pin--dest ${done ? 'is-done' : 'is-planned'}`} style={at(d)} aria-hidden="true">
-              {done ? <CircleCheck size={15} /> : <PlaneLanding size={15} />}
-            </span>
-            <span className="td-map-label td-map-label--dest" style={at(d)} aria-hidden="true">
-              {destName}
-            </span>
-          </>
-        )}
-      </div>
+        }}
+      </TripMap>
       <div className="td-map-legend">
         <span>
           {originLabel} → {destName}

@@ -9,6 +9,7 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { clearListFocus, peekListFocus, requestListFocus } from '../app/listFocus'
 import type { ListApi } from './api'
 import type { AddItemModalProps } from './AddItemModal'
 import type { ItemSheetProps } from './ItemSheet'
@@ -467,3 +468,32 @@ function byRecentOf(a: string, b: string): number {
   const created = new Map(listItems().map((i) => [i.name, i.createdAt]))
   return created.get(b)!.localeCompare(created.get(a)!)
 }
+
+// Fase 7, R3 — .agent/Tasks/fase-7-mapa.md: a Home pede um item e a Lista abre
+// com ele na ficha; o pedido é consumido (voltar à Lista não reabre).
+describe('Fase 7 R3 — listFocus abre a ficha do item pedido', () => {
+  afterEach(() => clearListFocus())
+
+  it('item existente: a ficha abre com os dados lidos e o pedido some', async () => {
+    const id = listItems()[0].id
+    requestListFocus(id)
+    renderList()
+    const sheet = await screen.findByRole('dialog', { name: 'ItemSheet' })
+    expect(sheet).toHaveTextContent(`sheet:${id}`)
+    expect(peekListFocus()).toBeNull()
+  })
+
+  it('id que não está na Lista: a tela abre sem ficha e o pedido some', async () => {
+    requestListFocus('nao-existe')
+    renderList()
+    await loaded()
+    expect(screen.queryByRole('dialog', { name: 'ItemSheet' })).toBeNull()
+    expect(peekListFocus()).toBeNull()
+  })
+
+  it('sem pedido: nenhuma ficha', async () => {
+    renderList()
+    await loaded()
+    expect(screen.queryByRole('dialog', { name: 'ItemSheet' })).toBeNull()
+  })
+})

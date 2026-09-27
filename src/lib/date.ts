@@ -138,3 +138,13 @@ export function addYears(iso: string, amount: number): string {
 export function localDateOfEpoch(ms: number): string {
   return toISODate(new Date(ms))
 }
+
+/** `'2026-09-25'` → `'Setembro'` — o mês por extenso, com maiúscula (o _Nosso ritmo_ da Home). */
+export function monthLong(iso: string): string {
+  return MONTHS_PT[Number(iso.slice(5, 7)) - 1]
+}
+
+/** `'2026-07-12'` → `'12 de julho'` — sem o ano (a _Última memória_ da Home). */
+export function dayMonthLong(iso: string): string {
+  return `${dayOfMonth(iso)} de ${MONTHS_PT[Number(iso.slice(5, 7)) - 1].toLowerCase()}`
+}

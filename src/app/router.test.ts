@@ -1,12 +1,14 @@
 // A12 (parte de rota) — .agent/Tasks/fase-3-configuracoes.md, seção 10.
 // A9 (rotas das Viagens) — .agent/Tasks/fase-6-viagens.md, seção 10; ADR 0020.
+// A2 (Home em /, Calendário em /calendario) — .agent/Tasks/fase-7-mapa.md; ADR 0023.
 
 import { describe, expect, it } from 'vitest'
 import { canonicalPath, parseRoute, pathFor } from './router'
 
 describe('parseRoute', () => {
-  it('raiz e /calendario são o calendário', () => {
-    expect(parseRoute('/')).toEqual({ name: 'calendar' })
+  it('A2 (Fase 7) — a raiz é a Home; /calendario é o Calendário (ADR 0023)', () => {
+    expect(parseRoute('/')).toEqual({ name: 'home' })
+    expect(parseRoute('//')).toEqual({ name: 'home' })
     expect(parseRoute('/calendario')).toEqual({ name: 'calendar' })
     expect(parseRoute('/calendario/')).toEqual({ name: 'calendar' })
   })
@@ -55,6 +57,7 @@ describe('canonicalPath', () => {
   })
   it('caminho canônico não muda', () => {
     expect(canonicalPath('/')).toBeNull()
+    expect(canonicalPath('/calendario')).toBeNull()
     expect(canonicalPath('/lista')).toBeNull()
     expect(canonicalPath('/configuracoes/lista')).toBeNull()
   })
@@ -70,7 +73,8 @@ describe('canonicalPath', () => {
 })
 
 it('pathFor', () => {
-  expect(pathFor({ name: 'calendar' })).toBe('/')
+  expect(pathFor({ name: 'home' })).toBe('/')
+  expect(pathFor({ name: 'calendar' })).toBe('/calendario')
   expect(pathFor({ name: 'list' })).toBe('/lista')
   expect(pathFor({ name: 'settings', tab: 'aparencia' })).toBe('/configuracoes/aparencia')
   expect(pathFor({ name: 'trips' })).toBe('/viagens')

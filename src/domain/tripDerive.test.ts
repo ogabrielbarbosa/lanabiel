@@ -8,7 +8,6 @@ import {
   budgetSummary,
   checkTimeLabel,
   countryLabel,
-  cropFor,
   dateRangeLabel,
   dayOfTrip,
   daysSpanLabel,
@@ -39,7 +38,6 @@ import {
   plannedAfterHero,
   plannedKicker,
   prepSummary,
-  project,
   readiness,
   routeLabel,
   shortUrl,
@@ -679,50 +677,6 @@ describe('filtros de "Já fizemos" (R7)', () => {
     expect(ids({ kind: 'br' })).toEqual(['c', 'a'])
     expect(ids({ kind: 'abroad' })).toEqual(['b'])
     expect(ids({ kind: 'year', year: 2019 })).toEqual([])
-  })
-})
-
-describe('mapa (ADR 0021)', () => {
-  it('project: equiretangular em fração', () => {
-    expect(project(0, 0)).toEqual({ x: 0.5, y: 0.5 })
-    expect(project(90, -180)).toEqual({ x: 0, y: 0 })
-    expect(project(-90, 180)).toEqual({ x: 1, y: 1 })
-    const lisboa = project(LISBOA.lat, LISBOA.lng)
-    expect(lisboa.x).toBeCloseTo(0.4746, 3)
-    expect(lisboa.y).toBeCloseTo(0.2849, 3)
-  })
-
-  it('viagem curta: recorte mínimo de 24°, com a proporção da caixa, pontos dentro', () => {
-    const crop = cropFor([SJC, ILHABELA], { aspect: 2 })
-    expect(crop.east - crop.west).toBeCloseTo(24)
-    expect(crop.north - crop.south).toBeCloseTo(12)
-    for (const p of [SJC, ILHABELA]) {
-      const q = crop.project(p)
-      expect(q.x).toBeGreaterThan(0.4)
-      expect(q.x).toBeLessThan(0.6)
-      expect(q.y).toBeGreaterThan(0.4)
-      expect(q.y).toBeLessThan(0.6)
-    }
-    expect(crop.frame.w).toBeCloseTo(24 / 360)
-    expect(crop.frame.h).toBeCloseTo(12 / 180)
-  })
-
-  it('viagem longa: largura dos pontos + folga; altura segue a caixa', () => {
-    const crop = cropFor([SJC, LISBOA], { aspect: 2, padDeg: 5 })
-    const width = LISBOA.lng - SJC.lng + 10
-    const height = LISBOA.lat - SJC.lat + 10
-    // A altura manda (62° × 2 > 46°): largura = altura × aspect.
-    expect(crop.north - crop.south).toBeCloseTo(height)
-    expect(crop.east - crop.west).toBeCloseTo(Math.max(width, height * 2))
-    const q = crop.project(LISBOA)
-    expect(q.y).toBeCloseTo(5 / height)
-  })
-
-  it('perto da borda do mundo é empurrado para dentro; sem pontos, o mundo', () => {
-    const crop = cropFor([{ lat: 85, lng: 179 }], { aspect: 2 })
-    expect(crop.north).toBe(90)
-    expect(crop.east).toBeCloseTo(180)
-    expect(cropFor([], { aspect: 2 })).toMatchObject({ west: -180, east: 180, north: 90, south: -90 })
   })
 })
 

@@ -127,7 +127,7 @@ function Detail({ trip, onEditTrip }: { trip: Trip; onEditTrip?: () => void }) {
   const pickPhotos = () => fileRef.current?.click()
   const toCalendar = () => {
     requestCalendarFocus(trip.startsOn)
-    navigate('/')
+    navigate('/calendario')
   }
 
   // A linha das saídas sem repetir "Gabriel e Lana" que já está ao lado (R15).

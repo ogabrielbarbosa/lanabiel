@@ -8,6 +8,7 @@ import { AuthGate } from './auth/AuthGate'
 import { supabase } from './lib/supabase'
 import { Shell } from './app/Shell'
 import { calendarApi } from './calendar/api'
+import { homeApi } from './home/api'
 import { listApi } from './list/api'
 import { settingsApi } from './settings/api'
 import { tripsApi } from './trips/api'
@@ -16,6 +17,7 @@ const settings = settingsApi(supabase)
 const list = listApi(supabase)
 const calendar = calendarApi(supabase)
 const trips = tripsApi(supabase)
+const home = homeApi(supabase)
 
 // R2: a timeline antiga guardava as estadias em `lanabiel:stays:v1`, neste
 // navegador. Nada dela é importado (spec, seção 13, decisão 4); a chave sai
@@ -29,7 +31,7 @@ try {
 export default function App() {
   return (
     <AuthGate db={supabase}>
-      <Shell calendarApi={calendar} api={settings} listApi={list} tripsApi={trips} />
+      <Shell calendarApi={calendar} api={settings} listApi={list} tripsApi={trips} homeApi={home} />
     </AuthGate>
   )
 }

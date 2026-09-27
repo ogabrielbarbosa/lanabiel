@@ -290,7 +290,7 @@ ou uma tabela própria que referencia o evento?
 
 ---
 
-## Fase 7 — Home (o globo)
+## Fase 7 — Home (o globo) · spec: [`fase-7-mapa.md`](./fase-7-mapa.md)
 
 **Frames:** `Home — Escuro [eocRt]` · `Painel — scroll completo [LFEx4]` ·
 `Navegação · Estados [j32cy]` · `Navegação · Cidades [saMmF]` · `Zoom São José

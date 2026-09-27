@@ -74,6 +74,8 @@ import type {
 } from '../domain/trips'
 import type { Database } from '../lib/database.types'
 import { todayISO } from '../lib/date'
+import { mapboxEngine } from '../map/engine'
+import type { MapEngine } from '../map/engine'
 
 export type {
   DeleteTripResult,
@@ -96,6 +98,8 @@ export type CoverResult = TripWrite<TripPhoto> | { status: 'photo_failed'; failu
 export interface TripsApi {
   /** `YYYY-MM-DD`, o "hoje" de `tripStatus` (I4). */
   today: () => string
+  /** Os mapas das Viagens (Fase 7 R22): `mapboxEngine`; nos testes, `fakeMapEngine().engine`. */
+  mapEngine: MapEngine
 
   // --- Leitura (a tela lê tudo em paralelo; ver `context.ts`) ------------
   /**
@@ -189,6 +193,7 @@ export function tripsApi(db: Db): TripsApi {
   const target = (coupleId: string, trip: TripRef) => ({ coupleId, tripId: trip.id, startsOn: trip.startsOn, endsOn: trip.endsOn })
   return {
     today: todayISO,
+    mapEngine: mapboxEngine,
     loadContext: () => loadSettings(db),
     loadTrips: () => loadTrips(db),
     loadListItems: () => loadTripListItems(db),

@@ -1,10 +1,12 @@
 // A12 (navegação) e A13 — a casca: barra com só o que existe, e a rota na URL.
 // A9 (Fase 6) — Viagens na barra, `/viagens` e `/viagens/<id>`.
+// A2 (Fase 7) — a Home em `/`, o Calendário em `/calendario` (ADR 0023).
 
-import { act, render, screen, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { fakeCalendarApi } from '../calendar/test/fixtures'
+import { seededHomeApi } from '../home/test/fakeApi'
 import { fakeListApi } from '../list/test/fixtures'
 import { fakeApi } from '../settings/test/fixtures'
 import { seededTripsApi } from '../trips/test/fakeApi'
@@ -21,6 +23,7 @@ function renderShell() {
       api={fakeApi()}
       listApi={fakeListApi()}
       tripsApi={seededTripsApi()}
+      homeApi={seededHomeApi()}
       onStageChanged={() => undefined}
     />,
   )
@@ -30,11 +33,40 @@ function mainNav() {
   return screen.getByRole('navigation', { name: 'Navegação principal' })
 }
 
-describe('A13 (Fase 3), A19 (Fase 4) e A9 (Fase 6) — a barra mostra só destinos que existem', () => {
-  it('Calendário, Lista, Viagens e Configurações, nessa ordem, e nada de Home', () => {
+describe('A13 (Fase 3), A19 (Fase 4), A9 (Fase 6) e A2 (Fase 7) — a barra mostra só destinos que existem', () => {
+  it('Home, Calendário, Lista, Viagens e Configurações, nessa ordem (o Navbar PajKz)', () => {
     renderShell()
     const links = [...mainNav().querySelectorAll('a')].map((a) => a.textContent)
-    expect(links).toEqual(['Calendário', 'Lista', 'Viagens', 'Configurações'])
+    expect(links).toEqual(['Home', 'Calendário', 'Lista', 'Viagens', 'Configurações'])
+    expect(within(mainNav()).getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/')
+    expect(within(mainNav()).getByRole('link', { name: 'Calendário' })).toHaveAttribute('href', '/calendario')
+  })
+})
+
+describe('A2 (Fase 7) — / é a Home, /calendario é o Calendário', () => {
+  it('/ abre a Home e marca o destino Home', async () => {
+    const { container } = renderShell()
+    await waitFor(() => expect(container.querySelector('.home-screen')).not.toBeNull())
+    expect(within(mainNav()).getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.queryByRole('heading', { name: 'Setembro 2026', level: 1 })).not.toBeInTheDocument()
+  })
+
+  it('/calendario abre o Calendário e marca o destino Calendário', async () => {
+    window.history.replaceState(null, '', '/calendario')
+    const { container } = renderShell()
+    expect(await screen.findByRole('heading', { name: 'Setembro 2026', level: 1 })).toBeInTheDocument()
+    expect(within(mainNav()).getByRole('link', { name: 'Calendário' })).toHaveAttribute('aria-current', 'page')
+    expect(container.querySelector('.home-screen')).toBeNull()
+  })
+
+  it('clicar em Calendário na barra vai para /calendario; Home volta para /', async () => {
+    const { container } = renderShell()
+    await userEvent.click(within(mainNav()).getByRole('link', { name: 'Calendário' }))
+    expect(window.location.pathname).toBe('/calendario')
+    expect(await screen.findByRole('heading', { name: 'Setembro 2026', level: 1 })).toBeInTheDocument()
+    await userEvent.click(within(mainNav()).getByRole('link', { name: 'Home' }))
+    expect(window.location.pathname).toBe('/')
+    await waitFor(() => expect(container.querySelector('.home-screen')).not.toBeNull())
   })
 })
 
@@ -98,9 +130,8 @@ describe('A19 — /lista', () => {
 })
 
 describe('A12 — rotas', () => {
-  it('/ mostra o Calendário (A21 da Fase 5); clicar em Configurações vai para a primeira aba', async () => {
+  it('clicar em Configurações vai para a primeira aba', async () => {
     renderShell()
-    expect(await screen.findByRole('heading', { name: 'Setembro 2026', level: 1 })).toBeInTheDocument()
     await userEvent.click(within(mainNav()).getByRole('link', { name: 'Configurações' }))
     expect(window.location.pathname).toBe('/configuracoes/perfil-do-casal')
     expect(await screen.findByRole('heading', { name: 'Configurações', level: 1 })).toBeInTheDocument()
@@ -147,12 +178,12 @@ describe('A21 (Fase 5) — o Adicionar da barra', () => {
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
   })
 
-  it('Novo evento vai para o Calendário e abre o modal, de qualquer rota', async () => {
+  it('Novo evento vai para o Calendário (/calendario) e abre o modal, de qualquer rota', async () => {
     window.history.replaceState(null, '', '/lista')
     renderShell()
     await userEvent.click(addButton())
     await userEvent.click(screen.getByRole('menuitem', { name: 'Novo evento' }))
-    expect(window.location.pathname).toBe('/')
+    expect(window.location.pathname).toBe('/calendario')
     expect(await screen.findByRole('dialog', { name: 'Novo evento' })).toBeInTheDocument()
   })
 

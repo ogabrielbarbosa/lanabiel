@@ -120,14 +120,77 @@ risoto de cogumelos e a torta de limão"_), a memória é o que ficou depois.
   chegar a mais de duas ou três condições por categoria, o sinal é que esta
   decisão está errada e cabe um ADR novo — não um `CHECK` maior.
 
+## Revisão — 2026-09-26 (Fase 4, antes de existir a tabela)
+
+Este ADR ainda estava `Proposed`, e a tabela ainda não existia. Então ele é
+revisado aqui, sem ser superseded. O texto acima fica como estava, como registro
+do que se sabia no dia 25. O que muda vale a partir desta seção.
+
+**O que mudou no conhecimento.** A premissa _"dos oito modais, dois estão
+desenhados"_ estava errada: os oito existem no `.pen` (País `PmKZ4`, Cidade
+`cX0DT`, Parque `UaQ1K`, Comida `e3jts`, Experiência `wBKDf`, Filme `NuAJ6`,
+além de Restaurante e Série). Lidos, eles confirmam os **dois formatos** e
+revelam quatro coisas que a inferência não pegou:
+
+1. **País** tem _Cidades que interessam_ (chips, _"Aparece como segunda linha do
+   item na lista"_), e o pin fica no centro do país, sem cidade.
+2. **Cidade** tem _Região_ em texto livre (_"Serra Gaúcha · pertinho de
+   Marau"_), também como segunda linha.
+3. **Comida** tem _Onde comer · opcional_ (_"Pode ficar vazio se for um prato,
+   não um lugar"_) além da cidade.
+4. **O marcar como feito** pede uma **data** (_"Quando · Sáb, 26 set 2026"_),
+   não um instante, e _Quem estava_ é ele, ela ou os dois.
+
+**Decisão revisada** (o resto da decisão original continua):
+
+- **Colunas novas:** `region text` (só `cidade`), `venue text` (só `comida`),
+  `highlights text[]` (só `pais`, ≤ 12), `updated_at timestamptz`.
+- **`done_at timestamptz` → `done_on date`**, porque o design pede um dia e o
+  projeto compara datas como strings ISO.
+- **`done_with`** passa a ser `'both' | 'solo'`, com `done_solo_by uuid →
+  profiles` quando `solo`. É por **perfil**, não por slot, para a pessoa
+  continuar a mesma se trocar de slot depois de alguém sair do casal.
+- **`platform` é texto livre** (≤ 30), não enum. O modal sugere seis
+  plataformas e aceita _Outra…_: Globoplay não pode custar uma migration.
+- **`link`** tem `CHECK (link ~* '^https?://')`, porque ele vira `href` na tela.
+- **O `CHECK` de formato**, reescrito:
+  - mídia exige `platform` e proíbe `lat`, `lng`, `country_code`, `city`,
+    `address`, `region`, `venue` e `highlights`;
+  - geográfico exige `lat`, `lng` e `country_code` e proíbe `platform`;
+  - `pais` proíbe `city`, e as outras cinco geográficas a exigem;
+  - `seasons`, `highlights`, `region` e `venue` pertencem a uma categoria cada.
+- **As memórias** (`list_memories`, uma por `(item_id, profile_id)`) e as
+  **fotos** (`list_photos`, ≤ 10 por item, por trigger) carregam o `couple_id`
+  repetido, com **FK composta** `(item_id, couple_id) → list_items (id,
+  couple_id)`. Assim a RLS das três tabelas é a mesma expressão
+  (`couple_id in (select private.my_couple_ids())`), sem subquery por item, e o
+  banco garante que o `couple_id` da filha é o do item.
+- **O lugar vem do Photon/OSM** e é guardado resolvido nas colunas geográficas.
+  Ver o [0016](./0016-busca-de-lugares-pelo-photon-osm.md).
+
+**Conferindo o próprio alarme deste ADR** (_"mais de duas ou três condições por
+categoria → a decisão está errada"_). As condições de **exigência** continuam
+curtas: geográfico exige coordenada, país e (exceto `pais`) cidade; mídia exige
+plataforma. O que cresceu foram as de **exclusividade** ("esta coluna só existe
+nesta categoria"), que são mecânicas: uma linha por coluna, sem lógica entre
+elas. O `CHECK` está no limite, não além. O próximo campo exclusivo de uma
+categoria só é o sinal para reconsiderar, com um ADR novo, uma coluna `jsonb`
+por categoria **só para os opcionais de exibição**, mantendo coordenada e
+plataforma como colunas.
+
+**Custo novo que esta revisão assume:** quatro colunas anuláveis a mais (treze
+no total), então documentar `list_items` em `.agent/System/` continua
+obrigatório, e ficou mais.
+
 ## Código / evidência
 
 | Artefato | Caminho |
 | -------- | ------- |
 | Schema antigo, descartado (`country NOT NULL` rejeita série) | tabela `public.places`, ref `smdtcznadmnrdubeidyz` |
-| Schema novo | `supabase/migrations/` — não existe ainda |
-| Modais desenhados (2 de 8) | Pencil: `Lista — Modal Adicionar (Restaurante)`, `(Série)` |
-| Campos do item feito | Pencil: `Lista — Detalhe do item (feito)` |
+| Schema novo | `supabase/migrations/…_list.sql` (Fase 4, a criar) |
+| Spec que revisa | [`../Tasks/fase-4-lista.md`](../Tasks/fase-4-lista.md) (seções 4 e 5) |
+| Modais desenhados (8 de 8, revisão) | Pencil: `RvlR2` Restaurante · `i160RR` Série · `PmKZ4` País · `cX0DT` Cidade · `UaQ1K` Parque · `e3jts` Comida · `wBKDf` Experiência · `NuAJ6` Filme |
+| Campos do item feito | Pencil: `RWegR` Detalhe do item (feito) · `x4sciG` Marcar como feito |
 
 ## Related
 

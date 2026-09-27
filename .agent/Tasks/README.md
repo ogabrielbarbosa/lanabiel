@@ -11,7 +11,7 @@ gosto: ela segue dependência de dados, e está justificada em cada linha.
 | 3 | [Configurações](./fase-3-configuracoes.md) | 9 abas | 🟡 Implementada (2026-09-26) — A24 manual pendente, contraste como dívida |
 | 4 | [Lista](./fase-4-lista.md) | 14 (8 modais) | 🟡 Implementada e na `main` (2026-09-26) — A21 manual pendente |
 | 5 | [Calendário](./fase-5-calendario.md) | 5 | 🟡 Implementada e na `main` (2026-09-27) — A24 manual pendente |
-| 6 | Viagens | 7 | 🔴 sem spec |
+| 6 | [Viagens](./fase-6-viagens.md) | 7 | 🟡 Implementada e na `main` (2026-09-27) — A21 manual pendente |
 | 7 | Home (globo) | 5 | 🔴 sem spec |
 
 ---
@@ -267,6 +267,12 @@ baseline errou.
 ---
 
 ## Fase 6 — Viagens
+
+> **Estado (2026-09-27):** implementada e mergeada. Spec em
+> [`fase-6-viagens.md`](./fase-6-viagens.md), execução no
+> [ledger](./fase-6-viagens.ledger.md). A viagem é o evento `viagem` dos dois
+> estendido por `trips` (ADR 0019); `/viagens/:id` sem biblioteca (0020); os
+> mapas são a imagem do `.pen` com projeção (0021). Falta o A21 manual.
 
 **Frames:** `Viagens — Grade [OmXwr]` · `Linha do tempo [NAPHW]` · `Painel
 scroll completo [lB4rw]` · `Viagem — Detalhe (Ilhabela, feita) [Peoa7]`

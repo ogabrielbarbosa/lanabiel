@@ -4,7 +4,7 @@
 
 - **Data:** 2026-09-27
 - **Autor:** Gabriel Barbosa (com Claude)
-- **Status:** 🟡 Reviewed (pronta p/ implementar) — decisões tomadas pelo agente a pedido do Gabriel ("toma as decisões"), registradas na seção 13
+- **Status:** 🟡 Implementada e verificada (2026-09-27) — A21 (manual, duas contas) pendente; decisões de produto tomadas pelo agente a pedido do Gabriel, na seção 13; execução no ledger
 - **Research (Gate 0):** N/A. A fase está desenhada nos 7 frames de Viagens; cidade do mundo (ADR 0017), Photon (ADR 0016), pintura (ADR 0018) e mídia do casal (ADR 0012) já existem
 - **ADR necessário?** Sim, três no mesmo PR: **0019** (a viagem é o evento `viagem` dos dois, estendido 1:1 por `trips`), **0020** (rota com parâmetro `/viagens/:id` sem biblioteca — supersede o gatilho do 0013) e **0021** (mapas das Viagens sem engine: projeção equiretangular sobre a imagem do `.pen`, até a Fase 7)
 
@@ -267,12 +267,12 @@ Domínio puro com vitest `domain` (todas as regras de I4–I10 e as derivações
 
 ## Plano (Gate 2)
 
-1. [ ] **T1 · Banco** — migration, `supabase/tests/trips.test.ts`, `db push`, `types:gen`. (A1–A7)
-2. [ ] **T2 · Domínio** — `src/domain/trips.ts`, `tripValidationCases.ts`, testes. (A2, A8) — paralelo ao T1
-3. [ ] **T3 · Dados e casca** — `src/data/trips.ts`, `tripRow.ts`, `src/trips/api.ts`, `context.ts` (hook de leitura), fixtures de teste, rota e barra, `calendarFocus`, export v4. (A9, A18)
-4. [ ] **T4 · Grade, Linha do tempo, Painel e Nova viagem** — `src/trips/*`, `trips.css`. (A10–A13, A17)
-5. [ ] **T5 · Detalhe, Galeria e editores** — `src/trips/detail/*`, `trip-detail.css`. (A14–A16) — paralelo ao T4
-6. [ ] **T6 · Fechamento** — conferência visual contra o `.pen` (A20), `/code-review`, `verify`, docs (`project_architecture.md`, `CLAUDE.md`, roadmap), ADRs para `Accepted` onde couber, merge.
+1. [x] **T1 · Banco** — migration, `supabase/tests/trips.test.ts`, `db push`, `types:gen`. (A1–A7)
+2. [x] **T2 · Domínio** — `src/domain/trips.ts`, `tripValidationCases.ts`, testes. (A2, A8) — paralelo ao T1
+3. [x] **T3 · Dados e casca** — `src/data/trips.ts`, `tripRow.ts`, `src/trips/api.ts`, `context.ts` (hook de leitura), fixtures de teste, rota e barra, `calendarFocus`, export v4. (A9, A18)
+4. [x] **T4 · Grade, Linha do tempo, Painel e Nova viagem** — `src/trips/*`, `trips.css`. (A10–A13, A17)
+5. [x] **T5 · Detalhe, Galeria e editores** — `src/trips/detail/*`, `trip-detail.css`. (A14–A16) — paralelo ao T4
+6. [x] **T6 · Fechamento** — conferência visual contra o `.pen` (A20), `/code-review`, `verify`, docs (`project_architecture.md`, `CLAUDE.md`, roadmap), ADRs para `Accepted` onde couber, merge.
 
 ## Related
 

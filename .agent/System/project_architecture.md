@@ -1,6 +1,6 @@
 # Arquitetura do projeto
 
-> Atualizado ao fim da Fase 5 (Calendário), 2026-09-27. O _como_ mora aqui e é
+> Atualizado ao fim da Fase 6 (Viagens), 2026-09-27. O _como_ mora aqui e é
 > reescrito sempre que o código muda; o _porquê_ mora em `../Decisions/`.
 
 ## O que é
@@ -36,7 +36,8 @@ src/
 ├── app/                    # Fase 3: a casca
 │   ├── Shell.tsx           # barra lateral (só destinos que existem) + rota + _Adicionar_
 │   ├── addIntent.ts        # o pedido do _Adicionar_: evento ou item, consumido pela tela dona
-│   ├── router.ts           # caminho na barra, sem biblioteca (ADR 0013)
+│   ├── calendarFocus.ts    # o _Ver no calendário_ das Viagens: o mês que o Calendário abre
+│   ├── router.ts           # caminho na barra, sem biblioteca (ADR 0013, 0020: `/viagens/:id`)
 │   ├── appearance.ts · useAppearance.ts   # tema/densidade/animações, por aparelho
 │   └── app.css             # tokens claro/escuro do .pen, em data-theme
 ├── calendar/               # Fase 5: o Calendário; recebe `CalendarApi` injetada (api.ts)
@@ -45,6 +46,13 @@ src/
 │   ├── PeriodModal.tsx · EventModal.tsx · CityPicker.tsx · CalDialog.tsx · CalendarModals.tsx
 │   ├── cityChoice.ts · modalEnv.ts · modalPreview.ts
 │   └── calendar.css · modals.css   # exceção registrada ao "um CSS por feature"
+├── trips/                  # Fase 6: as Viagens; recebe `TripsApi` injetada (api.ts)
+│   ├── TripsRoute.tsx · context.ts   # leitura única + releitura; carregando/erro/"não está aqui"
+│   ├── TripsScreen.tsx · TripsPanel.tsx · TripModal.tsx · parts.tsx · links.ts
+│   ├── detail/             # TripDetail · Itinerary · Gallery · Planning · blocks · editors (+ trip-detail.css)
+│   ├── assets/world-map.jpg   # o mapa-múndi do .pen, sem pins (ADR 0021)
+│   └── trips.css           # exceção registrada: duas folhas, como o Calendário
+├── dev/                    # SÓ em DEV: harness `?preview` com TripsApi em memória e os dados do .pen
 ├── list/                   # Fase 4: a Lista; recebe `ListApi` injetada (api.ts)
 │   ├── ListScreen.tsx · ListPanel.tsx · context.ts · parts.tsx · categories.ts
 │   ├── AddItemModal.tsx · ItemSheet.tsx · MarkDoneModal.tsx · Hearts.tsx
@@ -66,7 +74,10 @@ src/
 │   ├── list.ts             # Fase 4: validação (espelho do CHECK), filtros, sugestão, onde estamos
 │   ├── calendar.ts         # Fase 5: pintura (espelho da RPC), trechos, contagens, ocorrências, validação do evento
 │   ├── paintCases.ts · eventValidationCases.ts # a MESMA tabela roda no domínio e no banco (A2, A3)
-│   └── listValidationCases.ts # a MESMA tabela de casos roda no domínio e no banco (A2)
+│   ├── listValidationCases.ts # a MESMA tabela de casos roda no domínio e no banco (A2)
+│   ├── trips.ts            # Fase 6: contrato (tipos, listas, TRIP_LIMITS, DEFAULT_PREP)
+│   ├── tripValidation.ts · tripValidationCases.ts  # espelho dos CHECK, a mesma tabela no banco
+│   └── tripDerive.ts       # estado, números, herói, recordes, roteiro, projeção do mapa
 ├── data/
 │   ├── result.ts           # DataResult / WriteResult discriminados
 │   ├── rpc.ts              # chamada de RPC: 42501 → unauthenticated, resto → error
@@ -77,7 +88,9 @@ src/
 │   ├── places.ts           # busca de lugar no Photon/OSM, fallback IBGE (ADR 0016); `osmRef`
 │   ├── calendar.ts · calendarRow.ts # Fase 5: leitura, pintura, eventos, 💋; mapeador snake↔camel
 │   ├── worldCities.ts      # cidade do mundo: busca no Photon (sem BR) e `ensureWorldCity` (ADR 0017)
-│   └── listSummary.ts      # contagens e export da Lista para as Configurações
+│   ├── listSummary.ts      # contagens e export da Lista para as Configurações
+│   ├── media.ts            # couple-media: caminho, upload, remoção, URL assinada (Lista e Viagens)
+│   └── trips.ts · tripRow.ts # Fase 6: leitura/escritas das Viagens; mapeador snake↔camel
 ├── onboarding/             # Fase 2: o assistente e as telas; recebe `OnboardingApi` injetada
 │   ├── Onboarding.tsx      # a máquina de passos; o banco é a verdade, o passo é local
 │   ├── pendingInvite.ts    # código pendente em sessionStorage (sobrevive ao OAuth)
@@ -286,6 +299,43 @@ autor e cidade são do casal. Sem realtime: relê ao voltar ao foco (ADR 0015).
 O botão _Adicionar_ da barra registra um pedido em memória (`addIntent.ts`) e a
 tela dona o consome depois de ler os dados.
 
+## Viagens (Fase 6)
+
+**A viagem é o evento** ([ADR 0019](../Decisions/0019-viagem-e-o-evento-estendido-por-trips.md)):
+um `calendar_events` com `kind = 'viagem'` e `travelers = 'both'`. Datas,
+destino, título e nota moram só lá; `trips` estende o evento 1:1 pela mesma
+chave (`event_id`) com capa e hospedagem, e sete filhas penduram em `trips`
+(`trip_departures`, `trip_days`, `trip_itinerary_items`, `trip_prep_items`,
+`trip_budget_lines`, `trip_memories`, `trip_photos`), cada uma com `couple_id` e
+FK composta `(trip_id, couple_id)`. Apagar o evento leva tudo em cascata; as
+estadias pintadas ficam (ADR 0018). `trips` não tem policy de delete: apagar a
+viagem é apagar o evento.
+
+Um trigger (`calendar_events_trip`, invoker) cria `trips` e os cinco itens de
+preparação padrão quando um evento vira viagem dos dois — inclusive a criada pelo
+_Novo evento_ do Calendário. `create_trip` (RPC **invoker**, não conta nas doze
+`definer`) chama `create_event` com pintura e grava hospedagem e saídas na mesma
+transação. Tetos por trigger com trava na linha de `trips` (200 itens de roteiro,
+20 de preparação, 12 de orçamento, 500 fotos); item de roteiro fora das datas é
+recusado ao gravar.
+
+**O estado (planejada, em andamento, feita) é derivado de hoje**, nunca gravado
+(`tripStatus`). Números, herói, recordes, _Há um ano_, roteiro com dias livres
+colapsados e a nota da viagem (média das memórias, `ceil`) saem de
+`tripDerive.ts`. Distâncias são linha reta **da casa de quem vê**. "Puxar itens
+da lista" é leitura derivada (itens a ≤ 30 km do destino), não escrita.
+
+Fotos em `couple-media/<casal>/trip/<uuid>.webp` (arquivo → linha; apagar é
+arquivo → linha). URLs assinadas só do que está visível, em lote, re-assinadas
+na releitura e a cada 50 min. Os mapas são a imagem do `.pen` com pins por
+projeção equiretangular ([ADR 0021](../Decisions/0021-mapas-das-viagens-sem-engine.md)),
+até o MapLibre da Fase 7. `/viagens/:id` usa o roteador próprio
+([ADR 0020](../Decisions/0020-rota-com-parametro-sem-biblioteca.md)).
+
+Em DEV, `?preview` (ex. `/viagens?preview`) monta a casca com uma `TripsApi` em
+memória semeada com a copy e as imagens dos frames — para comparar a tela com o
+`.pen` sem login. `src/dev/` não entra no build de produção.
+
 ## Fronteiras
 
 | Fronteira | Onde | Regra |
@@ -297,12 +347,12 @@ tela dona o consome depois de ler os dados.
 
 ## Schema
 
-Catorze tabelas, todas com RLS: `cities`, `couples`, `profiles`, `couple_members`,
+Vinte e duas tabelas, todas com RLS: `cities`, `couples`, `profiles`, `couple_members`,
 `couple_invites`, `stays`, `couple_settings`, `profile_settings`,
 `couple_saved_cities`, `list_items`, `list_memories`, `list_photos`,
-`calendar_events`, `day_kisses`; mais dois contadores de abuso em `private`, fora da API.
+`calendar_events`, `day_kisses`, `trips` e as sete `trip_*` da Fase 6; mais dois contadores de abuso em `private`, fora da API.
 Dois buckets privados: `avatars` (por pessoa, ADR 0009) e `couple-media` (por
-casal, ADR 0012). Detalhes nas specs das Fases 0, 2, 3, 4 e 5 (seção 5). Dois pontos que não são óbvios lendo o
+casal, ADR 0012). Detalhes nas specs das Fases 0, 2, 3, 4, 5 e 6 (seção 5). Dois pontos que não são óbvios lendo o
 DDL:
 
 - `stays_no_overlap` é um `EXCLUDE USING gist` sobre
@@ -322,7 +372,7 @@ DDL:
 `public` há **exatamente doze** `security definer` — as sete RPCs do convite
 (ADR 0008), mais `leave_couple`, `delete_couple`, `cancel_invite`,
 `list_my_sessions` e `end_my_session` (Fase 3); `mark_item_done` (Fase 4),
-`paint_stays` e `create_event` (Fase 5) são `invoker` e não contam — e
+`paint_stays` e `create_event` (Fase 5) e `create_trip` (Fase 6) são `invoker` e não contam — e
 `supabase/tests/onboarding.test.ts` (A20) falha se aparecer uma décima terceira. Todas têm `revoke execute ... from public, anon`, porque o Postgres
 concede `EXECUTE` a `PUBLIC` por padrão. O `service_role` tem `USAGE` em
 `private` para o trigger de `couples` funcionar em escrita administrativa.

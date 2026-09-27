@@ -200,3 +200,40 @@ Prova depois das correções: `npm run test` 44 / 1119, typecheck, lint e build
 limpos.
 
 ---
+## Verificação (Gate 3)
+
+typecheck ✅ · lint ✅ · `npm run test` ✅ 44 arquivos / 1119 · build ✅ ·
+`npm run test:db` ✅ 13 arquivos / 425 (+4 pulados sem Mailpit), com a migration
+no online.
+
+| Aceite | Veredito | Prova |
+| --- | --- | --- |
+| A1 paridade limites/listas/`DEFAULT_PREP` | ✅ | `supabase/tests/trips.test.ts:215` |
+| A2 mesma tabela de casos, domínio e banco | ✅ | `tripValidation.test.ts` + `trips.test.ts:293` |
+| A3 `create_trip` numa transação | ✅ | `trips.test.ts:310` (consulta o banco) |
+| A4 trigger: viagem dos dois sim, visita/solo não | ✅ | `trips.test.ts:479` |
+| A5 RLS e FKs compostas | ✅ | `trips.test.ts:544` |
+| A6 dia dentro da viagem e tetos | ✅ | `trips.test.ts:685` |
+| A7 cascata; estadias ficam | ✅ | `trips.test.ts:755` |
+| A8 derivações | ✅ | `tripDerive.test.ts` (71) |
+| A9 rotas e barra | ✅ | `router.test.ts:20`, `Shell.test.tsx`, `TripsRoute.test.tsx:58` |
+| A10 Grade | ✅ | `TripsScreen.test.tsx:46–139` |
+| A11 Linha do tempo | ✅ | `TripsScreen.test.tsx:183` |
+| A12 Painel | ✅ | `TripsPanel.test.tsx:49–169` |
+| A13 Nova viagem | ✅ | `TripModal.test.tsx:60–148` |
+| A14 Detalhe feito/futuro | ✅ | `TripDetail.test.tsx:41,103` |
+| A15 Roteiro | ✅ | `Itinerary.test.tsx:18–153` |
+| A16 Galeria | ✅ | `Gallery.test.tsx:43` |
+| A17 leitura com falha | ✅ | `TripsRoute.test.tsx:24`, `TripsScreen.test.tsx:227` |
+| A18 export v4 | ✅ | `export.test.ts:178–247` |
+| A19 gates | ✅ | acima |
+| A20 visual contra o `.pen` | ⚠️ parcial | medido no harness a 1440×900 (posições a ≤ 2 px) pelos agentes nos 7 frames; o orquestrador viu Grade e Detalhe feito lado a lado com o export. Tema claro: o `.pen` só desenha o escuro, nada a comparar. Não visto: telas abaixo de 1440 |
+| A21 manual, duas contas | ❌ não verificado | precisa das duas sessões reais — pendente como o A24 da Fase 5 |
+
+Estados vazios: sem viagens (herói _"Para onde vai a próxima?"_,
+`TripsScreen.test.tsx:73`), sem fotos, sem memória (`TripDetail.test.tsx`).
+Falhas: leitura (A17), escrita (modais abertos com a causa), capa falhou (R25).
+Limites: tetos no banco (A6); 50 fotos por upload (`TripDetail.test.tsx:260`).
+Não medido: desempenho com 500 fotos numa viagem.
+
+---

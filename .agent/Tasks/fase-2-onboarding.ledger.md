@@ -292,3 +292,13 @@ Renomear as duas fases juntas, num commit só de renome.
 - `overflow: clip` movido para `auth.css`.
 - A29, A30, avisos e agendador: adiados para o fim do roadmap por decisão do
   Gabriel (2026-09-26).
+
+## A29 · Resend no ar (2026-09-27)
+
+Domínio `email.ogabarbosa.com` verificado no Resend (DKIM, SPF e MX na
+Cloudflare, DNS only). Segredos `RESEND_API_KEY`, `INVITE_FROM`
+(`lanabiel <convite@email.ogabarbosa.com>`) e `APP_URL`
+(`https://lanabiel.ogabarbosa.com`) subidos com `supabase secrets set
+--env-file supabase/functions/.env.local`; `send-invite` publicada (sem mudança
+de código). Falta a prova: um convite recebido num endereço de terceiro, com o
+ID da mensagem no Resend. O link do e-mail só abre depois do deploy no domínio.

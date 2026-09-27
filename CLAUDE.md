@@ -98,10 +98,12 @@ todo turno está abaixo.
 src/domain/coupleState.ts  # derivação: estadias → juntos/separados/viajando
 src/domain/onboarding.ts   # LIMITS (paridade com os CHECK), código de convite
 src/domain/settings.ts     # paletas, categorias, abas (paridade com os CHECK)
+src/domain/list.ts         # Lista: validação (espelho do CHECK), filtros, sugestão, onde estamos
 src/data/                  # result.ts (discriminado), stays, account, invites, couple, settings…
 src/app/                   # casca: barra lateral, roteador por caminho, aparência (tema)
 src/auth/                  # portão de sessão, Login, SignUp, StartChoice
 src/onboarding/            # assistente de criar/entrar no espaço, recebe OnboardingApi
+src/list/                  # a Lista (Fase 4), recebe ListApi
 src/settings/              # as nove abas das Configurações, recebe SettingsApi
 src/lib/                   # supabase.ts, database.types.ts (GERADO), date.ts
 src/timeline/              # a tela antiga, sobre localStorage — cai na Fase 5
@@ -186,7 +188,7 @@ por feature (`timeline/timeline.css`), sem framework nem CSS-in-JS.
 
 ## Estado atual do repositório
 
-Fases 0 a 3 na `main`. A Fase 1
+Fases 0 a 4 (a 4 na branch `fase-4-lista` até o merge). A Fase 1
 entregou `src/auth/` (portão de sessão, login por senha e OAuth); a Fase 2, o
 onboarding (`src/onboarding/`), o convite (`couple_invites`, edge function
 `supabase/functions/send-invite`), os municípios do IBGE e as fotos em bucket
@@ -197,14 +199,21 @@ mídia do casal (`couple-media`, ADR 0012) e sair/apagar o espaço. Com `ready`,
 o Calendário ainda é a timeline antiga sobre `localStorage` — até a Fase 5,
 **nenhum casal de fora deve usar o app**.
 
-As preferências de telas que ainda não existem (Calendário, Lista, Home,
+A Fase 4 entregou a Lista (`src/list/`, `/lista`): `list_items` em tabela única
+com dois formatos por `CHECK` (ADR 0003 revisado), memórias por pessoa e fotos
+do feito (`list_memories`, `list_photos`), `mark_item_done` (RPC `invoker`),
+busca de lugar no Photon/OSM com fallback IBGE (ADR 0016) e releitura ao voltar
+ao foco em vez de realtime (ADR 0015). O painel "Perto de vocês" lê as estadias
+do banco — até a Fase 5 gravá-las, ele diz "sem registro".
+
+As preferências de telas que ainda não existem (Calendário, Home,
 Notificações) já estão gravadas: **cada fase lê a coluna que a Fase 3 criou** e
 a refina, em vez de inventar a sua.
 
 Adiado de propósito para o fim do roadmap: e-mail real pelo Resend (A29), Google
 no celular (A30), avisos ao outro e o agendador.
 
-`.agent/System/project_architecture.md` está atualizado ao fim da Fase 3.
+`.agent/System/project_architecture.md` está atualizado ao fim da Fase 4.
 
 **O arquivo `lanabiel` (sem extensão) na raiz é um export JSON ANTIGO do design,
 e não é fonte da verdade.** Ele tem 4 telas e um conjunto de tokens

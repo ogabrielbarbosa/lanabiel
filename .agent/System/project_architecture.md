@@ -1,6 +1,6 @@
 # Arquitetura do projeto
 
-> Atualizado ao fim da Fase 3 (Configurações), 2026-09-26. O _como_ mora aqui e é
+> Atualizado ao fim da Fase 4 (Lista), 2026-09-26. O _como_ mora aqui e é
 > reescrito sempre que o código muda; o _porquê_ mora em `../Decisions/`.
 
 ## O que é
@@ -38,6 +38,10 @@ src/
 │   ├── router.ts           # caminho na barra, sem biblioteca (ADR 0013)
 │   ├── appearance.ts · useAppearance.ts   # tema/densidade/animações, por aparelho
 │   └── app.css             # tokens claro/escuro do .pen, em data-theme
+├── list/                   # Fase 4: a Lista; recebe `ListApi` injetada (api.ts)
+│   ├── ListScreen.tsx · ListPanel.tsx · context.ts · parts.tsx · categories.ts
+│   ├── AddItemModal.tsx · ItemSheet.tsx · MarkDoneModal.tsx · Hearts.tsx
+│   └── list.css            # inclui os tokens `cat-*` do .pen (claro e escuro)
 ├── settings/               # Fase 3: as nove abas; recebe `SettingsApi` injetada
 │   ├── SettingsScreen.tsx · RightPanel.tsx · context.ts · parts.tsx · exportAll.ts
 │   ├── tabs/               # uma por aba do Pencil
@@ -51,13 +55,18 @@ src/
 │   └── auth.css            # tokens lidos do .pen; escuro é o padrão
 ├── domain/
 │   ├── coupleState.ts      # derivação: estadias → juntos/separados/viajando
-│   └── onboarding.ts       # LIMITS (paridade com os CHECK), código Crockford, "juntos há", distância
+│   ├── onboarding.ts       # LIMITS (paridade com os CHECK), código Crockford, "juntos há", distância
+│   ├── list.ts             # Fase 4: validação (espelho do CHECK), filtros, sugestão, onde estamos
+│   └── listValidationCases.ts # a MESMA tabela de casos roda no domínio e no banco (A2)
 ├── data/
 │   ├── result.ts           # DataResult / WriteResult discriminados
 │   ├── rpc.ts              # chamada de RPC: 42501 → unauthenticated, resto → error
 │   ├── account.ts          # estágio: needs_profile / needs_couple / awaiting_partner / ready
 │   ├── profile.ts · couple.ts · invites.ts · cities.ts · avatar.ts   # Fase 2
-│   └── stays.ts            # leitura e escrita de estadias, fronteira snake→camel
+│   ├── stays.ts            # leitura e escrita de estadias, fronteira snake→camel
+│   ├── list.ts · listRow.ts # Fase 4: leitura/escritas/cascatas da Lista; mapeador snake↔camel
+│   ├── places.ts           # busca de lugar no Photon/OSM, fallback IBGE (ADR 0016)
+│   └── listSummary.ts      # contagens e export da Lista para as Configurações
 ├── onboarding/             # Fase 2: o assistente e as telas; recebe `OnboardingApi` injetada
 │   ├── Onboarding.tsx      # a máquina de passos; o banco é a verdade, o passo é local
 │   ├── pendingInvite.ts    # código pendente em sessionStorage (sobrevive ao OAuth)
@@ -188,6 +197,50 @@ aberto — convite é da pessoa convidada. Quem fica volta a `awaiting_partner`
 (slot 1 ou 2), e o próximo aceite ocupa a vaga livre. Apagar o espaço apaga a
 pasta `couple-media/<couple_id>/` pelo cliente e depois chama `delete_couple`.
 
+## Lista (Fase 4)
+
+`list_items` é **uma tabela para as oito categorias**, em dois formatos
+([ADR 0003](../Decisions/0003-lista-tabela-unica-com-check-por-categoria.md),
+com a revisão de 2026-09-26). O que cada coluna vale para cada categoria não se
+lê no `\d`, e por isso está aqui:
+
+| Coluna | Vale em | Regra |
+| --- | --- | --- |
+| `lat`, `lng`, `country_code`, `country` | as 6 geográficas | obrigatórias (menos `country`); nulas em filme/série |
+| `city` | geográficas menos `pais` | obrigatória; em `pais` é nula (o pin fica no centro do país) |
+| `address`, `state` | geográficas | opcionais; nulas em mídia |
+| `region` | só `cidade` | texto livre, segunda linha do item |
+| `venue` | só `comida` | "Onde comer", opcional |
+| `highlights` | só `pais` | "Cidades que interessam", ≤ 12, cada ≤ 40; vazio nas outras |
+| `platform` | só `filme`, `serie` | obrigatória nelas, texto livre (≤ 30); nula nas geográficas |
+| `seasons` | só `serie` | 1–99, opcional |
+| `status`, `done_on`, `done_with`, `done_solo_by`, `rating` | todas | `done` ⇔ data e "quem estava"; `solo` ⇔ `done_solo_by`; nota só em feito |
+
+O lugar é guardado **resolvido** (texto + coordenada) a partir do Photon/OSM,
+chamado direto do navegador, com fallback no IBGE
+([ADR 0016](../Decisions/0016-busca-de-lugares-pelo-photon-osm.md)). A Lista
+**não** escreve em `cities`. A regra do formato mora em dois lugares com prova
+de paridade: `validateItem` (`src/domain/list.ts`) e o `CHECK`
+`list_items_format`; `listValidationCases.ts` roda contra os dois.
+
+`list_memories` (uma por pessoa por item; cada um escreve só a sua) e
+`list_photos` (≤ 10 por item, por trigger com trava na linha do item) repetem o
+`couple_id` com **FK composta** `(item_id, couple_id)`, para a RLS ser a mesma
+expressão de sempre. Arquivos em `couple-media/<couple_id>/item/` (foto do
+item) e `…/memory/` (fotos do feito).
+
+Marcar como feito é a RPC `mark_item_done`, **`security invoker`** — existe só
+pela atomicidade (status, data, quem estava, nota, memória e fotos numa
+transação). As cascatas com Storage (subir → RPC; apagar arquivos → linha) e
+o que cada falha deixa para trás estão na seção 7 da
+[spec](../Tasks/fase-4-lista.md).
+
+Sem realtime: a Lista relê ao voltar ao foco e depois de cada escrita própria
+([ADR 0015](../Decisions/0015-lista-sem-realtime-reler-ao-voltar.md)). O
+painel ("Perto de vocês", sugestão) lê o estado do casal **derivado** das
+estadias do banco; até a Fase 5 gravar estadias, ele diz "sem registro" em vez
+de adivinhar.
+
 ## Fronteiras
 
 | Fronteira | Onde | Regra |
@@ -199,11 +252,11 @@ pasta `couple-media/<couple_id>/` pelo cliente e depois chama `delete_couple`.
 
 ## Schema
 
-Nove tabelas, todas com RLS: `cities`, `couples`, `profiles`, `couple_members`,
+Doze tabelas, todas com RLS: `cities`, `couples`, `profiles`, `couple_members`,
 `couple_invites`, `stays`, `couple_settings`, `profile_settings`,
-`couple_saved_cities`; mais dois contadores de abuso em `private`, fora da API.
+`couple_saved_cities`, `list_items`, `list_memories`, `list_photos`; mais dois contadores de abuso em `private`, fora da API.
 Dois buckets privados: `avatars` (por pessoa, ADR 0009) e `couple-media` (por
-casal, ADR 0012). Detalhes nas specs das Fases 0, 2 e 3 (seção 5). Dois pontos que não são óbvios lendo o
+casal, ADR 0012). Detalhes nas specs das Fases 0, 2, 3 e 4 (seção 5). Dois pontos que não são óbvios lendo o
 DDL:
 
 - `stays_no_overlap` é um `EXCLUDE USING gist` sobre
@@ -222,7 +275,8 @@ DDL:
 `private.my_couple_ids()` é `security definer` em `private`, fora da API. Em
 `public` há **exatamente doze** `security definer` — as sete RPCs do convite
 (ADR 0008), mais `leave_couple`, `delete_couple`, `cancel_invite`,
-`list_my_sessions` e `end_my_session` (Fase 3) — e
+`list_my_sessions` e `end_my_session` (Fase 3); `mark_item_done` (Fase 4) é
+`invoker` e não conta — e
 `supabase/tests/onboarding.test.ts` (A20) falha se aparecer uma décima terceira. Todas têm `revoke execute ... from public, anon`, porque o Postgres
 concede `EXECUTE` a `PUBLIC` por padrão. O `service_role` tem `USAGE` em
 `private` para o trigger de `couples` funcionar em escrita administrativa.

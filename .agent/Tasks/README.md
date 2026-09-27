@@ -9,7 +9,7 @@ gosto: ela segue dependência de dados, e está justificada em cada linha.
 | 1 | [Login](./fase-1-login.md) | 2 | 🟡 Reviewed (2026-09-26) |
 | 2 | [Onboarding](./fase-2-onboarding.md) | 6 frames / 23 telas | 🟡 Implementada e na `main` (2026-09-26) — A29/A30 adiados, ver abaixo |
 | 3 | [Configurações](./fase-3-configuracoes.md) | 9 abas | 🟡 Implementada (2026-09-26) — A24 manual pendente, contraste como dívida |
-| 4 | Lista | 7 | 🔴 sem spec |
+| 4 | [Lista](./fase-4-lista.md) | 14 (8 modais) | 🟡 Implementada na branch `fase-4-lista` (2026-09-26) — A21 manual pendente |
 | 5 | Calendário | 5 | 🔴 sem spec |
 | 6 | Viagens | 7 | 🔴 sem spec |
 | 7 | Home (globo) | 5 | 🔴 sem spec |
@@ -185,7 +185,7 @@ mudar schema.
 **Frames:** `Lista — Todos [B3rwp]` · `Filtro sem resultados [DXg1A]` ·
 `Detalhe do item (feito) [RWegR]` · `Modal Adicionar (Restaurante) [RvlR2]` ·
 `Modal Adicionar (Série) [i160RR]` · `Modal Marcar como feito [x4sciG]` ·
-`Painel scroll completo [ltlFV]`.
+`Painel scroll completo [ltlFV]` · os outros seis modais de adicionar (abaixo).
 
 **Por que antes do Calendário:** o modal "Novo evento" tem um campo **"Vínculo
 com a lista"**, então o Calendário precisa que os itens existam.
@@ -212,10 +212,13 @@ séries não viram pin no globo"*.
   cidade · do calendário"*, com distâncias, e a sugestão do dia muda de lugar
   para série quando vocês estão separados.
 
-**Buraco:** dos 8 modais de adicionar, **2 estão desenhados**. Os outros seis
-(País, Cidade, Parque, Comida, Filme, Experiência) a spec define a partir do
-padrão dos dois que existem e das linhas da lista. Enquanto a tabela estiver
-vazia, `ALTER TABLE` é barato — depois de 86 itens, não.
+**Os 8 modais de adicionar estão desenhados** (conferido no `.pen` em
+2026-09-26 — esta seção dizia "2 de 8"): além dos dois acima, País `PmKZ4`,
+Cidade `cX0DT`, Parque `UaQ1K`, Comida `e3jts`, Experiência `wBKDf` e Filme
+`NuAJ6`. Eles revelaram campos que o ADR 0003 não previa (cidades de interesse
+do país, região da cidade, _onde comer_ da comida) e uma busca de
+estabelecimento com endereço, no mundo todo — ver a spec
+[`fase-4-lista.md`](./fase-4-lista.md).
 
 **Schema novo:** `list_items`, `memories`, fotos, e o bucket de Storage.
 

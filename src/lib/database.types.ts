@@ -313,6 +313,205 @@ export type Database = {
         }
         Relationships: []
       }
+      list_items: {
+        Row: {
+          added_by: string | null
+          address: string | null
+          category: string
+          city: string | null
+          country: string | null
+          country_code: string | null
+          couple_id: string
+          created_at: string
+          done_on: string | null
+          done_solo_by: string | null
+          done_with: string | null
+          featured: boolean
+          highlights: string[]
+          id: string
+          lat: number | null
+          link: string | null
+          lng: number | null
+          name: string
+          note: string | null
+          photo_path: string | null
+          platform: string | null
+          rating: number | null
+          region: string | null
+          seasons: number | null
+          state: string | null
+          status: string
+          updated_at: string
+          venue: string | null
+        }
+        Insert: {
+          added_by?: string | null
+          address?: string | null
+          category: string
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
+          couple_id: string
+          created_at?: string
+          done_on?: string | null
+          done_solo_by?: string | null
+          done_with?: string | null
+          featured?: boolean
+          highlights?: string[]
+          id?: string
+          lat?: number | null
+          link?: string | null
+          lng?: number | null
+          name: string
+          note?: string | null
+          photo_path?: string | null
+          platform?: string | null
+          rating?: number | null
+          region?: string | null
+          seasons?: number | null
+          state?: string | null
+          status?: string
+          updated_at?: string
+          venue?: string | null
+        }
+        Update: {
+          added_by?: string | null
+          address?: string | null
+          category?: string
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
+          couple_id?: string
+          created_at?: string
+          done_on?: string | null
+          done_solo_by?: string | null
+          done_with?: string | null
+          featured?: boolean
+          highlights?: string[]
+          id?: string
+          lat?: number | null
+          link?: string | null
+          lng?: number | null
+          name?: string
+          note?: string | null
+          photo_path?: string | null
+          platform?: string | null
+          rating?: number | null
+          region?: string | null
+          seasons?: number | null
+          state?: string | null
+          status?: string
+          updated_at?: string
+          venue?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_items_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "list_items_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: false
+            referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "list_items_done_solo_by_fkey"
+            columns: ["done_solo_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      list_memories: {
+        Row: {
+          body: string
+          couple_id: string
+          created_at: string
+          item_id: string
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          couple_id: string
+          created_at?: string
+          item_id: string
+          profile_id?: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          couple_id?: string
+          created_at?: string
+          item_id?: string
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_memories_item"
+            columns: ["item_id", "couple_id"]
+            isOneToOne: false
+            referencedRelation: "list_items"
+            referencedColumns: ["id", "couple_id"]
+          },
+          {
+            foreignKeyName: "list_memories_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      list_photos: {
+        Row: {
+          added_by: string | null
+          couple_id: string
+          created_at: string
+          id: string
+          item_id: string
+          path: string
+        }
+        Insert: {
+          added_by?: string | null
+          couple_id: string
+          created_at?: string
+          id?: string
+          item_id: string
+          path: string
+        }
+        Update: {
+          added_by?: string | null
+          couple_id?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_photos_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "list_photos_item"
+            columns: ["item_id", "couple_id"]
+            isOneToOne: false
+            referencedRelation: "list_items"
+            referencedColumns: ["id", "couple_id"]
+          },
+        ]
+      }
       profile_settings: {
         Row: {
           notify_anniversary_app: boolean
@@ -524,6 +723,18 @@ export type Database = {
       }
       lookup_invite: { Args: { p_code: string }; Returns: Json }
       mark_invite_sent: { Args: { p_invite_id: string }; Returns: undefined }
+      mark_item_done: {
+        Args: {
+          p_done_on: string
+          p_done_with: string
+          p_item: string
+          p_memory: string
+          p_photo_paths: string[]
+          p_rating: number
+          p_solo_by: string
+        }
+        Returns: Json
+      }
       renew_invite: { Args: never; Returns: Json }
       search_cities: {
         Args: { p_limit?: number; p_query: string }

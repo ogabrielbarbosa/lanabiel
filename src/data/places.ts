@@ -30,6 +30,13 @@ export interface PlaceCandidate extends GeoPlace {
   label: string
   /** Segunda linha: "{rua, nº} · {cidade}, {UF}" ou "{estado}, {país} · {lat}, {lng}". */
   detail: string
+  /**
+   * `N`/`W`/`R` + `osm_id` (`'R5400890'`): a identidade do resultado no OSM, que
+   * o Calendário usa para deduplicar a cidade estrangeira dentro do casal (ADR
+   * 0017). Ausente quando o Photon não a trouxe e no fallback do IBGE. A Lista
+   * não a grava (`placeColumns` escolhe as colunas uma a uma).
+   */
+  osmRef?: string
 }
 
 /**
@@ -154,6 +161,8 @@ interface PhotonProperties {
   state?: string
   country?: string
   countrycode?: string
+  osm_type?: string
+  osm_id?: number
 }
 
 interface PhotonFeature {
@@ -193,7 +202,22 @@ export function featureToCandidate(feature: PhotonFeature, mode: PlaceMode): Pla
   const state = mode === 'country' ? null : p.state ?? null
 
   const place: GeoPlace = { address, city, state, country, countryCode, lat, lng }
-  return { ...place, label: name, detail: placeDetail(place, mode) }
+  const candidate: PlaceCandidate = { ...place, label: name, detail: placeDetail(place, mode) }
+  const ref = osmRef(p)
+  if (ref) candidate.osmRef = ref
+  return candidate
+}
+
+/**
+ * `osm_type` (`N`ode, `W`ay, `R`elation) + `osm_id` → `'R5400890'`, no formato
+ * do CHECK `cities_osm_ref` (`^[NWR][0-9]+$`). Qualquer outra coisa → `null`:
+ * sem chave, a cidade não pode ser gravada, e inventar uma duplicaria Lisboa.
+ */
+export function osmRef(p: { osm_type?: unknown; osm_id?: unknown }): string | null {
+  const type = typeof p.osm_type === 'string' ? p.osm_type.toUpperCase() : null
+  if (type !== 'N' && type !== 'W' && type !== 'R') return null
+  if (typeof p.osm_id !== 'number' || !Number.isSafeInteger(p.osm_id) || p.osm_id <= 0) return null
+  return `${type}${p.osm_id}`
 }
 
 /** Mesmo nome e mesma coordenada (3 casas ≈ 100 m) = o mesmo resultado. */

@@ -10,8 +10,25 @@
 // `ListApi`) porque nasceu antes da fronteira de dados: as telas começam contra
 // ela enquanto a migration sobe. `calendarApi(db)` a liga em `src/data/calendar.ts`.
 
-import type { DataResult } from '../data/result'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '../lib/database.types'
+import { todayISO } from '../lib/date'
+import { avatarUrl } from '../data/avatar'
+import {
+  addKiss,
+  createEvent,
+  deleteEvent,
+  loadCalendar,
+  loadKisses,
+  paint,
+  removeKiss,
+  updateEvent,
+} from '../data/calendar'
+import { loadCalCities, searchCities } from '../data/cities'
 import type { City } from '../data/cities'
+import type { DataResult } from '../data/result'
+import { loadSettings } from '../data/settings'
+import { ensureWorldCity, searchWorldCities } from '../data/worldCities'
 import type { SettingsData } from '../data/settings'
 import type { CalCity, CalendarEvent, EventDraft, PaintEntry } from '../domain/calendar'
 import type { ListCategory } from '../domain/list'
@@ -108,4 +125,25 @@ export interface CalendarApi {
   searchWorldCities: (query: string, options: { signal?: AbortSignal }) => Promise<WorldSearchResult>
   /** `insert … on conflict do nothing` + `select id` pela `osm_ref` (ADR 0017). */
   ensureWorldCity: (coupleId: string, candidate: WorldCityCandidate) => Promise<CalendarWrite<CalCity>>
+}
+
+export function calendarApi(db: SupabaseClient<Database>): CalendarApi {
+  return {
+    today: todayISO,
+    newId: () => crypto.randomUUID(),
+    loadContext: () => loadSettings(db),
+    loadCalendar: () => loadCalendar(db),
+    loadCities: (ids) => loadCalCities(db, ids),
+    loadKisses: (from, to) => loadKisses(db, from, to),
+    avatarUrl: (path) => avatarUrl(db, path),
+    paint: (entries) => paint(db, entries),
+    createEvent: (coupleId, draft, paintStays) => createEvent(db, coupleId, draft, paintStays),
+    updateEvent: (id, draft) => updateEvent(db, id, draft),
+    deleteEvent: (id) => deleteEvent(db, id),
+    addKiss: (coupleId, day) => addKiss(db, coupleId, day),
+    removeKiss: (day) => removeKiss(db, day),
+    searchCities: (query) => searchCities(db, query),
+    searchWorldCities: (query, options) => searchWorldCities(query, { signal: options.signal }),
+    ensureWorldCity: (coupleId, candidate) => ensureWorldCity(db, coupleId, candidate),
+  }
 }

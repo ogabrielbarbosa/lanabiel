@@ -39,38 +39,157 @@ export type Database = {
   }
   public: {
     Tables: {
+      calendar_events: {
+        Row: {
+          all_day: boolean
+          city_id: string | null
+          couple_id: string
+          created_at: string
+          created_by: string | null
+          ends_at: string | null
+          ends_on: string | null
+          id: string
+          kind: string
+          list_item_id: string | null
+          note: string | null
+          place: string | null
+          repeats_yearly: boolean
+          starts_at: string | null
+          starts_on: string
+          title: string
+          traveler_id: string | null
+          travelers: string | null
+          updated_at: string
+        }
+        Insert: {
+          all_day?: boolean
+          city_id?: string | null
+          couple_id: string
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          ends_on?: string | null
+          id?: string
+          kind: string
+          list_item_id?: string | null
+          note?: string | null
+          place?: string | null
+          repeats_yearly?: boolean
+          starts_at?: string | null
+          starts_on: string
+          title: string
+          traveler_id?: string | null
+          travelers?: string | null
+          updated_at?: string
+        }
+        Update: {
+          all_day?: boolean
+          city_id?: string | null
+          couple_id?: string
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          ends_on?: string | null
+          id?: string
+          kind?: string
+          list_item_id?: string | null
+          note?: string | null
+          place?: string | null
+          repeats_yearly?: boolean
+          starts_at?: string | null
+          starts_on?: string
+          title?: string
+          traveler_id?: string | null
+          travelers?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: false
+            referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_list_item"
+            columns: ["list_item_id", "couple_id"]
+            isOneToOne: false
+            referencedRelation: "list_items"
+            referencedColumns: ["id", "couple_id"]
+          },
+          {
+            foreignKeyName: "calendar_events_traveler_id_fkey"
+            columns: ["traveler_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cities: {
         Row: {
           country_code: string
+          couple_id: string | null
           created_at: string
           ibge_code: number | null
           id: string
           lat: number
           lng: number
           name: string
+          osm_ref: string | null
+          region: string | null
           state_code: string | null
         }
         Insert: {
           country_code: string
+          couple_id?: string | null
           created_at?: string
           ibge_code?: number | null
           id?: string
           lat: number
           lng: number
           name: string
+          osm_ref?: string | null
+          region?: string | null
           state_code?: string | null
         }
         Update: {
           country_code?: string
+          couple_id?: string | null
           created_at?: string
           ibge_code?: number | null
           id?: string
           lat?: number
           lng?: number
           name?: string
+          osm_ref?: string | null
+          region?: string | null
           state_code?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cities_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: false
+            referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       couple_invites: {
         Row: {
@@ -312,6 +431,45 @@ export type Database = {
           started_on?: string
         }
         Relationships: []
+      }
+      day_kisses: {
+        Row: {
+          added_by: string | null
+          couple_id: string
+          created_at: string
+          day: string
+          id: string
+        }
+        Insert: {
+          added_by?: string | null
+          couple_id: string
+          created_at?: string
+          day: string
+          id?: string
+        }
+        Update: {
+          added_by?: string | null
+          couple_id?: string
+          created_at?: string
+          day?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "day_kisses_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "day_kisses_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: false
+            referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       list_items: {
         Row: {
@@ -704,6 +862,7 @@ export type Database = {
         Args: { p_name?: string; p_started_on: string }
         Returns: Json
       }
+      create_event: { Args: { p_event: Json; p_paint: boolean }; Returns: Json }
       create_invite: {
         Args: { p_email: string; p_invitee_name?: string }
         Returns: Json
@@ -735,17 +894,21 @@ export type Database = {
         }
         Returns: Json
       }
+      paint_stays: { Args: { p_entries: Json }; Returns: Json }
       renew_invite: { Args: never; Returns: Json }
       search_cities: {
         Args: { p_limit?: number; p_query: string }
         Returns: {
           country_code: string
+          couple_id: string | null
           created_at: string
           ibge_code: number | null
           id: string
           lat: number
           lng: number
           name: string
+          osm_ref: string | null
+          region: string | null
           state_code: string | null
         }[]
         SetofOptions: {

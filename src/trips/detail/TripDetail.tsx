@@ -157,25 +157,25 @@ function Detail({ trip, onEditTrip }: { trip: Trip; onEditTrip?: () => void }) {
       />
 
       <nav className="td-top" aria-label="Viagem">
-        <AppLink to="/viagens" className="td-pill-btn">
+        <AppLink to="/viagens" className="lg td-pill-btn">
           <ArrowLeft size={16} aria-hidden="true" />
           Nossas viagens
         </AppLink>
         <div className="td-top-actions">
-          <button type="button" className="td-pill-btn" onClick={toCalendar}>
+          <button type="button" className="lg td-pill-btn" onClick={toCalendar}>
             <CalendarRange size={16} aria-hidden="true" />
             Ver no calendário
           </button>
-          <button type="button" className="td-pill-btn" onClick={() => addItem()}>
+          <button type="button" className="lg td-pill-btn" onClick={() => addItem()}>
             <ListPlus size={16} aria-hidden="true" />
             Adicionar ao roteiro
           </button>
-          <button type="button" className="td-pill-btn" onClick={pickPhotos} disabled={upload.phase === 'sending'}>
+          <button type="button" className="lg td-pill-btn" onClick={pickPhotos} disabled={upload.phase === 'sending'}>
             <ImagePlus size={16} aria-hidden="true" />
             Adicionar fotos
           </button>
           {onEditTrip && (
-            <button type="button" className="td-round" aria-label="Editar viagem" onClick={onEditTrip}>
+            <button type="button" className="lg td-round" aria-label="Editar viagem" onClick={onEditTrip}>
               <Pencil size={16} aria-hidden="true" />
             </button>
           )}
@@ -183,7 +183,7 @@ function Detail({ trip, onEditTrip }: { trip: Trip; onEditTrip?: () => void }) {
       </nav>
 
       {notice && (
-        <p className="td-notice" role="status">
+        <p className="td-notice lg" role="status">
           {notice}
           <button type="button" className="td-notice-x" aria-label="Fechar aviso" onClick={clearNotice}>
             <X size={14} aria-hidden="true" />
@@ -191,7 +191,7 @@ function Detail({ trip, onEditTrip }: { trip: Trip; onEditTrip?: () => void }) {
         </p>
       )}
       {upload.phase !== 'idle' && (
-        <p className={`td-notice ${upload.phase === 'done' && upload.failed ? 'is-failed' : ''}`} role="status" aria-live="polite">
+        <p className={`td-notice lg ${upload.phase === 'done' && upload.failed ? 'is-failed' : ''}`} role="status" aria-live="polite">
           {upload.phase === 'sending' ? `Enviando ${upload.done} de ${upload.total}` : upload.message}
           {upload.phase === 'done' && (
             <button type="button" className="td-notice-x" aria-label="Fechar aviso" onClick={dismiss}>
@@ -218,7 +218,7 @@ function Detail({ trip, onEditTrip }: { trip: Trip; onEditTrip?: () => void }) {
             </span>
           )}
           {trip.photos.length > 0 && (
-            <button type="button" className="td-round td-round--dark" aria-label="Galeria em tela cheia" onClick={() => openGallery(0)}>
+            <button type="button" className="lg td-round td-round--dark" aria-label="Galeria em tela cheia" onClick={() => openGallery(0)}>
               <Expand size={15} aria-hidden="true" />
             </button>
           )}
@@ -262,8 +262,8 @@ function Detail({ trip, onEditTrip }: { trip: Trip; onEditTrip?: () => void }) {
 
       {/* Os quatro números (R16) */}
       <ul className="td-stats" aria-label="Números da viagem">
-        <li style={toneStyle('peach')}>
-          <span className="td-stat-chip" aria-hidden="true">
+        <li className="lg" style={toneStyle('peach')}>
+          <span className="td-stat-chip lg" aria-hidden="true">
             <Building2 size={18} />
           </span>
           <span className="td-stat-text">
@@ -271,8 +271,8 @@ function Detail({ trip, onEditTrip }: { trip: Trip; onEditTrip?: () => void }) {
             <span>{citiesLabel(citiesList.length)}</span>
           </span>
         </li>
-        <li style={toneStyle('aqua')}>
-          <span className="td-stat-chip" aria-hidden="true">
+        <li className="lg" style={toneStyle('aqua')}>
+          <span className="td-stat-chip lg" aria-hidden="true">
             <Route size={18} />
           </span>
           <span className="td-stat-text">
@@ -280,8 +280,8 @@ function Detail({ trip, onEditTrip }: { trip: Trip; onEditTrip?: () => void }) {
             <span>{done ? `percorridos · ${routeLabel(origin, destName, true)}` : routeLabel(origin, destName)}</span>
           </span>
         </li>
-        <li style={toneStyle('heart')}>
-          <span className="td-stat-chip" aria-hidden="true">
+        <li className="lg" style={toneStyle('heart')}>
+          <span className="td-stat-chip lg" aria-hidden="true">
             <CalendarHeart size={18} />
           </span>
           <span className="td-stat-text">
@@ -289,8 +289,8 @@ function Detail({ trip, onEditTrip }: { trip: Trip; onEditTrip?: () => void }) {
             <span>juntos · {daysSpanLabel(trip.startsOn, trip.endsOn)}</span>
           </span>
         </li>
-        <li style={toneStyle('sky')}>
-          <span className="td-stat-chip" aria-hidden="true">
+        <li className="lg" style={toneStyle('sky')}>
+          <span className="td-stat-chip lg" aria-hidden="true">
             <MapPin size={18} />
           </span>
           <span className="td-stat-text">

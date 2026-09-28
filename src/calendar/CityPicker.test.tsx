@@ -130,7 +130,7 @@ describe('R17 — seletor de cidade', () => {
     type(input, 'pel')
     await wait(350)
     expect(optionTexts()).toEqual(['Pelotas, RS'])
-    expect(screen.getByRole('status')).toHaveTextContent('Busca mundial indisponível — mostrando cidades do Brasil')
+    expect(screen.getByRole('status')).toHaveTextContent('A busca fora do Brasil não respondeu. Por enquanto, só cidades brasileiras.')
     expect(screen.queryByText('© OpenStreetMap')).not.toBeInTheDocument()
   })
 
@@ -141,7 +141,7 @@ describe('R17 — seletor de cidade', () => {
     })
     type(input, 'pel')
     await wait(350)
-    expect(screen.getByRole('alert')).toHaveTextContent('A busca de cidades está fora do ar — tente de novo em instantes')
+    expect(screen.getByRole('alert')).toHaveTextContent('A busca de cidades está fora do ar. Tente de novo daqui a pouco.')
   })
 
   it('a busca anterior é abortada e a resposta velha, descartada', async () => {

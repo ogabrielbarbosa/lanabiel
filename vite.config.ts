@@ -6,7 +6,13 @@ import type { UserConfig } from 'vite'
 
 // Versão e build reais para o "Sobre o app" das Configurações (R5): a versão do
 // package.json e o SHA curto do commit. Fora de um repositório git, "dev".
+//
+// No Vercel o build roda sobre o código sem histórico: `git rev-parse` falharia
+// e o "Sobre o app" diria "dev" em produção. O SHA vem da variável que a
+// plataforma injeta (`VERCEL_GIT_COMMIT_SHA`, completa — cortada em 7).
 function buildId(): string {
+  const fromPlatform = process.env.VERCEL_GIT_COMMIT_SHA
+  if (fromPlatform) return fromPlatform.slice(0, 7)
   try {
     return execFileSync('git', ['rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).trim()
   } catch {

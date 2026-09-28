@@ -38,7 +38,7 @@ export function YearView() {
 
   return (
     <section className="cal-year" aria-label="Ano">
-      <div className="cal-year-grid">
+      <div className="cal-year-grid lg">
         <div className="cal-year-scale" aria-hidden="true">
           <span />
           <span className="cal-year-days">

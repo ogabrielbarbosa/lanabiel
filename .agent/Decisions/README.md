@@ -57,6 +57,7 @@ Use `/adr <título>`. Template: [`0000-template.md`](./0000-template.md).
 | [0021](./0021-mapas-das-viagens-sem-engine.md) | Mapas das Viagens sem engine: projeção sobre a imagem do `.pen`, até a Fase 7 (superseded pelo 0022) | cliente, Viagens (Fase 6) | 2026-09-27 |
 | [0022](./0022-engine-do-mapa-mapbox.md) | Engine do mapa: Mapbox GL JS v3, com satélite, terreno 3D e atmosfera (supersede o 0021 e o item do backlog) | cliente, dependência externa (Fase 7) | 2026-09-27 |
 | [0023](./0023-home-na-raiz-calendario-em-calendario.md) | A Home ocupa `/`; o Calendário passa a `/calendario` | cliente, navegação (Fase 7) | 2026-09-27 |
+| [0024](./0024-perfil-provisorio-herdado-no-aceite.md) | Perfil provisório da outra pessoa, herdado no aceite do convite | schema (`profiles`), convite | 2026-09-27 |
 
 ## Backlog — discutido, sem código
 

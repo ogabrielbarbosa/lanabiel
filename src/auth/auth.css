@@ -12,9 +12,13 @@
   --glass-soft: #ffffff0a;
   --glass-hover: #ffffff1f;
   --glass-stroke-soft: #ffffff14;
+  /* O contorno e o brilho do vidro `.lg` (app.css) leem estes: fixos no escuro,
+     como o resto da tela. */
+  --glass-stroke: #ffffff38;
+  --glass-shine: #ffffff40;
+  --glass-glint: #ffffff;
   --glass-dark: #0a1030b8;
   --glass-shadow: #02051480;
-  --glass-edge: linear-gradient(180deg, #ffffff40 0%, #ffffff14 45%, #ffffff38 100%);
   --text-primary: #f4f6fb;
   --text-secondary: #f4f6fbb3;
   --text-tertiary: #f4f6fb73;
@@ -23,7 +27,6 @@
   --accent-2: #f4a3b4;
   --accent-3: #f6e3a1;
   --accent-glow: #7fd8c466;
-  --accent-gradient: linear-gradient(225deg, var(--accent), var(--accent-2));
   --on-accent: #08102a;
   --danger: #f48a8a;
   --danger-soft: #f48a8a1f;
@@ -49,8 +52,9 @@
   -webkit-font-smoothing: antialiased;
 }
 
-/* Vidro com borda em gradiente: o CSS não pinta `border` com gradiente e raio
-   ao mesmo tempo, então painel e botões usam um ::before mascarado no anel. */
+/* Painel, botão secundário e escolha são o vidro `.lg` de app.css (contorno
+   em anel mascarado). Aqui fica o resto; `app.css` carrega DEPOIS deste
+   arquivo, então um ajuste de `--lg-*` no seletor-base precisa de `.x.lg`. */
 
 /* --- o globo ------------------------------------------------------------- */
 
@@ -140,6 +144,10 @@
   color: var(--text-secondary);
 }
 
+.auth-caption .auth-caption-title {
+  color: var(--text-primary);
+}
+
 /* --- painel -------------------------------------------------------------- */
 
 .auth-panel {
@@ -148,9 +156,8 @@
   min-height: calc(100dvh - 32px);
   display: flex;
   flex-direction: column;
-  padding: 40px;
+  padding: 39px;
   border-radius: 36px;
-  background: linear-gradient(var(--glass), var(--glass)), var(--glass-dark);
   backdrop-filter: blur(60px);
   -webkit-backdrop-filter: blur(60px);
   box-shadow:
@@ -158,18 +165,10 @@
     0 30px 80px var(--glass-shadow);
 }
 
-.auth-panel::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  padding: 1px;
-  border-radius: inherit;
-  background: var(--glass-edge);
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask-composite: exclude;
-  pointer-events: none;
+/* Vidro `.lg` (app.css). O seletor duplo vence o `.lg`, que carrega depois. */
+.auth-panel.lg {
+  --lg-fill: linear-gradient(var(--glass), var(--glass)), linear-gradient(var(--glass-dark), var(--glass-dark));
+  --lg-sweep: 0;
 }
 
 .auth-top {
@@ -194,7 +193,7 @@
   display: grid;
   place-items: center;
   border-radius: 12px;
-  background: var(--accent-gradient);
+  background: var(--accent);
   color: var(--on-accent);
   box-shadow:
     0 6px 18px var(--accent-glow),
@@ -336,10 +335,8 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 0 16px;
-  border: none;
+  padding: 0 15px;
   border-radius: 999px;
-  background: var(--glass);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   box-shadow: inset 0 1px 1px #ffffff40;
@@ -350,22 +347,9 @@
   cursor: pointer;
 }
 
-.auth-btn::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  padding: 1px;
-  border-radius: inherit;
-  background: var(--glass-edge);
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-.auth-btn:hover:not(:disabled) {
-  background: var(--glass-hover);
+/* O secundário é vidro `.lg`; o primário, degradê sem contorno. */
+.auth-btn.lg:hover:not(:disabled) {
+  --lg-fill: linear-gradient(var(--glass-hover), var(--glass-hover));
 }
 
 .auth-btn:focus-visible {
@@ -375,7 +359,8 @@
 
 .auth-btn-primary {
   padding: 0 18px 0 14px;
-  background: var(--accent-gradient);
+  border: none;
+  background: var(--accent);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow:
@@ -384,12 +369,8 @@
   color: var(--on-accent);
 }
 
-.auth-btn-primary::before {
-  display: none;
-}
-
 .auth-btn-primary:hover:not(:disabled) {
-  background: var(--accent-gradient);
+  background: var(--accent);
   filter: brightness(1.06);
 }
 
@@ -477,8 +458,6 @@
   text-align: left;
   padding: 16px 18px;
   border-radius: 18px;
-  border: 1px solid var(--glass-stroke-soft);
-  background: var(--glass);
   color: var(--text-primary);
   font: inherit;
   cursor: pointer;
@@ -511,19 +490,373 @@
 /* `loading` não renderiza nem Login nem app (I8). Um esqueleto neutro é o que
    impede o Login de piscar a cada recarga de quem já está logado. */
 .auth-skeleton {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
+  /* `.auth` alinha o painel à direita (`flex-end`); sem desfazer, a grade
+     inteira ia para o canto e o "Carregando…" aparecia lá embaixo. */
+  justify-content: center;
+  align-content: center;
   background: #060a1c;
 }
 
-.auth-skeleton-mark {
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-  background: linear-gradient(225deg, #7fd8c4, #f4a3b4);
-  opacity: 0.35;
+/* A tela de carregamento: fixa sobre tudo, no centro, com a luz indo e
+   voltando entre SJC e Marau. Entra em fade para uma carga rápida não piscar. */
+.auth-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  gap: 18px;
+  animation: auth-loading-in 0.5s var(--ease-out, ease-out) both;
 }
+
+.auth-loading > * {
+  position: relative;
+}
+
+@keyframes auth-loading-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.auth-loading .auth-loading-glow {
+  position: absolute;
+  width: 560px;
+  height: 560px;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.45;
+  pointer-events: none;
+  animation: auth-breathe 5s ease-in-out infinite alternate;
+}
+
+.auth-loading-glow--pink {
+  top: -220px;
+  left: -180px;
+  background: #6a3560;
+}
+
+.auth-loading-glow--aqua {
+  right: -160px;
+  bottom: -240px;
+  background: #15525a;
+  animation-delay: -2.5s;
+}
+
+.auth-loading-mark {
+  display: grid;
+  place-items: center;
+  width: 80px;
+  height: 80px;
+  border-radius: 26px;
+  background: linear-gradient(225deg, #7fd8c4, #f4a3b4);
+  color: #08102a;
+  box-shadow:
+    0 10px 36px #7fd8c455,
+    inset 0 1px 1px #ffffff80;
+  animation: auth-loading-float 2.4s ease-in-out infinite;
+}
+
+.auth-loading-mark svg {
+  animation: auth-beat 2.4s ease-in-out infinite;
+}
+
+@keyframes auth-loading-float {
+  50% {
+    translate: 0 -6px;
+    box-shadow:
+      0 16px 44px #f4a3b455,
+      inset 0 1px 1px #ffffff80;
+  }
+}
+
+.auth-loading-arc {
+  width: min(280px, 72vw);
+  height: auto;
+  margin-top: 4px;
+  overflow: visible;
+}
+
+.auth-loading-track {
+  stroke: #ffffff1f;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 3 5;
+}
+
+/* Um traço de 28 unidades que corre de uma ponta à outra e volta. Medidas
+   reais do arco (≈159): com `pathLength` o Chrome desloca o traço errado e ele
+   some no meio do caminho. */
+.auth-loading-comet {
+  stroke: #f4a3b4;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 28 200;
+  stroke-dashoffset: 0;
+  filter: drop-shadow(0 0 6px #f4a3b4aa);
+  animation: auth-loading-travel 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite alternate;
+}
+
+@keyframes auth-loading-travel {
+  to {
+    stroke-dashoffset: -131;
+    stroke: #7fd8c4;
+  }
+}
+
+.auth-loading-word {
+  margin: 6px 0 0;
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: -1.3px;
+  line-height: 1;
+}
+
+.auth-loading .auth-hint {
+  font-size: 13px;
+  letter-spacing: 0.2px;
+}
+
+/* --- movimento ----------------------------------------------------------- */
+
+/* A abertura (`.auth--intro`, só na primeira moldura da carga — AuthShell):
+   o globo surge do escuro crescendo, a legenda sobe linha a linha e o painel
+   desliza da direita. Depois, sempre: o halo respira, a atmosfera gira bem
+   devagar (as cores correm em volta do globo), o globo flutua e as estrelas
+   piscam. E em todo passo o conteúdo do painel entra em cascata. As regras
+   de "Reduzir animações" (app.css, index.html) cortam tudo isto. */
+
+.auth-stars {
+  inset: 0;
+  border-radius: 0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 18%, #ffffffcc, transparent),
+    radial-gradient(1px 1px at 27% 72%, #ffffffaa, transparent),
+    radial-gradient(1.5px 1.5px at 41% 9%, #ffffffbb, transparent),
+    radial-gradient(1px 1px at 58% 34%, #ffffff99, transparent),
+    radial-gradient(1.5px 1.5px at 66% 86%, #ffffffaa, transparent),
+    radial-gradient(1px 1px at 74% 14%, #ffffffcc, transparent),
+    radial-gradient(1px 1px at 88% 52%, #ffffff99, transparent),
+    radial-gradient(1.5px 1.5px at 94% 24%, #ffffffbb, transparent),
+    radial-gradient(1px 1px at 6% 58%, #ffffffaa, transparent),
+    radial-gradient(1px 1px at 50% 94%, #ffffff88, transparent);
+  animation: auth-twinkle 5s ease-in-out infinite alternate;
+}
+
+.auth-halo {
+  animation: auth-breathe 7s ease-in-out infinite alternate;
+}
+
+.auth-atmosphere {
+  animation: auth-spin 60s linear infinite;
+}
+
+.auth-globe,
+.auth-shading,
+.auth-rim {
+  animation: auth-float 9s ease-in-out infinite alternate;
+}
+
+@keyframes auth-twinkle {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 0.9;
+  }
+}
+
+@keyframes auth-breathe {
+  from {
+    opacity: 0.75;
+    scale: 0.97;
+  }
+  to {
+    opacity: 1;
+    scale: 1.03;
+  }
+}
+
+@keyframes auth-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@keyframes auth-float {
+  from {
+    translate: 0 -6px;
+  }
+  to {
+    translate: 0 8px;
+  }
+}
+
+/* A abertura: o palco inteiro nasce do escuro (e as camadas de dentro
+   continuam com as animações de sempre). Se a abertura do app (Splash.tsx)
+   está tocando por cima, a entrada espera a cortina sair: `data-splash` no
+   <html> vale desde o primeiro render. */
+.auth {
+  --intro-delay: 0s;
+}
+
+:root[data-splash] .auth {
+  --intro-delay: 2.75s;
+}
+
+.auth--intro .auth-stage {
+  animation: auth-stage-in 1.6s cubic-bezier(0.22, 1, 0.36, 1) var(--intro-delay) backwards;
+}
+
+@keyframes auth-stage-in {
+  from {
+    opacity: 0;
+    scale: 0.9;
+    filter: blur(12px);
+  }
+}
+
+.auth--intro .auth-caption > span {
+  animation: auth-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) calc(var(--intro-delay) + 0.5s) backwards;
+}
+
+.auth--intro .auth-caption > span + span {
+  animation-delay: calc(var(--intro-delay) + 0.7s);
+}
+
+.auth--intro .auth-panel {
+  animation: auth-panel-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) calc(var(--intro-delay) + 0.2s) backwards;
+}
+
+@keyframes auth-panel-in {
+  from {
+    opacity: 0;
+    translate: 48px 0;
+  }
+}
+
+@keyframes auth-rise {
+  from {
+    opacity: 0;
+    translate: 0 16px;
+    filter: blur(6px);
+  }
+}
+
+/* O conteúdo do painel, a cada passo. */
+.auth-main > * {
+  animation: auth-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.auth-main > :nth-child(2) {
+  animation-delay: 70ms;
+}
+
+.auth-main > :nth-child(3) {
+  animation-delay: 140ms;
+}
+
+.auth-main > :nth-child(4) {
+  animation-delay: 210ms;
+}
+
+.auth-main > :nth-child(n + 5) {
+  animation-delay: 280ms;
+}
+
+.auth--intro .auth-main > * {
+  animation-delay: calc(var(--intro-delay) + 0.55s);
+}
+
+.auth--intro .auth-main > :nth-child(2) {
+  animation-delay: calc(var(--intro-delay) + 0.62s);
+}
+
+.auth--intro .auth-main > :nth-child(3) {
+  animation-delay: calc(var(--intro-delay) + 0.69s);
+}
+
+.auth--intro .auth-main > :nth-child(n + 4) {
+  animation-delay: calc(var(--intro-delay) + 0.76s);
+}
+
+/* O coração da logo bate de vez em quando. */
+.auth-mark svg {
+  animation: auth-beat 4.5s ease-in-out 1.2s infinite;
+}
+
+@keyframes auth-beat {
+  0%,
+  16%,
+  100% {
+    scale: 1;
+  }
+  4% {
+    scale: 1.2;
+  }
+  8% {
+    scale: 0.95;
+  }
+  12% {
+    scale: 1.14;
+  }
+}
+
+/* Botões e escolhas: respondem ao cursor e ao toque. */
+.auth-btn,
+.auth-choice {
+  transition:
+    scale 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+    translate 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.3s ease,
+    filter 0.3s ease;
+}
+
+@media (hover: hover) {
+  .auth-choice:hover {
+    translate: 0 -2px;
+    box-shadow: 0 16px 40px var(--glass-shadow);
+  }
+
+  .auth-btn-primary:hover:not(:disabled) {
+    box-shadow:
+      0 12px 32px var(--accent-glow),
+      inset 0 1px 1px #ffffff80;
+  }
+}
+
+.auth-btn:active:not(:disabled),
+.auth-choice:active:not(:disabled) {
+  scale: 0.97;
+}
+
+.auth-input {
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.auth-input:focus-within {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.auth-error {
+  animation: auth-shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+@keyframes auth-shake {
+  20%,
+  60% {
+    translate: -5px 0;
+  }
+  40%,
+  80% {
+    translate: 5px 0;
+  }
+}
+
 
 /* --- telas estreitas ----------------------------------------------------- */
 

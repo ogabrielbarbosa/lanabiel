@@ -24,6 +24,7 @@ import type { FakeMap } from '../map/fakeEngine'
 import { settingsData } from '../settings/test/fixtures'
 import {
   CITY_LISBOA,
+  CITY_MARAU,
   CITY_SJC,
   ITEM_BONETE,
   ITEM_BUENOS_AIRES,
@@ -81,6 +82,9 @@ function pickerRows(area: HTMLElement): string[] {
     .map((b) => [...b.querySelectorAll('span')].map((s) => s.textContent).join(' '))
 }
 
+/** Só as linhas com lugar (contagem > 0): o resto são as regiões sem lugar, em 0. */
+const placedRows = (area: HTMLElement) => pickerRows(area).filter((r) => !r.endsWith(' 0'))
+
 // ---------------------------------------------------------------------------
 
 describe('A10 — breadcrumb e seletores: Brasil → São Paulo → São José dos Campos', () => {
@@ -105,7 +109,7 @@ describe('A10 — breadcrumb e seletores: Brasil → São Paulo → São José d
     expect(picker(area)).toHaveAccessibleName('Estados do Brasil')
     expect(within(picker(area)).getByText('4 com lugares')).toBeInTheDocument()
     expect(within(picker(area)).getByPlaceholderText('Buscar estado')).toBeInTheDocument()
-    expect(pickerRows(area)).toEqual(['SP São Paulo 7', 'BA Bahia 1', 'PE Pernambuco 1', 'RS Rio Grande do Sul 1'])
+    expect(placedRows(area)).toEqual(['SP São Paulo 7', 'BA Bahia 1', 'PE Pernambuco 1', 'RS Rio Grande do Sul 1'])
     expect(lastFlight(map)).toEqual(camera({ level: 'country', path: SJC_PATH }))
     // A UF em foco fica destacada.
     expect(within(picker(area)).getByRole('button', { name: /São Paulo/ })).toHaveAttribute('aria-current', 'true')
@@ -115,7 +119,7 @@ describe('A10 — breadcrumb e seletores: Brasil → São Paulo → São José d
     expect(picker(area)).toHaveAccessibleName('Cidades em São Paulo')
     expect(within(picker(area)).getByText('3 com lugares')).toBeInTheDocument()
     expect(within(picker(area)).getByPlaceholderText('Buscar cidade')).toBeInTheDocument()
-    expect(pickerRows(area)).toEqual(['SJC São José dos Campos 4', 'SPO São Paulo 2', 'ILH Ilhabela 1'])
+    expect(placedRows(area)).toEqual(['SJC São José dos Campos 4', 'SPO São Paulo 2', 'ILH Ilhabela 1'])
     expect(lastFlight(map)).toEqual(camera({ level: 'state', path: SJC_PATH }))
 
     await user.click(within(picker(area)).getByRole('button', { name: /São José dos Campos/ }))
@@ -132,7 +136,10 @@ describe('A10 — breadcrumb e seletores: Brasil → São Paulo → São José d
     await user.click(segment(area, 'Mundo'))
     expect(picker(area)).toHaveAccessibleName('Países')
     expect(within(picker(area)).getByText('4 com lugares')).toBeInTheDocument()
-    expect(pickerRows(area)).toEqual(['BR Brasil 10', 'PT Portugal 3', 'AR Argentina 1', 'JP Japão 1'])
+    expect(placedRows(area)).toEqual(['BR Brasil 10', 'PT Portugal 3', 'AR Argentina 1', 'JP Japão 1'])
+    // Todos os países, os sem lugar em 0.
+    expect(pickerRows(area).length).toBeGreaterThan(240)
+    expect(pickerRows(area)).toContain('IT Itália 0')
 
     await user.click(within(picker(area)).getByRole('button', { name: /Portugal/ }))
     expect(current(area)).toHaveTextContent('Portugal')
@@ -148,17 +155,25 @@ describe('A10 — breadcrumb e seletores: Brasil → São Paulo → São José d
     expect(current(area)).toHaveTextContent('Lisboa')
   })
 
-  it('"Ver os 27 estados" expande, com os sem lugar em 0; a busca filtra', async () => {
+  it('Brasil mostra os 27 estados direto, com os sem lugar em 0; a busca filtra', async () => {
     const { area, user } = await renderHome()
     await user.click(segment(area, 'Brasil'))
-    await user.click(within(picker(area)).getByRole('button', { name: /Ver os 27 estados/ }))
     const rows = pickerRows(area)
     expect(rows).toHaveLength(27)
     expect(rows.slice(0, 4)).toEqual(['SP São Paulo 7', 'BA Bahia 1', 'PE Pernambuco 1', 'RS Rio Grande do Sul 1'])
     expect(rows).toContain('AC Acre 0')
+    expect(within(picker(area)).queryByRole('button', { name: /Ver os 27/ })).not.toBeInTheDocument()
 
     await user.type(within(picker(area)).getByPlaceholderText('Buscar estado'), 'minas')
     expect(pickerRows(area)).toEqual(['MG Minas Gerais 0'])
+  })
+
+  it('escolher um país sem lugar voa para o centro dele', async () => {
+    const { area, user, map } = await renderHome()
+    await user.click(segment(area, 'Mundo'))
+    await user.click(within(picker(area)).getByRole('button', { name: /Itália/ }))
+    expect(current(area)).toHaveTextContent('Itália')
+    expect(lastFlight(map)).toMatchObject({ kind: 'center', center: { lat: 42.83, lng: 12.83 } })
   })
 
   it('tocar no ativo alterna o seletor; Esc e clique fora fecham', async () => {
@@ -180,26 +195,34 @@ describe('A10 — breadcrumb e seletores: Brasil → São Paulo → São José d
     expect(current(area)).toHaveTextContent('Brasil')
   })
 
-  it('"Ver cidades sem lugares" busca os municípios do IBGE da UF, com contagem 0', async () => {
-    const searchCities = vi.fn<HomeApi['searchCities']>(async () => ({
+  it('o estado lista todos os municípios do IBGE, os sem lugar em 0; escolher um voa até ele', async () => {
+    const stateCities = vi.fn<HomeApi['stateCities']>(async () => ({
       status: 'ok',
       rows: [
+        { id: 'c-ilhabela', name: 'Ilhabela', stateCode: 'SP', lat: -23.78, lng: -45.36 },
         { id: 'c-taubate', name: 'Taubaté', stateCode: 'SP', lat: -23.0264, lng: -45.5553 },
-        { id: 'c-outra', name: 'Taubaté do Sul', stateCode: 'RS', lat: -29, lng: -51 },
       ],
     }))
-    const { area, user, map } = await renderHome({}, { searchCities })
+    const { area, user, map } = await renderHome({}, { stateCities })
     await user.click(segment(area, 'São Paulo'))
     expect(picker(area)).toHaveAccessibleName('Cidades em São Paulo')
-    await user.click(within(picker(area)).getByRole('button', { name: /Ver cidades sem lugares/ }))
-    await user.type(within(picker(area)).getByPlaceholderText('Buscar cidade'), 'Taub')
+    expect(stateCities).toHaveBeenLastCalledWith('SP')
+    await waitFor(() => expect(pickerRows(area)).toEqual(['SJC São José dos Campos 4', 'SPO São Paulo 2', 'ILH Ilhabela 1', 'TAU Taubaté 0']))
+    expect(within(picker(area)).queryByRole('button', { name: /Ver cidades sem lugares/ })).not.toBeInTheDocument()
 
-    await waitFor(() => expect(pickerRows(area)).toEqual(['TAU Taubaté 0']))
-    expect(searchCities).toHaveBeenLastCalledWith('Taub')
-
+    await user.type(within(picker(area)).getByPlaceholderText('Buscar cidade'), 'taub')
+    expect(pickerRows(area)).toEqual(['TAU Taubaté 0'])
     await user.click(within(picker(area)).getByRole('button', { name: /Taubaté/ }))
     expect(current(area)).toHaveTextContent('Taubaté')
     expect(lastFlight(map)).toMatchObject({ kind: 'center', center: { lat: -23.0264, lng: -45.5553 }, pitch: 60 })
+  })
+
+  it('municípios que não carregam: ficam as cidades com lugar e o aviso', async () => {
+    const stateCities = vi.fn<HomeApi['stateCities']>(async () => ({ status: 'error', cause: 'pausado' }))
+    const { area, user } = await renderHome({}, { stateCities })
+    await user.click(segment(area, 'São Paulo'))
+    expect(await within(picker(area)).findByText('Não deu para carregar as outras cidades.')).toBeInTheDocument()
+    expect(pickerRows(area)).toEqual(['SJC São José dos Campos 4', 'SPO São Paulo 2', 'ILH Ilhabela 1'])
   })
 
   it('Zoom Controls: + e − mudam o zoom sem mudar o nível; o alvo leva à cidade de quem vê (R10)', async () => {
@@ -352,7 +375,7 @@ describe('A11 — filtros (R12) valem para pins, contagens e Aqui por perto', ()
     // Os seletores contam sob os filtros.
     await user.click(segment(area, 'Brasil'))
     expect(within(picker(area)).getByText('1 com lugares')).toBeInTheDocument()
-    expect(pickerRows(area)).toEqual(['SP São Paulo 1'])
+    expect(placedRows(area)).toEqual(['SP São Paulo 1'])
   })
 
   it('categorias ocultas não viram chip nem pin', async () => {
@@ -398,6 +421,45 @@ describe('R13 — Aqui por perto', () => {
   it('só existe no nível cidade', async () => {
     const { area } = await renderHome()
     expect(within(area).queryByRole('region', { name: 'Aqui por perto' })).not.toBeInTheDocument()
+  })
+})
+
+describe('onde cada um está: a bolinha na cor de cada pessoa', () => {
+  const stay = (id: string, profileId: string, cityId: string, startsOn: string, endsOn: string | null): Stay => ({
+    id,
+    profileId,
+    cityId,
+    startsOn,
+    endsOn,
+  })
+  const dots = async (area: HTMLElement) => within(await within(area).findByRole('list', { name: 'Onde cada um está' })).getAllByRole('listitem')
+
+  it('separados: cada bolinha na cidade de cada um, na cor de cada um', async () => {
+    const context = tripsContextData({
+      stays: [stay('a', 'u-gabriel', 'c-sjc', '2026-09-01', null), stay('b', 'u-lana', 'c-marau', '2026-09-23', null)],
+    })
+    const { area } = await renderHome({ context })
+    const [g, l] = await dots(area)
+    expect([g.textContent, l.textContent]).toEqual(['Gabriel em São José dos Campos', 'Lana em Marau'])
+    // A engine falsa: x = (lng+180)·4, y = (90−lat)·4.
+    expect(g.style.left).toBe(`${(CITY_SJC.lng + 180) * 4}px`)
+    expect(l.style.top).toBe(`${(90 - CITY_MARAU.lat) * 4}px`)
+    const colors = [g, l].map((d) => d.style.getPropertyValue('--person'))
+    expect(colors[0]).not.toBe('')
+    expect(colors[0]).not.toBe(colors[1])
+  })
+
+  it('sem período hoje: a última posição; sem nenhuma, a casa', async () => {
+    const context = tripsContextData({ stays: [stay('a', 'u-lana', CITY_LISBOA.id, '2026-09-01', '2026-09-10')] })
+    const { area } = await renderHome({ context })
+    expect((await dots(area)).map((d) => d.textContent)).toEqual(['Gabriel em São José dos Campos', 'Lana em Lisboa'])
+  })
+
+  it('juntos na mesma cidade: lado a lado, não uma em cima da outra', async () => {
+    const { area } = await renderHome()
+    const [g, l] = await dots(area)
+    expect(g.style.top).toBe(l.style.top)
+    expect(parseFloat(l.style.left) - parseFloat(g.style.left)).toBe(16)
   })
 })
 

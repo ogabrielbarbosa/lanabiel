@@ -93,7 +93,7 @@ export function BudgetCard({ trip, onEdit }: { trip: Trip; onEdit: () => void })
   return (
     <Card title="Orçamento estimado" labelledBy={`td-budget-${trip.id}`} className="td-budget" action={{ label: 'Editar', onClick: onEdit, ariaLabel: 'Editar orçamento' }}>
       {b.lines.length === 0 ? (
-        <div className="td-empty td-empty--left">
+        <div className="lg td-empty td-empty--left">
           <p>Sem orçamento ainda</p>
         </div>
       ) : (
@@ -146,8 +146,8 @@ export function LodgingCard({ trip, onEdit }: { trip: Trip; onEdit: () => void }
       action={l.url ? { label: 'Abrir reserva', href: l.url } : null}
     >
       {empty ? (
-        <div className="td-empty td-empty--left">
-          <button type="button" className="td-pill-btn" onClick={onEdit}>
+        <div className="lg td-empty td-empty--left">
+          <button type="button" className="lg td-pill-btn" onClick={onEdit}>
             <Plus size={16} aria-hidden="true" />
             Adicionar hospedagem
           </button>

@@ -835,6 +835,7 @@ export function settingsSeed(stays: Stay[]): SettingsData {
           color: '#7FD8C4',
           joinedAt: `${COUPLE_STARTED}T12:00:00Z`,
           homeCity: asCity(CITY.sjc),
+          pending: false,
         },
         {
           profileId: LANA,
@@ -845,6 +846,7 @@ export function settingsSeed(stays: Stay[]): SettingsData {
           color: '#F4A3B4',
           joinedAt: `${COUPLE_STARTED}T13:00:00Z`,
           homeCity: asCity(CITY.marau),
+          pending: false,
         },
       ],
     },

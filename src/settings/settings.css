@@ -5,19 +5,19 @@
 
 .st {
   display: flex;
-  gap: 16px;
-  align-items: flex-start;
-  min-height: calc(100dvh - 32px);
+  /* O quadro da casca (app.css): a área rola por dentro e o painel é o
+     mesmo das outras telas — largura, altura e posição. */
+  height: 100%;
 }
 
 .st-area {
   flex: 1;
   min-width: 0;
-  max-width: 848px;
   display: flex;
   flex-direction: column;
   gap: 24px;
-  padding: 24px 8px 40px 24px;
+  padding: 24px 40px 40px 24px;
+  overflow-y: auto;
 }
 
 /* --- cabeçalho ----------------------------------------------------------- */
@@ -50,15 +50,24 @@
 
 .st-menu {
   flex: 0 0 236px;
+  padding: 8px;
+  border-radius: 24px;
+  position: sticky;
+  top: 16px;
+}
+
+/* Vidros `.lg` (app.css). app.css carrega DEPOIS deste arquivo: um `--lg-*`
+   no seletor-base só vale com o seletor duplo `.x.lg`. */
+.st-menu.lg {
+  --lg-sweep: 0;
+}
+
+/* A lista mora num miolo próprio: no celular ela rola na horizontal, e a
+   rolagem no `.st-menu` cortaria o anel do vidro. */
+.st-menu-list {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 8px;
-  border-radius: 24px;
-  background: var(--glass);
-  border: 1px solid var(--glass-stroke-soft);
-  position: sticky;
-  top: 16px;
 }
 
 .st-menu-item {
@@ -66,7 +75,6 @@
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-  border: 1px solid transparent;
   border-radius: 14px;
   color: var(--text-secondary);
   font-size: 14px;
@@ -78,14 +86,19 @@
   flex: 1;
 }
 
+.st-menu-item.lg {
+  --lg-fill: linear-gradient(transparent, transparent);
+  --lg-edge: linear-gradient(transparent, transparent);
+}
+
 .st-menu-item:hover {
-  background: var(--glass-soft);
+  --lg-fill: linear-gradient(var(--glass-soft), var(--glass-soft));
   color: var(--text-primary);
 }
 
 .st-menu-item[aria-current='page'] {
-  background: var(--glass-hover);
-  border-color: var(--accent-glow);
+  --lg-fill: linear-gradient(var(--glass-hover), var(--glass-hover));
+  --lg-edge: linear-gradient(var(--accent-glow), var(--accent-glow));
   color: var(--text-primary);
   font-weight: 600;
 }
@@ -111,10 +124,13 @@
   background: var(--divider);
 }
 
+.st-menu-item--danger[aria-current='page'] {
+  --lg-edge: linear-gradient(var(--danger-soft), var(--danger-soft));
+}
+
 .st-menu-item--danger[aria-current='page'],
 .st-menu-item--danger[aria-current='page'] svg {
   color: var(--danger);
-  border-color: var(--danger-soft);
 }
 
 .st-menu-item:focus-visible,
@@ -164,8 +180,6 @@
 .st-card {
   padding: calc(18px * var(--density)) 18px;
   border-radius: 22px;
-  background: var(--glass);
-  border: 1px solid var(--glass-stroke-soft);
   box-shadow: inset 0 1px 1px var(--glass-shine);
 }
 
@@ -276,13 +290,15 @@
   color: var(--text-secondary);
 }
 
-/* `Toggle On/Off`: 44×26, botão de 20. */
+/* `Toggle On/Off`: 44×26, botão de 20. O botão é absoluto: com padding, a
+   caixa interna (26 − borda − padding = 18) ficava menor que ele e o empurrava
+   para baixo. */
 .st-toggle {
   position: relative;
   flex: 0 0 auto;
   width: 44px;
   height: 26px;
-  padding: 3px;
+  padding: 0;
   border: 1px solid var(--glass-stroke-soft);
   border-radius: 999px;
   background: var(--track);
@@ -291,7 +307,9 @@
 }
 
 .st-toggle-knob {
-  display: block;
+  position: absolute;
+  top: 2px;
+  left: 2px;
   width: 20px;
   height: 20px;
   border-radius: 50%;
@@ -300,12 +318,12 @@
 }
 
 .st-toggle[aria-checked='true'] {
-  background: var(--accent-gradient);
+  background: var(--accent);
   border-color: transparent;
 }
 
 .st-toggle[aria-checked='true'] .st-toggle-knob {
-  transform: translateX(16px);
+  transform: translateX(18px);
   background: #fff;
 }
 
@@ -325,8 +343,10 @@
   gap: 2px;
   padding: 3px;
   border-radius: 999px;
-  background: var(--glass-soft);
-  border: 1px solid var(--glass-stroke-soft);
+}
+
+.st-segmented.lg {
+  --lg-fill: linear-gradient(var(--glass-soft), var(--glass-soft));
 }
 
 .st-segment {
@@ -432,9 +452,8 @@
   flex: 0 0 auto;
   height: 40px;
   padding: 0 16px;
-  border: 1px solid var(--glass-stroke-soft);
+  border: 1px solid transparent;
   border-radius: 999px;
-  background: var(--glass);
   color: var(--text-primary);
   font: inherit;
   font-size: 14px;
@@ -443,8 +462,9 @@
   white-space: nowrap;
 }
 
-.st-btn:hover:not(:disabled) {
-  background: var(--glass-hover);
+/* O fantasma é vidro `.lg`; os outros pintam o próprio fundo. */
+.st-btn.lg:hover:not(:disabled) {
+  --lg-fill: linear-gradient(var(--glass-hover), var(--glass-hover));
 }
 
 .st-btn:disabled {
@@ -454,13 +474,13 @@
 
 .st-btn--primary {
   border-color: transparent;
-  background: var(--accent-gradient);
+  background: var(--accent);
   color: var(--on-accent);
   font-weight: 600;
 }
 
 .st-btn--primary:hover:not(:disabled) {
-  background: var(--accent-gradient);
+  background: var(--accent);
   filter: brightness(1.05);
 }
 
@@ -469,6 +489,10 @@
   background: var(--danger-soft);
   color: var(--danger);
   font-weight: 600;
+}
+
+.st-btn--danger:hover:not(:disabled) {
+  background: var(--glass-hover);
 }
 
 .st-btn--link {
@@ -601,7 +625,7 @@
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: var(--accent-gradient);
+  background: var(--accent);
   color: var(--on-accent);
 }
 
@@ -626,7 +650,7 @@
 .st-cover-since strong {
   font-size: 16px;
   font-weight: 600;
-  background: var(--accent-gradient);
+  background: var(--accent);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -645,8 +669,10 @@
   gap: 12px;
   padding: 14px;
   border-radius: 20px;
-  background: var(--glass-soft);
-  border: 1px solid var(--glass-stroke-soft);
+}
+
+.st-member.lg {
+  --lg-fill: linear-gradient(var(--glass-soft), var(--glass-soft));
 }
 
 .st-member p {
@@ -658,9 +684,11 @@
   font-weight: 600;
 }
 
+/* A vaga é tracejada: contorno de borda comum, sem `.lg`. */
 .st-member--empty {
   flex-wrap: wrap;
-  border-style: dashed;
+  border: 1px dashed var(--glass-stroke-soft);
+  background: var(--glass-soft);
 }
 
 .st-member--empty > div:first-of-type {
@@ -843,11 +871,13 @@
   min-width: 140px;
   padding: 6px;
   border-radius: 14px;
-  background: var(--glass-dark);
-  border: 1px solid var(--glass-stroke-soft);
   box-shadow: 0 20px 40px var(--glass-shadow);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
+}
+
+.st-popover.lg {
+  --lg-fill: linear-gradient(var(--glass-dark), var(--glass-dark));
 }
 
 .st-popover button {
@@ -946,9 +976,7 @@
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
-  border: 1px solid var(--glass-stroke-soft);
   border-radius: 999px;
-  background: transparent;
   color: var(--text-tertiary);
   font: inherit;
   font-size: 13px;
@@ -957,8 +985,12 @@
   cursor: pointer;
 }
 
+.st-chip.lg {
+  --lg-fill: linear-gradient(transparent, transparent);
+}
+
 .st-chip[aria-pressed='true'] {
-  background: var(--glass-hover);
+  --lg-fill: linear-gradient(var(--glass-hover), var(--glass-hover));
   color: var(--text-primary);
   text-decoration: none;
 }
@@ -1004,6 +1036,10 @@
 
 .st-matrix {
   padding: 8px 18px;
+}
+
+/* A rolagem fica num miolo: no cartão `.lg` ela cortaria o anel da borda. */
+.st-matrix-scroll {
   overflow-x: auto;
 }
 
@@ -1064,18 +1100,22 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 8px;
-  border: 2px solid transparent;
+  padding: 9px; /* a borda do `.lg` é de 1px; a antiga era de 2 */
   border-radius: 16px;
-  background: var(--glass-soft);
   color: var(--text-secondary);
   font: inherit;
   font-size: 13px;
   cursor: pointer;
 }
 
+.st-theme-preview.lg {
+  --lg-fill: linear-gradient(var(--glass-soft), var(--glass-soft));
+}
+
+/* O anel acende em acento e a sombra dá o segundo pixel da borda antiga. */
 .st-theme-preview[aria-checked='true'] {
-  border-color: var(--accent);
+  --lg-edge: linear-gradient(var(--accent), var(--accent));
+  box-shadow: 0 0 0 1px var(--accent);
   color: var(--text-primary);
 }
 
@@ -1174,7 +1214,7 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--accent-gradient);
+  background: var(--accent);
 }
 
 /* --- Zona sensível ------------------------------------------------------- */
@@ -1252,12 +1292,16 @@
 
 /* --- diálogo ------------------------------------------------------------- */
 
+/* Vidro `.lg`. Duas coisas do `<dialog>` modal brigam com ele: o `relative`
+   do `.lg` tiraria o `fixed` do navegador (o diálogo abriria no topo do
+   documento, não da janela), e o `overflow: auto` do navegador cortaria o anel,
+   que mora na área da borda. A rolagem passa para `.st-dialog-body`. */
 .st-dialog {
+  position: fixed;
   width: min(480px, calc(100vw - 32px));
-  padding: 20px;
-  border: 1px solid var(--glass-stroke-soft);
+  padding: 0;
+  overflow: visible;
   border-radius: 24px;
-  background: var(--glass-dark);
   color: var(--text-primary);
   font-family: var(--font);
   box-shadow: 0 30px 80px var(--glass-shadow);
@@ -1265,8 +1309,30 @@
   -webkit-backdrop-filter: blur(40px);
 }
 
+.st-dialog.lg {
+  --lg-fill: linear-gradient(var(--glass-dark), var(--glass-dark));
+  --lg-sweep: 0;
+}
+
+.st-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.st-dialog-body {
+  min-height: 0;
+  padding: 19px;
+  overflow: auto;
+  border-radius: inherit;
+}
+
 .st-dialog::backdrop {
   background: #0000008c;
+  animation: fade-in var(--dur) ease backwards;
+}
+
+.st-dialog[open] {
+  animation: dialog-in 0.42s var(--ease-spring) backwards;
 }
 
 .st-dialog-head {
@@ -1304,20 +1370,19 @@
 /* --- painel da direita (`Right Panel`, hWcCy) ---------------------------- */
 
 .st-panel {
-  flex: 0 0 320px;
-  margin-left: auto;
+  flex: 0 0 var(--panel-width);
   display: flex;
   flex-direction: column;
   gap: 12px;
-  position: sticky;
-  top: 0;
-  padding: 20px;
-  border-radius: 32px;
-  background: var(--glass);
-  border: 1px solid var(--glass-stroke-soft);
+  padding: 24px 20px;
+  border-radius: 36px;
   box-shadow: 0 30px 80px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
   backdrop-filter: blur(60px);
   -webkit-backdrop-filter: blur(60px);
+}
+
+.st-panel.lg {
+  --lg-sweep: 0;
 }
 
 .st-panel p {
@@ -1362,7 +1427,7 @@
 }
 
 .st-panel-since strong {
-  background: var(--accent-gradient);
+  background: var(--accent);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -1438,8 +1503,13 @@
 }
 
 @media (max-width: 759px) {
+  .st {
+    height: auto;
+  }
+
   .st-area {
     padding: 12px 0 24px;
+    overflow: visible;
   }
 
   .st-header h1 {
@@ -1453,8 +1523,11 @@
   .st-menu {
     position: static;
     flex: none;
-    flex-direction: row;
     width: 100%;
+  }
+
+  .st-menu-list {
+    flex-direction: row;
     overflow-x: auto;
     scrollbar-width: none;
   }

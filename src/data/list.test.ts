@@ -302,7 +302,7 @@ describe('tradução de erro do PostgREST', () => {
     expect(translateError({ code: '23503', message: 'fk' })).toEqual({ status: 'not_found' })
     expect(translateError({ code: '42501', message: 'rls' })).toEqual({
       status: 'error',
-      cause: 'este espaço mudou — recarregue',
+      cause: 'este espaço mudou, recarregue a página',
     })
   })
 
@@ -403,7 +403,7 @@ describe('Marcar como feito — cascata (seção 7)', () => {
     const { db, log } = fakeDb({ rpcThrows: new TypeError('Failed to fetch') })
     expect(await markDone(db, 'couple-1', input(), okPrepare)).toEqual({
       status: 'error',
-      cause: 'A conexão caiu — confira se o item ficou marcado antes de tentar de novo',
+      cause: 'A conexão caiu. Confira se o item ficou marcado antes de tentar de novo',
     })
     expect(log.filter((l) => l.startsWith('upload:'))).toHaveLength(3)
     expect(log.some((l) => l.startsWith('remove:'))).toBe(false)
@@ -413,7 +413,7 @@ describe('Marcar como feito — cascata (seção 7)', () => {
     const { db, log } = fakeDb({ rpc: { data: null, error: { code: '', message: 'TypeError: Failed to fetch' } } })
     expect(await markDone(db, 'couple-1', input(), okPrepare)).toEqual({
       status: 'error',
-      cause: 'A conexão caiu — confira se o item ficou marcado antes de tentar de novo',
+      cause: 'A conexão caiu. Confira se o item ficou marcado antes de tentar de novo',
     })
     expect(log.some((l) => l.startsWith('remove:'))).toBe(false)
 

@@ -11,7 +11,8 @@
 
 import { addDays, daysInclusive, diffDays, isoOf, localDateOf } from '../lib/date'
 import { countDrawn, runAround, runs } from './calendar'
-import type { CityMap, MembersBySlot, Run } from './calendar'
+import { COUNTRY_CENTERS, COUNTRY_CODES } from './countries'
+import type { CalCity, CityMap, MembersBySlot, Run } from './calendar'
 import { countStates, stayOn } from './coupleState'
 import type { Stay } from './coupleState'
 import { MEDIA_CATEGORIES } from './list'
@@ -310,15 +311,16 @@ export interface RegionRow {
 const byCountThenName = (a: RegionRow, b: RegionRow) => b.count - a.count || a.name.localeCompare(b.name, 'pt-BR')
 
 /**
- * R8/R9: as linhas do seletor de um nível. `world` → países; `country` → UFs
- * (Brasil) ou cidades (fora); `state` → cidades da UF. Só regiões com pins;
- * `allStates` acrescenta as UFs sem lugar (o _Ver os 27 estados_).
+ * R8/R9: as linhas do seletor de um nível. `world` → todos os países;
+ * `country` → as 27 UFs (Brasil) ou as cidades com pin (fora); `state` → as
+ * cidades da UF com pin, mais `cities` (os municípios do IBGE da UF) em 0.
+ * Os com lugar primeiro, pela contagem; o resto em ordem alfabética.
  */
 export function regionRows(
   pins: readonly Pin[],
   level: 'world' | 'country' | 'state',
   path: FocusPath,
-  opts: { allStates?: boolean } = {},
+  cities: readonly { name: string }[] = [],
 ): RegionRow[] {
   const rows = new Map<string, RegionRow>()
   const bump = (key: string, code: string, name: string) => {
@@ -326,21 +328,24 @@ export function regionRows(
     if (row) row.count += 1
     else rows.set(key, { key, code, name, count: 1 })
   }
+  const zero = (key: string, code: string, name: string) => {
+    if (!rows.has(key)) rows.set(key, { key, code, name, count: 0 })
+  }
 
   if (level === 'world') {
     for (const p of pins) bump(p.countryCode, p.countryCode, countryName(p.countryCode))
+    for (const code of COUNTRY_CODES) zero(code, code, countryName(code))
   } else if (level === 'country' && path.countryCode === 'BR') {
     for (const p of pins) {
       if (p.countryCode === 'BR' && p.uf) bump(p.uf, p.uf, BR_STATES[p.uf].name)
     }
-    if (opts.allStates) {
-      for (const [uf, s] of Object.entries(BR_STATES)) {
-        if (!rows.has(uf)) rows.set(uf, { key: uf, code: uf, name: s.name, count: 0 })
-      }
-    }
+    for (const [uf, s] of Object.entries(BR_STATES)) zero(uf, uf, s.name)
   } else {
     const inRegion = pins.filter((p) => isInRegion(p, level, path) && p.cityKey && p.cityName)
     for (const p of inRegion) bump(p.cityKey as string, cityCode(p.cityName as string), p.cityName as string)
+    if (level === 'state' && path.countryCode) {
+      for (const c of cities) zero(cityKeyOf(path.countryCode, path.uf, c.name), cityCode(c.name), c.name)
+    }
   }
   return [...rows.values()].sort(byCountThenName)
 }
@@ -355,6 +360,12 @@ export function cityCenter(path: FocusPath, pins: readonly Pin[]): LatLng | null
   if (path.cityCenter) return path.cityCenter
   const own = pins.filter((p) => p.cityKey !== null && p.cityKey === path.cityKey)
   return centroid(own)
+}
+
+/** O centro aproximado de um país (`COUNTRY_CENTERS`), para a câmera de um país sem pin. */
+function countryCenter(code: string | null): LatLng | null {
+  const c = code ? COUNTRY_CENTERS[code] : undefined
+  return c ? { lat: c[0], lng: c[1] } : null
 }
 
 function centroid(points: readonly LatLng[]): LatLng | null {
@@ -373,7 +384,9 @@ export type Camera =
   | { kind: 'center'; center: LatLng; zoom: number; pitch: number; bearing: number; terrain: boolean }
   | { kind: 'bounds'; sw: LatLng; ne: LatLng; minZoom: number; maxZoom: number; padding: number }
 
-export const WORLD_ZOOM = 1.6
+// O globo do `.pen` (eocRt) tem ~1050 px num frame de 900: passa da borda de
+// baixo. Com o mapa de tela inteira, 1,6 dava um globo de ~540 px.
+export const WORLD_ZOOM = 2.4
 export const CITY_ZOOM = 11
 export const CITY_PITCH = 60
 const COUNTRY_MIN_ZOOM = 3
@@ -394,7 +407,9 @@ export function cameraFor(view: MapView, pins: readonly Pin[], viewer: LatLng): 
   const minZoom = level === 'country' ? COUNTRY_MIN_ZOOM : STATE_MIN_ZOOM
   if (own.length === 0) {
     const fallback =
-      level === 'state' && path.uf ? BR_STATES[path.uf] : (centroid(pins.filter((p) => p.countryCode === path.countryCode)) ?? viewer)
+      level === 'state' && path.uf
+        ? BR_STATES[path.uf]
+        : (centroid(pins.filter((p) => p.countryCode === path.countryCode)) ?? countryCenter(path.countryCode) ?? viewer)
     return { kind: 'center', center: { lat: fallback.lat, lng: fallback.lng }, zoom: minZoom, pitch: 0, bearing: 0, terrain: false }
   }
   const lats = own.map((p) => p.lat)
@@ -446,9 +461,70 @@ export function formatKm(km: number): string {
 // Quem vê: onde está hoje (R4, R7)
 // ---------------------------------------------------------------------------
 
-/** A cidade de quem vê hoje: a estadia, senão a casa (R7). */
-export function viewerCityId(profileId: string, homeCityId: string, stays: readonly Stay[], today: string): string {
-  return stayOn(stays, profileId, today)?.cityId ?? homeCityId
+/**
+ * Onde uma pessoa está hoje, para o MAPA: a estadia de hoje; sem ela, a
+ * última que já terminou (a última posição conhecida); sem nenhuma, a casa.
+ *
+ * É posição para desenhar, não estado do casal: o `Couple Status` continua
+ * dizendo _"Sem registro de hoje"_ numa lacuna (`unknown` não é separados).
+ * Estadia futura não conta — ninguém "está" onde ainda vai estar.
+ */
+export function personCityId(profileId: string, homeCityId: string, stays: readonly Stay[], today: string): string {
+  const current = stayOn(stays, profileId, today)
+  if (current) return current.cityId
+  let last: Stay | null = null
+  for (const s of stays) {
+    if (s.profileId !== profileId || s.endsOn === null || s.endsOn >= today) continue
+    if (!last || (s.endsOn as string) > (last.endsOn as string)) last = s
+  }
+  return last?.cityId ?? homeCityId
+}
+
+/** A cidade de quem vê hoje (R7): `personCityId`. */
+export const viewerCityId = personCityId
+
+/** Uma pessoa no mapa: a bolinha na cor dela, na cidade de `personCityId`. */
+export interface PersonMarker {
+  profileId: string
+  name: string
+  color: string
+  cityId: string
+  lat: number
+  lng: number
+  /** Quantos estão na MESMA cidade antes deste (0, 1): o deslocamento lado a lado. */
+  offset: number
+  /** Quantos estão na cidade dele (1 ou 2). */
+  together: number
+}
+
+/**
+ * As duas bolinhas. Uma cidade que não veio na leitura cai na casa (a mesma
+ * regra de `viewerCity`): não se desenha bolinha em "?".
+ */
+export function personMarkers(
+  people: readonly { profileId: string; name: string; color: string; homeCity: CalCity }[],
+  stays: readonly Stay[],
+  cities: CityMap,
+  today: string,
+): PersonMarker[] {
+  const placed = people.map((p) => {
+    const id = personCityId(p.profileId, p.homeCity.id, stays, today)
+    const city = cities.get(id) ?? p.homeCity
+    return { person: p, city }
+  })
+  return placed.map(({ person, city }, i) => {
+    const same = placed.filter((q) => q.city.id === city.id)
+    return {
+      profileId: person.profileId,
+      name: person.name,
+      color: person.color,
+      cityId: city.id,
+      lat: city.lat,
+      lng: city.lng,
+      offset: placed.slice(0, i).filter((q) => q.city.id === city.id).length,
+      together: same.length,
+    }
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -591,8 +667,8 @@ export function circumferenceLine(km: number): { text: string; pct: number } {
     return { text, pct }
   }
   const tail = `${pct}% da circunferência da Terra`
-  if (pct >= 50) return { text: `Mais de meia volta ao mundo — ${tail}`, pct }
-  if (pct >= 40) return { text: `Quase meia volta ao mundo — ${tail}`, pct }
+  if (pct >= 50) return { text: `Mais de meia volta ao mundo (${tail})`, pct }
+  if (pct >= 40) return { text: `Quase meia volta ao mundo (${tail})`, pct }
   return { text: tail.charAt(0).toUpperCase() + tail.slice(1), pct }
 }
 

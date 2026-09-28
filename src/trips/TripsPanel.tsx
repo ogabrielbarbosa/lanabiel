@@ -63,7 +63,7 @@ export function TripsPanel({ onPlan }: TripsPanelProps) {
 
 function Card({ title, action, children, className = '' }: { title: string; action?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={`tr-card ${className}`} aria-label={title}>
+    <section className={`tr-card lg ${className}`} aria-label={title}>
       <div className="tr-card-head">
         <h3>{title}</h3>
         {action}
@@ -228,7 +228,7 @@ function DreamsCard({ onPlan }: { onPlan: (query: string) => void }) {
               </span>
               <button
                 type="button"
-                className="tr-plan"
+                className="tr-plan lg"
                 aria-label={`Planejar ${item.name}`}
                 onClick={() => onPlan(planQuery(item))}
               >
@@ -287,7 +287,7 @@ function RecordsCard() {
       <ul className="tr-records">
         {rows.map((row) => (
           <li key={row.key} data-record={row.key}>
-            <span className={`tr-record-chip tr-tone--${row.tone}`} aria-hidden="true">
+            <span className={`tr-record-chip lg tr-tone--${row.tone}`} aria-hidden="true">
               {row.icon}
             </span>
             <span className="tr-record-text">

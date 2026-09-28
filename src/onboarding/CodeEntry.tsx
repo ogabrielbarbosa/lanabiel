@@ -37,10 +37,10 @@ export function CodeEntry({ initial = '', onBack, onSubmit }: CodeEntryProps) {
   }
 
   return (
-    <AuthShell caption={{ title: 'Tem um código?', subtitle: '6 caracteres e vocês estão juntos.' }}>
+    <AuthShell caption={{ title: 'Tem um código?', subtitle: 'Ele tem 6 caracteres.' }}>
       <div className="auth-heading onb-heading">
         <h1>Digite o código de convite</h1>
-        <p>Seu amor recebeu o código quando criou o espaço. Ele também está no e-mail de convite.</p>
+        <p>Quem criou o espaço recebeu o código. Ele também está no e-mail de convite.</p>
       </div>
 
       <form
@@ -52,7 +52,7 @@ export function CodeEntry({ initial = '', onBack, onSubmit }: CodeEntryProps) {
       >
         <CodeInput value={value} onChange={setValue} />
 
-        <button type="button" className="auth-btn onb-btn-small onb-self-start" onClick={() => void pasteFromClipboard()}>
+        <button type="button" className="lg auth-btn onb-btn-small onb-self-start" onClick={() => void pasteFromClipboard()}>
           <Copy />
           Colar do WhatsApp
         </button>
@@ -63,7 +63,7 @@ export function CodeEntry({ initial = '', onBack, onSubmit }: CodeEntryProps) {
         </p>
 
         <div className="onb-actions">
-          <button type="button" className="auth-btn" onClick={onBack}>
+          <button type="button" className="lg auth-btn" onClick={onBack}>
             Voltar
           </button>
           <button type="submit" className="auth-btn auth-btn-primary" disabled={!code}>

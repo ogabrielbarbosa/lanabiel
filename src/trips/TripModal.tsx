@@ -57,7 +57,7 @@ export type TripModalProps =
   | { mode: 'edit'; trip: Trip; onClose(): void }
 
 const SUBTITLE = 'Cria o período no calendário e puxa itens da lista do destino'
-const EDIT_NOTICE = 'Mudar datas ou destino aqui não muda o período — ajuste no calendário.'
+const EDIT_NOTICE = 'Mudar datas ou destino aqui não muda o período. Pra isso, ajuste no calendário.'
 const COVER_FAILED = 'A viagem foi salva, mas a capa não subiu.'
 const DEPARTURE_PLACEHOLDER = 'voo GRU → FLN · 1h05'
 const STRIP_WEEKDAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
@@ -270,7 +270,7 @@ export function TripModal(props: TripModalProps) {
       const trip = props.trip
       const event = events.get(trip.id)
       if (!event) {
-        setFailure('Não deu pra salvar: essa viagem mudou — recarregue')
+        setFailure('Não deu pra salvar porque essa viagem mudou. Recarregue a página.')
         return
       }
       const eventResult = await api.updateTripEvent(event, {
@@ -466,7 +466,7 @@ export function TripModal(props: TripModalProps) {
               {s.cover.url && <img src={s.cover.url} alt="" />}
             </span>
           )}
-          <button type="button" className="tr-cover-upload" disabled={pending} onClick={() => fileRef.current?.click()}>
+          <button type="button" className="tr-cover-upload lg" disabled={pending} onClick={() => fileRef.current?.click()}>
             <ImagePlus size={18} aria-hidden="true" />
             Enviar
           </button>
@@ -488,7 +488,7 @@ export function TripModal(props: TripModalProps) {
       <ModalField label="De onde cada um sai" field="departures">
         <div className="tr-mrow">
           {slots.map((p) => (
-            <div key={p.profileId} className="tr-departure">
+            <div key={p.profileId} className="tr-departure lg">
               <Avatar person={p} size={28} />
               <span className="tr-departure-text">
                 <span className="tr-departure-home">{p.homeCity.name}</span>
@@ -550,12 +550,12 @@ export function TripModal(props: TripModalProps) {
   )
 
   const side = editing ? (
-    <aside className="tr-mprev" aria-label="Período">
+    <aside className="tr-mprev lg" aria-label="Período">
       <p className="tr-mprev-notice">{EDIT_NOTICE}</p>
       {listBlock}
     </aside>
   ) : (
-    <aside className="tr-mprev" aria-label="Ao salvar">
+    <aside className="tr-mprev lg" aria-label="Ao salvar">
       <div className="tr-mprev-head">
         <p className="tr-mprev-kicker">
           <Sparkles size={13} aria-hidden="true" />
@@ -566,7 +566,7 @@ export function TripModal(props: TripModalProps) {
       {preview && s.dest ? (
         <>
           <div
-            className="tr-mprev-card"
+            className="tr-mprev-card lg"
             data-band={preview.band}
             style={{ '--band': preview.band === 'unknown' ? undefined : bandColor(settings, preview.band) } as CSSProperties}
           >

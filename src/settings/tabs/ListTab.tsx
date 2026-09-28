@@ -76,7 +76,7 @@ export function ListTab(ctx: TabContext) {
               <button
                 key={category}
                 type="button"
-                className={`st-chip st-chip--${category}`}
+                className={`lg st-chip st-chip--${category}`}
                 aria-pressed={on}
                 disabled={writes.pending('hiddenCategories') || locked}
                 title={locked ? 'Pelo menos uma categoria fica ligada' : undefined}

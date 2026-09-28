@@ -60,7 +60,7 @@ describe('A15 — o formulário (R20)', () => {
     expect(screen.getByText('7 de 10')).toBeInTheDocument()
     await user.upload(screen.getByLabelText('Escolher fotos'), images(6, 'g'))
     expect(screen.getByText('10 de 10')).toBeInTheDocument()
-    expect(screen.getByText(/Cabem só 10 fotos/)).toBeInTheDocument()
+    expect(screen.getByText(/Cabem 10 fotos/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Adicionar' })).toBeDisabled()
     // Tirar uma antes de enviar libera o lugar.
     await user.click(screen.getByRole('button', { name: 'Tirar a foto 1' }))

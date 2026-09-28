@@ -49,7 +49,7 @@ export function tabLead(tab: SettingsTab, listCounts: DataResult<ListCounts> | n
 
 /** Mensagem de uma falha de escrita, para mostrar junto do controle. */
 export function failureMessage(result: { status: 'unauthenticated' } | { status: 'error'; cause: string }): string {
-  return result.status === 'unauthenticated' ? 'Sua sessão expirou — entre de novo.' : result.cause
+  return result.status === 'unauthenticated' ? 'Sua sessão expirou. Entre de novo.' : result.cause
 }
 
 /** Escritas em voo e erros, por chave de controle. */

@@ -24,6 +24,9 @@
   --glass-shine: #ffffff40;
   --glass-shadow: #02051480;
   --glass-dark: #0a1030b8;
+  /* A luz do cursor no contorno do vidro (`.lg`): branco no escuro; no claro
+     branco some sobre o vidro branco, e a luz é o acento. Fora do .pen. */
+  --glass-glint: #ffffff;
   --text-primary: #f4f6fb;
   --text-secondary: #f4f6fbb3;
   --text-tertiary: #f4f6fb73;
@@ -54,6 +57,7 @@
   --glass-shine: #ffffffff;
   --glass-shadow: #5b6b9a33;
   --glass-dark: #ffffffcc;
+  --glass-glint: #1fa184;
   --text-primary: #0e1430;
   --text-secondary: #0e1430b3;
   --text-tertiary: #0e143080;
@@ -72,7 +76,14 @@
 
 :root {
   --font: 'Geist', ui-sans-serif, system-ui, sans-serif;
-  --accent-gradient: linear-gradient(225deg, var(--accent), var(--accent-2));
+  /* Movimento: uma saída suave (quase tudo), uma mola com um leve passar do
+     ponto (o que "salta": indicador, menu, ícone) e as durações. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.45, 0.64, 1);
+  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  --dur-fast: 0.16s;
+  --dur: 0.32s;
+  --dur-slow: 0.55s;
   /* Densidade: um só multiplicador de espaçamento vertical. */
   --density: 1;
 }
@@ -94,11 +105,29 @@
 
 /* --- a casca ------------------------------------------------------------- */
 
+/* A barra de rolagem não aparece em lugar nenhum do app — a rolagem continua
+   funcionando (roda, trackpad, toque, teclado). Uma regra só aqui, em vez de
+   cada tela esconder a sua. */
+* {
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
+/* O quadro é o MESMO em toda tela (desktop): a casca ocupa a janela exata e
+   nunca rola; cada tela preenche `.shell-main` com a área à esquerda, que rola
+   por dentro, e o painel da direita com `--panel-width`, de cima a baixo, a
+   12 da barra. Quem rola é a área ou o painel — nunca a página. Assim o painel
+   fica na mesma posição e do mesmo tamanho na Home, no Calendário, na Lista,
+   nas Viagens e nas Configurações. No celular (< 760) a página volta a rolar. */
 .shell {
+  --panel-width: 424px;
   position: relative;
   display: flex;
-  gap: 16px;
-  min-height: 100dvh;
+  gap: 12px;
+  height: 100dvh;
   padding: 16px;
   overflow: clip;
   background: var(--bg-deep);
@@ -138,6 +167,13 @@
   z-index: 1;
   flex: 1;
   min-width: 0;
+  min-height: 0;
+}
+
+@media (max-width: 1359px) {
+  .shell {
+    --panel-width: clamp(340px, 29vw, 424px);
+  }
 }
 
 /* --- a barra de navegação (`Navbar`, PajKz) ------------------------------- */
@@ -154,8 +190,8 @@
   height: calc(100dvh - 32px);
   padding: 20px 10px;
   border-radius: 32px;
-  background: var(--glass);
-  border: 1px solid var(--glass-stroke-soft);
+  /* Vidro `.lg`: a barra é alta e fica sob o cursor, sem o brilho correndo. */
+  --lg-sweep: 0;
   box-shadow: 0 30px 80px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
   backdrop-filter: blur(60px);
   -webkit-backdrop-filter: blur(60px);
@@ -178,6 +214,8 @@
 }
 
 .shell-nav-button {
+  position: relative;
+  z-index: 1;
   display: grid;
   place-items: center;
   width: 44px;
@@ -188,6 +226,10 @@
   color: var(--text-secondary);
   cursor: pointer;
   text-decoration: none;
+  transition:
+    background-color var(--dur-fast) ease,
+    color var(--dur) ease,
+    scale var(--dur-fast) var(--ease-out);
 }
 
 .shell-nav-button:hover {
@@ -195,16 +237,53 @@
   color: var(--text-primary);
 }
 
+.shell-nav-button:active {
+  scale: 0.9;
+}
+
+/* O fundo do destino atual é a bolinha (abaixo), que nasce pequena e cresce;
+   o botão só troca a cor e dá um pulinho no ícone. */
 .shell-nav-button[aria-current='page'] {
-  background: var(--glass-hover);
-  border-color: var(--glass-stroke);
-  box-shadow: 0 0 20px var(--accent-glow), inset 0 1px 1px var(--glass-shine);
+  background: transparent;
   color: var(--accent);
 }
 
-.shell-nav-button:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+.shell-nav-button[aria-current='page'] svg {
+  animation: nav-icon-pop var(--dur-slow) var(--ease-spring);
+}
+
+@keyframes nav-icon-pop {
+  0% {
+    scale: 0.7;
+    rotate: -12deg;
+  }
+  60% {
+    scale: 1.15;
+    rotate: 4deg;
+  }
+  100% {
+    scale: 1;
+    rotate: 0deg;
+  }
+}
+
+.shell-nav-bubble {
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border: 1px solid var(--glass-stroke);
+  border-radius: 999px;
+  background: var(--glass-hover);
+  box-shadow: 0 0 20px var(--accent-glow), inset 0 1px 1px var(--glass-shine);
+  pointer-events: none;
+  animation: nav-bubble-in var(--dur-slow) var(--ease-spring) backwards;
+}
+
+@keyframes nav-bubble-in {
+  from {
+    opacity: 0;
+    scale: 0.3;
+  }
 }
 
 /* O _Adicionar_ (`Add Button`, NVoXy): 44px, o gradiente e o "sobre o
@@ -220,10 +299,32 @@
   height: 44px;
   border: 0;
   border-radius: 999px;
-  background: var(--accent-gradient);
+  background: var(--accent);
   box-shadow: 0 8px 24px var(--accent-glow), inset 0 1px 1px var(--glass-shine);
   color: var(--on-accent);
   cursor: pointer;
+  transition:
+    scale var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur) ease,
+    filter var(--dur) ease;
+}
+
+.shell-add-button svg {
+  transition: rotate var(--dur) var(--ease-spring);
+}
+
+.shell-add-button:hover {
+  box-shadow: 0 10px 32px var(--accent-glow), 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent), inset 0 1px 1px var(--glass-shine);
+  filter: brightness(1.06);
+}
+
+.shell-add-button:active {
+  scale: 0.9;
+}
+
+/* Aberto, o + gira e vira um ×. */
+.shell-add-button[aria-expanded='true'] svg {
+  rotate: 135deg;
 }
 
 .shell-add-button:focus-visible {
@@ -242,11 +343,25 @@
   min-width: 180px;
   padding: 6px;
   border-radius: 16px;
-  background: var(--glass);
-  border: 1px solid var(--glass-stroke-soft);
+  /* O menu nasce dentro da barra, que já tem `backdrop-filter`: o desfoque
+     dele só veria o que está dentro dela, e fora da barra não há nada. Sem
+     o vidro escuro por baixo, o que passa atrás atravessa o texto. */
+  --lg-fill: linear-gradient(var(--glass-strong), var(--glass-strong)), linear-gradient(var(--glass-dark), var(--glass-dark));
   box-shadow: 0 30px 80px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
-  backdrop-filter: blur(60px);
-  -webkit-backdrop-filter: blur(60px);
+  transform-origin: bottom right;
+  animation: pop-in var(--dur) var(--ease-spring) backwards;
+}
+
+.shell-add-menu.is-closing {
+  animation: pop-out var(--dur-fast) var(--ease-in) both;
+}
+
+.shell-add-menu button {
+  animation: rise-in var(--dur) var(--ease-out) backwards;
+}
+
+.shell-add-menu button:nth-child(2) {
+  animation-delay: 50ms;
 }
 
 .shell-add-menu button {
@@ -261,6 +376,13 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
+  transition:
+    background-color var(--dur-fast) ease,
+    translate var(--dur-fast) var(--ease-out);
+}
+
+.shell-add-menu button:hover {
+  translate: -2px 0;
 }
 
 .shell-add-menu button:hover,
@@ -282,6 +404,8 @@
 @media (max-width: 759px) {
   .shell {
     flex-direction: column;
+    height: auto;
+    min-height: 100dvh;
     padding: 12px 12px 88px;
   }
 
@@ -307,4 +431,493 @@
     right: 0;
     bottom: calc(100% + 14px);
   }
+
+  .shell-nav-button[aria-current='page'] svg {
+    animation-name: nav-icon-pop;
+  }
+}
+
+/* --- o vidro líquido (`.lg`) --------------------------------------------- */
+
+/* A receita de vidro do `.pen` (Right Panel, Glass Card, Chip…): preenchimento
+   translúcido, contorno em degradê de cima para baixo (shine → soft 45% →
+   stroke), brilho interno de 1px e desfoque do fundo.
+
+   O contorno mora num anel mascarado (`::after`), NÃO no truque de
+   `padding-box` + `border-box`: a camada `border-box` fica por baixo do
+   preenchimento inteiro, e com um vidro de 7% o degradê da borda (25% de
+   branco) vazava pelo miolo — o painel da Home saía três vezes mais claro que
+   o frame, e cada cartão empilhado clareava mais.
+
+   No hover só a BORDA reage (o preenchimento fica quieto): o trecho do
+   contorno perto do cursor acende e um brilho corre em volta. A posição
+   (`--mx`/`--my`) vem de `trackGlassPointer` (glass.ts), posto na casca; sem
+   ponteiro fino (toque) nada disso liga. Cada vidro ajusta pelas variáveis:
+   `--lg-fill` (preenchimento), `--lg-edge` (contorno), `--lg-sweep` (o brilho
+   que corre, 0 desliga) e `--lg-radius` (o alcance da luz do cursor). */
+
+@property --lg-ring-on {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --lg-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* Os padrões têm especificidade zero: o ajuste de cada tela (`.hp-card {
+   --lg-sweep: 0 }`) vence em qualquer ordem de carregamento do CSS — no dev
+   este arquivo entra DEPOIS das telas, no build a ordem é a dos chunks. */
+:where(.lg) {
+  --lg-fill: linear-gradient(var(--glass), var(--glass));
+  --lg-edge: linear-gradient(180deg, var(--glass-shine), var(--glass-stroke-soft) 45%, var(--glass-stroke));
+  --lg-sweep: 0.55;
+  --lg-radius: 140px;
+  position: relative;
+}
+
+.lg {
+  --lg-ring-on: 0;
+  border: 1px solid transparent;
+  background: var(--lg-fill) border-box;
+  transition: --lg-ring-on 0.35s ease;
+}
+
+.lg::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  background:
+    radial-gradient(
+      var(--lg-radius) circle at var(--mx, 50%) var(--my, 0%),
+      color-mix(in srgb, var(--glass-glint) calc(90% * var(--lg-ring-on)), transparent),
+      transparent 100%
+    ),
+    conic-gradient(
+      from var(--lg-angle),
+      transparent 0 62%,
+      color-mix(in srgb, var(--glass-glint) calc(100% * var(--lg-sweep) * var(--lg-ring-on)), transparent) 80%,
+      transparent 96%
+    ),
+    var(--lg-edge);
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+@keyframes lg-sweep {
+  to {
+    --lg-angle: 360deg;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lg:hover {
+    --lg-ring-on: 1;
+  }
+
+  .lg:hover::after {
+    animation: lg-sweep 5s linear infinite;
+  }
+}
+
+/* --- movimento ----------------------------------------------------------- */
+
+/* As entradas e saídas que o app inteiro reusa (modais, menus, cartões). As
+   telas as chamam pelo nome; nada aqui depende de estar dentro da casca. */
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    scale: 0.92;
+    translate: 0 6px;
+  }
+}
+
+@keyframes pop-out {
+  to {
+    opacity: 0;
+    scale: 0.95;
+    translate: 0 4px;
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    scale: 0.94;
+    translate: 0 18px;
+  }
+}
+
+@keyframes dialog-out {
+  to {
+    opacity: 0;
+    scale: 0.97;
+    translate: 0 10px;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0.4;
+    translate: 40px 0;
+  }
+}
+
+@keyframes sheet-out {
+  to {
+    opacity: 0;
+    translate: 40px 0;
+  }
+}
+
+/* Botões: um afundar curto ao pressionar, em qualquer botão do app. `scale`
+   (e não `transform`) soma com o que o botão já tiver de posição, e o
+   `:where` deixa qualquer regra de tela vencer. */
+:where(button, [role='button'], a.lg):not(:disabled):active {
+  scale: 0.97;
+}
+
+:where(button, [role='button']) {
+  transition: scale var(--dur-fast) var(--ease-out);
+}
+
+/* Os painéis da direita chegam em cascata ao abrir a tela ou quando os
+   dados chegam. `backwards`: depois de entrar, nenhum `translate` fica
+   preso no elemento (um `position: fixed` lá dentro continuaria na janela). */
+:where(.hp-scroll, .ls-panel-scroll, .cal-panel-scroll, .tr-panel-scroll, .st-panel) > * {
+  animation: rise-in var(--dur-slow) var(--ease-out) backwards;
+}
+
+:where(.hp-scroll, .ls-panel-scroll, .cal-panel-scroll, .tr-panel-scroll, .st-panel) > :nth-child(2) {
+  animation-delay: 60ms;
+}
+
+:where(.hp-scroll, .ls-panel-scroll, .cal-panel-scroll, .tr-panel-scroll, .st-panel) > :nth-child(3) {
+  animation-delay: 120ms;
+}
+
+:where(.hp-scroll, .ls-panel-scroll, .cal-panel-scroll, .tr-panel-scroll, .st-panel) > :nth-child(4) {
+  animation-delay: 180ms;
+}
+
+:where(.hp-scroll, .ls-panel-scroll, .cal-panel-scroll, .tr-panel-scroll, .st-panel) > :nth-child(n + 5) {
+  animation-delay: 240ms;
+}
+
+/* O esqueleto do painel (PanelSkeleton.tsx): o painel já está no lugar
+   enquanto a tela lê; aqui só o miolo. */
+.panel-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.panel-skeleton-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 4px;
+}
+
+.panel-skeleton span {
+  flex: none;
+  border-radius: 22px;
+  background: var(--glass);
+  animation: panel-pulse 1.4s ease-in-out infinite;
+}
+
+.panel-skeleton-head span {
+  width: 42%;
+  height: 14px;
+  border-radius: 999px;
+}
+
+.panel-skeleton-head span + span {
+  width: 72%;
+  height: 28px;
+}
+
+@keyframes panel-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel-skeleton span {
+    animation: none;
+  }
+}
+
+/* --- a abertura (Splash.tsx) --------------------------------------------- */
+
+/* Cores fixas do escuro, como o login: a abertura toca antes de o tema da
+   casca valer, e o login que costuma vir depois dela também é escuro. */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  overflow: clip;
+  background: #060a1c;
+  color: #f4f6fb;
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  cursor: pointer;
+}
+
+.splash.is-leaving {
+  animation: splash-out 0.6s var(--ease-in) forwards;
+  pointer-events: none;
+}
+
+@keyframes splash-out {
+  to {
+    opacity: 0;
+    scale: 1.06;
+    filter: blur(8px);
+  }
+}
+
+.splash-glow {
+  position: absolute;
+  width: 640px;
+  height: 640px;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0;
+  animation: splash-glow-in 1.8s var(--ease-out) forwards;
+}
+
+.splash-glow--pink {
+  top: -220px;
+  left: -180px;
+  background: #6a3560;
+}
+
+.splash-glow--aqua {
+  right: -160px;
+  bottom: -260px;
+  background: #15525a;
+  animation-delay: 0.2s;
+}
+
+@keyframes splash-glow-in {
+  to {
+    opacity: 0.6;
+  }
+}
+
+.splash-stage {
+  position: relative;
+  width: min(360px, 88vw);
+  aspect-ratio: 360 / 150;
+}
+
+.splash-arcs {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.splash-arc {
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  filter: drop-shadow(0 0 6px #f4a3b488);
+  animation: splash-draw 0.9s cubic-bezier(0.65, 0, 0.35, 1) 0.35s forwards;
+}
+
+@keyframes splash-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.splash-city {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: splash-pop 0.5s var(--ease-spring) backwards;
+}
+
+.splash-city--right {
+  animation-delay: 0.1s;
+}
+
+.splash-ping {
+  fill: none;
+  stroke: #7fd8c4;
+  stroke-width: 1.5;
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: splash-ping 1.4s var(--ease-out) 0.2s 2;
+}
+
+.splash-ping--right {
+  stroke: #f6e3a1;
+  animation-delay: 0.3s;
+}
+
+@keyframes splash-ping {
+  0% {
+    opacity: 0.9;
+    scale: 1;
+  }
+  100% {
+    opacity: 0;
+    scale: 4;
+  }
+}
+
+@keyframes splash-pop {
+  from {
+    opacity: 0;
+    scale: 0;
+  }
+}
+
+.splash-label {
+  position: absolute;
+  top: calc(100% - 8px);
+  left: calc(30 / 360 * 100%);
+  translate: -18% 0;
+  color: #f4f6fbb3;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  animation: rise-in 0.6s var(--ease-out) 0.25s backwards;
+}
+
+.splash-label--right {
+  left: auto;
+  right: calc(30 / 360 * 100%);
+  translate: 30% 0;
+  animation-delay: 0.35s;
+}
+
+/* A logo no ponto onde os dois arcos se encontram (180, 34 do viewBox). */
+.splash-mark {
+  position: absolute;
+  left: 50%;
+  top: calc(34 / 150 * 100%);
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 20px;
+  background: #7fd8c4;
+  color: #08102a;
+  box-shadow:
+    0 10px 36px #7fd8c466,
+    inset 0 1px 1px #ffffff80;
+  animation: splash-mark-in 0.7s var(--ease-spring) 1.15s backwards;
+}
+
+.splash-mark svg {
+  animation: auth-beat 1.6s ease-in-out 1.7s infinite;
+}
+
+@keyframes splash-mark-in {
+  from {
+    opacity: 0;
+    scale: 0.2;
+    rotate: -30deg;
+  }
+}
+
+.splash-burst {
+  position: absolute;
+  left: 50%;
+  top: calc(34 / 150 * 100%);
+  width: 60px;
+  height: 60px;
+  translate: -50% -50%;
+  border: 2px solid #f4a3b4;
+  border-radius: 50%;
+  opacity: 0;
+  animation: splash-burst 0.9s var(--ease-out) 1.2s;
+}
+
+@keyframes splash-burst {
+  0% {
+    opacity: 0.9;
+    scale: 0.8;
+  }
+  100% {
+    opacity: 0;
+    scale: 3.2;
+  }
+}
+
+.splash-word {
+  position: relative;
+  display: flex;
+  margin: 28px 0 0;
+  font-size: 40px;
+  font-weight: 600;
+  letter-spacing: -1.6px;
+  line-height: 1;
+}
+
+.splash-word span {
+  display: inline-block;
+  animation: splash-letter 0.6s var(--ease-spring) backwards;
+  animation-delay: calc(1.4s + var(--i) * 55ms);
+}
+
+@keyframes splash-letter {
+  from {
+    opacity: 0;
+    translate: 0 18px;
+    filter: blur(6px);
+  }
+}
+
+.splash-tagline {
+  position: relative;
+  margin: 0;
+  color: #f4f6fbb3;
+  font-size: 15px;
+  animation: rise-in 0.7s var(--ease-out) 1.95s backwards;
 }

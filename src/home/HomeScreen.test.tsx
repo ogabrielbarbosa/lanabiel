@@ -96,7 +96,7 @@ describe('A16 — leitura falhou: erro com Tentar de novo, e o mapa não recebe 
     const ctx = tripsContextData()
     const alone = { ...ctx, couple: { ...ctx.couple, members: ctx.couple.members.slice(0, 1) } }
     const { container } = render(<HomeScreen api={seededHomeApi({ context: alone })} />)
-    expect(await screen.findByRole('status')).toHaveTextContent('A Home é de vocês dois — convide de novo em Configurações.')
+    expect(await screen.findByRole('status')).toHaveTextContent('O mapa aparece quando as duas pessoas estiverem no espaço. Em Configurações, na aba Casal, você convida a outra pessoa ou cria o perfil dela para já ir preenchendo.')
     expect(mapSlot(container)).toBeNull()
   })
 })
@@ -132,7 +132,7 @@ describe('R24 / A17 — releitura ao voltar à aba', () => {
 
     vi.mocked(api.loadList).mockImplementation(async () => failing)
     act(() => setVisibility('visible'))
-    expect(await screen.findByText('Não deu pra atualizar — mostrando o que já estava aqui')).toBeInTheDocument()
+    expect(await screen.findByText('Não deu pra atualizar. Você está vendo a última versão carregada.')).toBeInTheDocument()
     expect(mapSlot(container)).toBe(slot)
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })

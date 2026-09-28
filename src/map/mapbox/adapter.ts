@@ -213,6 +213,19 @@ export async function mountMapbox(el: HTMLElement, opts: MountOptions): Promise<
           paint: { ...paint, 'line-color': '#F6E3A1', 'line-dasharray': [2, 2] },
         })
       },
+      globe: () => {
+        if (map.getProjection().name !== 'globe' || map.getZoom() >= 5) return null
+        // O centro da câmera cai no centro do disco (o globo não inclina), e
+        // (0°, λ+90°) está a 90° do centro em qualquer latitude — no contorno.
+        const c = map.getCenter()
+        const mid = map.project(c)
+        const edge = map.project([c.lng + 90, 0])
+        // A câmera é em perspectiva: o contorno visto fica um pouco antes dos
+        // 90°, e o ponto a 90° cai ~4% para dentro dele (medido no zoom 2,4).
+        const r = Math.hypot(edge.x - mid.x, edge.y - mid.y) * 1.04
+        return { x: mid.x, y: mid.y, r }
+      },
+      setInset: ({ top, right }) => map.setPadding({ top, bottom: 0, left: 0, right }),
       destroy: () => map.remove(),
     },
   }

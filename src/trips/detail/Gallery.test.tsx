@@ -103,7 +103,7 @@ describe('A16 — tela cheia', () => {
     const { dialog } = await openFull(tripsValue({ api }))
     await userEvent.keyboard('{ArrowRight}')
     await userEvent.click(within(dialog).getByRole('button', { name: 'Definir como capa' }))
-    expect(within(dialog).getByRole('alert')).toHaveTextContent('Não deu pra trocar a capa: essa foto não é desta viagem — recarregue')
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('Não deu pra trocar a capa: essa foto não é desta viagem, recarregue a página')
   })
 
   it('Esc fecha e devolve o foco a quem abriu', async () => {

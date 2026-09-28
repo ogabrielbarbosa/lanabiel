@@ -77,9 +77,9 @@ const TILE_ORDER: readonly ListCategory[] = [
 ]
 
 const DEBOUNCE_MS = 350
-const SEARCH_DOWN = 'A busca de lugares está fora do ar — tente de novo em instantes'
-const FALLBACK_NOTICE = 'Busca mundial indisponível — mostrando cidades do Brasil'
-const CITY_ONLY = 'Não achei — usar só a cidade'
+const SEARCH_DOWN = 'A busca de lugares está fora do ar. Tente de novo daqui a pouco.'
+const FALLBACK_NOTICE = 'A busca fora do Brasil não respondeu. Por enquanto, só cidades brasileiras.'
+const CITY_ONLY = 'Não achei. Usar só a cidade'
 
 /** Modo de busca por categoria (R13 / ADR 0016). Mídia não busca. */
 function searchModeOf(category: ListCategory): PlaceMode | null {
@@ -247,7 +247,7 @@ function PlaceCombobox({
 
   return (
     <div className="ls-add-combo">
-      <div className={`ls-add-input ls-add-input--search ${invalid ? 'is-invalid' : ''}`}>
+      <div className={`ls-add-input ls-add-input--search ${invalid ? 'is-invalid' : ''} lg`}>
         {icon}
         <input
           id={id}
@@ -279,7 +279,7 @@ function PlaceCombobox({
           {SEARCH_DOWN}
         </p>
       )}
-      <div className="ls-add-results" hidden={!expanded}>
+      <div className="ls-add-results lg" hidden={!expanded}>
         {result?.status === 'ok' && result.fallback && <p className="ls-add-fallback">{FALLBACK_NOTICE}</p>}
         <ul id={listId} role="listbox" aria-label="Resultados da busca">
           {options.map((option, index) => (
@@ -593,7 +593,7 @@ export function AddItemModal(props: AddItemModalProps) {
   const offline = search.down && geo && place === null
 
   const chosenCard = chosen && place && (
-    <div className="ls-add-chosen">
+    <div className="ls-add-chosen lg">
       <Check size={15} aria-hidden="true" className="ls-add-chosen-check" />
       <span className="ls-add-option-text">
         <span className="ls-add-option-label">{chosen.label}</span>
@@ -628,7 +628,7 @@ export function AddItemModal(props: AddItemModalProps) {
       </Field>
     ) : (
       <Field label="Nome" htmlFor={fid('name')} error={nameError} errorId={fid('name-error')}>
-        <div className={`ls-add-input ${nameError ? 'is-invalid' : ''}`}>
+        <div className={`ls-add-input ${nameError ? 'is-invalid' : ''} lg`}>
           <PenLine size={15} aria-hidden="true" />
           <input
             id={fid('name')}
@@ -654,7 +654,7 @@ export function AddItemModal(props: AddItemModalProps) {
     const error = extra.errorFields ? errorFor(...extra.errorFields) : null
     return (
       <Field label={label} htmlFor={fid(field)} hint={extra.hint} error={error} errorId={fid(`${field}-error`)}>
-        <div className={`ls-add-input ${error ? 'is-invalid' : ''} ${onChange ? '' : 'is-readonly'}`}>
+        <div className={`ls-add-input ${error ? 'is-invalid' : ''} ${onChange ? '' : 'is-readonly'} lg`}>
           {icon}
           <input
             id={fid(field)}
@@ -679,7 +679,7 @@ export function AddItemModal(props: AddItemModalProps) {
   })
   const noteField = (
     <Field label="Nota" htmlFor={fid('note')} error={errorFor('note')} errorId={fid('note-error')}>
-      <div className={`ls-add-input ls-add-input--area ${errorFor('note') ? 'is-invalid' : ''}`}>
+      <div className={`ls-add-input ls-add-input--area ${errorFor('note') ? 'is-invalid' : ''} lg`}>
         <StickyNote size={15} aria-hidden="true" />
         <textarea
           id={fid('note')}
@@ -706,7 +706,7 @@ export function AddItemModal(props: AddItemModalProps) {
           }}
           placeholder={
             category === 'experiencia'
-              ? 'Busque cidade, região ou endereço — ex.: Capadócia'
+              ? 'Busque cidade, região ou endereço (ex.: Capadócia)'
               : mode === 'city'
                 ? 'Busque a cidade'
                 : 'Busque o lugar ou o endereço'
@@ -722,7 +722,7 @@ export function AddItemModal(props: AddItemModalProps) {
         {chosenCard}
         {cityOnly && (
           <p className="ls-add-hint">
-            Buscando só a cidade — o pin cai no centro dela.{' '}
+            Buscando só a cidade. O pin fica no centro dela.{' '}
             <button type="button" className="ls-add-link-btn" onClick={backToPlaceSearch}>
               Buscar o lugar de novo
             </button>
@@ -747,7 +747,7 @@ export function AddItemModal(props: AddItemModalProps) {
             key={p}
             id={i === 0 ? fid('platform') : undefined}
             type="button"
-            className="ls-chip"
+            className="ls-chip lg"
             aria-pressed={!otherPlatform && platform === p}
             onClick={() => {
               setPlatform(p)
@@ -759,7 +759,7 @@ export function AddItemModal(props: AddItemModalProps) {
         ))}
         <button
           type="button"
-          className="ls-chip"
+          className="ls-chip lg"
           aria-pressed={otherPlatform}
           onClick={() => {
             setOtherPlatform(true)
@@ -770,7 +770,7 @@ export function AddItemModal(props: AddItemModalProps) {
         </button>
       </div>
       {otherPlatform && (
-        <div className="ls-add-input">
+        <div className="ls-add-input lg">
           <PenLine size={15} aria-hidden="true" />
           <input
             id={fid('platform-other')}
@@ -790,7 +790,7 @@ export function AddItemModal(props: AddItemModalProps) {
   const seasonsError = errorFor('seasons')
   const seasonsField = (
     <Field label="Temporadas" htmlFor={fid('seasons')} error={seasonsError} errorId={fid('seasons-error')}>
-      <div className={`ls-add-input ls-add-input--short ${seasonsError ? 'is-invalid' : ''}`}>
+      <div className={`ls-add-input ls-add-input--short ${seasonsError ? 'is-invalid' : ''} lg`}>
         <Layers size={15} aria-hidden="true" />
         <input
           id={fid('seasons')}
@@ -819,7 +819,7 @@ export function AddItemModal(props: AddItemModalProps) {
     >
       <div className="ls-add-chips">
         {highlights.map((city) => (
-          <span key={city} className="ls-chip ls-add-highlight">
+          <span key={city} className="ls-chip ls-add-highlight lg">
             <span className="ls-dot ls-cat--cidade" aria-hidden="true" />
             {city}
             <button
@@ -832,7 +832,7 @@ export function AddItemModal(props: AddItemModalProps) {
             </button>
           </span>
         ))}
-        <span className="ls-chip ls-add-highlight-new">
+        <span className="ls-chip ls-add-highlight-new lg">
           <Plus size={15} aria-hidden="true" />
           <input
             id={fid('highlights')}
@@ -951,10 +951,10 @@ export function AddItemModal(props: AddItemModalProps) {
       </Field>
 
       {media ? (
-        <div className="ls-add-preview ls-add-preview--media">
+        <div className="ls-add-preview ls-add-preview--media lg">
           <p className="ls-add-preview-head">Sem local</p>
           <p className="ls-add-hint">
-            Filmes e séries não viram pin no globo — aparecem só na lista e nas sugestões para as noites separados.
+            Filmes e séries não aparecem no globo, só na lista e nas sugestões pras noites em que vocês estão longe.
           </p>
         </div>
       ) : (
@@ -963,7 +963,7 @@ export function AddItemModal(props: AddItemModalProps) {
             Vai virar um pin no globo
             <MapPin size={14} aria-hidden="true" />
           </p>
-          <div className="ls-add-map">
+          <div className="ls-add-map lg">
             <span className="ls-add-map-pin" aria-hidden="true">
               {CategoryIcon && <CategoryIcon size={15} />}
             </span>
@@ -971,13 +971,13 @@ export function AddItemModal(props: AddItemModalProps) {
           </div>
           {category === 'pais' && (
             <p className="ls-add-hint">
-              O pin fica no centro do país, não num endereço — as cidades acima não viram pins.
+              O pin fica no centro do país, não num endereço. As cidades acima não viram pins.
             </p>
           )}
         </div>
       )}
 
-      <div className="ls-add-emphasis">
+      <div className="ls-add-emphasis lg">
         <span className="ls-add-emphasis-icon" aria-hidden="true">
           <Star size={16} />
         </span>
@@ -1001,7 +1001,7 @@ export function AddItemModal(props: AddItemModalProps) {
 
   const subtitle = media
     ? 'Filmes e séries: sem local, com plataforma'
-    : 'Escolha a categoria primeiro — os campos se ajustam'
+    : 'Escolha a categoria primeiro. Os campos mudam conforme ela.'
 
   const footer = (
     <div className="ls-add-foot">
@@ -1017,7 +1017,7 @@ export function AddItemModal(props: AddItemModalProps) {
           </button>
         ) : (
           <>
-            <button type="button" className="ls-btn" onClick={props.onClose} disabled={saving}>
+            <button type="button" className="ls-btn lg" onClick={props.onClose} disabled={saving}>
               <X size={16} aria-hidden="true" />
               Cancelar
             </button>
@@ -1052,7 +1052,7 @@ export function AddItemModal(props: AddItemModalProps) {
                     key={cat}
                     id={index === 0 ? fid('category') : undefined}
                     type="button"
-                    className={`ls-add-tile ${catClass(cat)}`}
+                    className={`ls-add-tile ${catClass(cat)} lg`}
                     aria-pressed={category === cat}
                     disabled={editing && category !== cat}
                     onClick={() => pickCategory(cat)}
@@ -1065,7 +1065,7 @@ export function AddItemModal(props: AddItemModalProps) {
                 )
               })}
             </div>
-            {editing && <p className="ls-add-hint">A categoria não muda na edição — para outra, apague e adicione de novo.</p>}
+            {editing && <p className="ls-add-hint">A categoria não muda na edição. Pra trocar, apague o item e adicione de novo.</p>}
           </section>
 
           {category && (
@@ -1082,12 +1082,12 @@ export function AddItemModal(props: AddItemModalProps) {
         </fieldset>
 
         {failure && (
-          <p className="ls-notice ls-notice--error" role="alert">
+          <p className="ls-notice ls-notice--error lg" role="alert">
             {failure}
           </p>
         )}
         {partial && (
-          <p className="ls-notice ls-notice--error" role="alert">
+          <p className="ls-notice ls-notice--error lg" role="alert">
             {partial.message}
           </p>
         )}

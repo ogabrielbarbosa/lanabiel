@@ -294,7 +294,7 @@ export function AvatarPicker({
           </span>
         )}
       </div>
-      <label htmlFor={inputId} className="auth-btn onb-btn-small">
+      <label htmlFor={inputId} className="lg auth-btn onb-btn-small">
         {value ? 'Trocar foto' : 'Escolher foto'}
       </label>
       <input

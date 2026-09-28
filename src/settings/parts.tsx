@@ -16,7 +16,7 @@ import type { ListCounts } from '../data/listSummary'
 import { formatThousands } from '../domain/settings'
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`st-card ${className}`}>{children}</div>
+  return <div className={`lg st-card ${className}`}>{children}</div>
 }
 
 export function FieldError({ message }: { message: string | null | undefined }) {
@@ -99,7 +99,7 @@ export function Segmented<T extends string>({
   pending?: boolean
 }) {
   return (
-    <div className="st-segmented" role="radiogroup" aria-label={label}>
+    <div className="lg st-segmented" role="radiogroup" aria-label={label}>
       {options.map(({ value: v, label: l, icon: Icon, disabled }) => (
         <button
           key={v}
@@ -250,7 +250,7 @@ export function Button({
   type?: 'button' | 'submit'
 }) {
   return (
-    <button type={type} className={`st-btn st-btn--${variant}`} onClick={onClick} disabled={disabled}>
+    <button type={type} className={`${variant === 'ghost' ? 'lg ' : ''}st-btn st-btn--${variant}`} onClick={onClick} disabled={disabled}>
       {Icon && <Icon size={16} aria-hidden="true" />}
       {children}
     </button>
@@ -279,20 +279,22 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
-      className="st-dialog"
+      className="lg st-dialog"
       aria-labelledby={titleId}
       onCancel={(event) => {
         event.preventDefault()
         onClose()
       }}
     >
-      <div className="st-dialog-head">
-        <h2 id={titleId}>{title}</h2>
-        <button type="button" className="st-icon-btn" aria-label="Fechar" onClick={onClose}>
-          <X size={16} />
-        </button>
+      <div className="st-dialog-body">
+        <div className="st-dialog-head">
+          <h2 id={titleId}>{title}</h2>
+          <button type="button" className="st-icon-btn" aria-label="Fechar" onClick={onClose}>
+            <X size={16} />
+          </button>
+        </div>
+        {children}
       </div>
-      {children}
     </dialog>
   )
 }

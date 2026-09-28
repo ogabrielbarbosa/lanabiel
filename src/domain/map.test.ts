@@ -5,7 +5,7 @@
 // A7 (volta ao mundo), A8 (ritmo e cabeçalho), A9 (última memória).
 
 import { describe, expect, it } from 'vitest'
-import type { MembersBySlot, Stay } from './calendar'
+import type { CalCity, MembersBySlot, Stay } from './calendar'
 import type { GeoPlace, ListCategory, ListItem, ListMemory } from './list'
 import {
   BR_STATES,
@@ -30,6 +30,8 @@ import {
   nearby,
   pathOfCity,
   pathOfPin,
+  personCityId,
+  personMarkers,
   pinsOf,
   regionRows,
   statusCounts,
@@ -199,31 +201,42 @@ describe('regionRows (A4, I4)', () => {
   const sp: FocusPath = { ...br, uf: 'SP' }
   const pt: FocusPath = { ...EMPTY_PATH, countryCode: 'PT' }
 
-  it('world: por país, contagem desc; o BR sem UF e o `pais` contam no país', () => {
-    expect(regionRows(PINS, 'world', EMPTY_PATH)).toEqual([
+  it('world: todos os países; os com lugar primeiro, por contagem; o BR sem UF e o `pais` contam no país', () => {
+    const rows = regionRows(PINS, 'world', EMPTY_PATH)
+    expect(rows.slice(0, 3)).toEqual([
       { key: 'BR', code: 'BR', name: 'Brasil', count: 5 },
       { key: 'PT', code: 'PT', name: 'Portugal', count: 3 },
       { key: 'TR', code: 'TR', name: 'Turquia', count: 1 },
     ])
+    expect(rows.length).toBeGreaterThan(240)
+    expect(rows.find((r) => r.key === 'JP')).toEqual({ key: 'JP', code: 'JP', name: 'Japão', count: 0 })
+    const names = rows.slice(3).map((r) => r.name)
+    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, 'pt-BR')))
   })
 
-  it('country Brasil: por UF — "São Paulo" por extenso e "SP" são a mesma; o sem UF não entra', () => {
-    expect(regionRows(PINS, 'country', br)).toEqual([
+  it('country Brasil: as 27 UFs — "São Paulo" por extenso e "SP" são a mesma; as sem lugar em zero, por nome', () => {
+    const rows = regionRows(PINS, 'country', br)
+    expect(rows).toHaveLength(27)
+    expect(rows.slice(0, 2)).toEqual([
       { key: 'SP', code: 'SP', name: 'São Paulo', count: 3 },
       { key: 'RJ', code: 'RJ', name: 'Rio de Janeiro', count: 1 },
     ])
-  })
-
-  it('country Brasil com allStates: as 27 UFs, as sem lugar com zero e por nome', () => {
-    const rows = regionRows(PINS, 'country', br, { allStates: true })
-    expect(rows).toHaveLength(27)
-    expect(rows.slice(0, 2).map((r) => [r.code, r.count])).toEqual([['SP', 3], ['RJ', 1]])
     const zeros = rows.slice(2)
     expect(zeros.every((r) => r.count === 0)).toBe(true)
     expect(zeros[0]).toEqual({ key: 'AC', code: 'AC', name: 'Acre', count: 0 })
     const names = zeros.map((r) => r.name)
     expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, 'pt-BR')))
+    // O sem UF não entra.
     expect(rows.reduce((s, r) => s + r.count, 0)).toBe(4)
+  })
+
+  it('state com os municípios da UF: os sem lugar em zero, e o com pin não duplica', () => {
+    const rows = regionRows(PINS, 'state', sp, [{ name: 'São José dos Campos' }, { name: 'Taubaté' }, { name: 'Ubatuba' }])
+    expect(rows).toEqual([
+      { key: 'BR:SP:sao jose dos campos', code: 'SJC', name: 'São José dos Campos', count: 2 },
+      { key: 'BR:SP:ubatuba', code: 'UBA', name: 'Ubatuba', count: 1 },
+      { key: 'BR:SP:taubate', code: 'TAU', name: 'Taubaté', count: 0 },
+    ])
   })
 
   it('state: por cidade, sem acento nem caixa ("Sao Jose dos Campos" = "São José dos Campos")', () => {
@@ -289,7 +302,7 @@ describe('cameraFor (A5, I6)', () => {
   const VIEWER = { lat: -23.18, lng: -45.88 }
   const br: FocusPath = { ...EMPTY_PATH, countryCode: 'BR' }
 
-  it('world: o globo centrado em quem vê, zoom 1,6, sem inclinação', () => {
+  it('world: o globo centrado em quem vê, zoom 2,4, sem inclinação', () => {
     expect(cameraFor({ level: 'world', path: EMPTY_PATH }, PINS, VIEWER)).toEqual({
       kind: 'center',
       center: VIEWER,
@@ -298,7 +311,7 @@ describe('cameraFor (A5, I6)', () => {
       bearing: 0,
       terrain: false,
     })
-    expect(WORLD_ZOOM).toBe(1.6)
+    expect(WORLD_ZOOM).toBe(2.4)
   })
 
   it('country com pins: bounds dos pins do país (o sem UF incluso), zoom mínimo 3', () => {
@@ -377,7 +390,7 @@ describe('circumferenceLine (A7, I11)', () => {
   it('o .pen: 18.420 km → 46%, quase meia volta', () => {
     expect(circumferenceLine(18420)).toEqual({
       pct: 46,
-      text: 'Quase meia volta ao mundo — 46% da circunferência da Terra',
+      text: 'Quase meia volta ao mundo (46% da circunferência da Terra)',
     })
   })
 
@@ -387,12 +400,12 @@ describe('circumferenceLine (A7, I11)', () => {
   })
 
   it('bordas de 40 e 50', () => {
-    expect(circumferenceLine(16030).text).toBe('Quase meia volta ao mundo — 40% da circunferência da Terra')
-    expect(circumferenceLine(20038)).toEqual({ pct: 50, text: 'Mais de meia volta ao mundo — 50% da circunferência da Terra' })
+    expect(circumferenceLine(16030).text).toBe('Quase meia volta ao mundo (40% da circunferência da Terra)')
+    expect(circumferenceLine(20038)).toEqual({ pct: 50, text: 'Mais de meia volta ao mundo (50% da circunferência da Terra)' })
   })
 
   it('entre 50 e 99: mais de meia volta', () => {
-    expect(circumferenceLine(30000)).toEqual({ pct: 75, text: 'Mais de meia volta ao mundo — 75% da circunferência da Terra' })
+    expect(circumferenceLine(30000)).toEqual({ pct: 75, text: 'Mais de meia volta ao mundo (75% da circunferência da Terra)' })
   })
 
   it('exatamente uma volta: "Uma volta ao mundo"', () => {
@@ -402,6 +415,64 @@ describe('circumferenceLine (A7, I11)', () => {
   it('mais de uma: voltas com uma casa e vírgula', () => {
     expect(circumferenceLine(52100)).toEqual({ pct: 130, text: '1,3 voltas ao mundo' })
     expect(circumferenceLine(80150)).toEqual({ pct: 200, text: '2,0 voltas ao mundo' })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Onde cada um está: a bolinha de cada pessoa no mapa
+// ---------------------------------------------------------------------------
+
+describe('personCityId: hoje, senão a última posição, senão a casa', () => {
+  it('a estadia de hoje manda, inclusive em aberto', () => {
+    expect(personCityId(G, SJC_ID, [stay(G, LIS_ID, '2026-09-20', null)], TODAY)).toBe(LIS_ID)
+    expect(personCityId(G, SJC_ID, [stay(G, LIS_ID, '2026-09-20', TODAY)], TODAY)).toBe(LIS_ID)
+  })
+
+  it('sem estadia hoje: a última que já terminou, não a mais antiga', () => {
+    const stays = [stay(G, LIS_ID, '2026-08-01', '2026-08-10'), stay(G, MARAU_ID, '2026-09-01', '2026-09-15')]
+    expect(personCityId(G, SJC_ID, stays, TODAY)).toBe(MARAU_ID)
+  })
+
+  it('estadia futura e de outra pessoa não contam', () => {
+    const stays = [stay(G, LIS_ID, '2026-10-01', '2026-10-10'), stay(L, MARAU_ID, '2026-09-01', '2026-09-15')]
+    expect(personCityId(G, SJC_ID, stays, TODAY)).toBe(SJC_ID)
+  })
+
+  it('sem estadia nenhuma: a casa', () => {
+    expect(personCityId(L, MARAU_ID, [], TODAY)).toBe(MARAU_ID)
+  })
+})
+
+describe('personMarkers', () => {
+  const city = (id: string, lat: number, lng: number): CalCity => ({ id, name: CITY_NAMES[id], stateCode: null, countryCode: 'BR', region: null, lat, lng })
+  const SJC = city(SJC_ID, -23.18, -45.88)
+  const MARAU = city(MARAU_ID, -28.45, -52.2)
+  const LIS = { ...city(LIS_ID, 38.72, -9.14), countryCode: 'PT' }
+  const CITIES = new Map([SJC, MARAU, LIS].map((c) => [c.id, c]))
+  const PEOPLE = [
+    { profileId: G, name: 'Gabriel', color: '#e8a33d', homeCity: SJC },
+    { profileId: L, name: 'Lana', color: '#c86b8a', homeCity: MARAU },
+  ]
+
+  it('separados: cada um na sua cidade, na sua cor', () => {
+    const m = personMarkers(PEOPLE, [], CITIES, TODAY)
+    expect(m.map((x) => [x.name, x.cityId, x.color, x.lat, x.together])).toEqual([
+      ['Gabriel', SJC_ID, '#e8a33d', -23.18, 1],
+      ['Lana', MARAU_ID, '#c86b8a', -28.45, 1],
+    ])
+  })
+
+  it('juntos: a mesma cidade, com o deslocamento lado a lado', () => {
+    const m = personMarkers(PEOPLE, [stay(L, SJC_ID, '2026-09-20', null)], CITIES, TODAY)
+    expect(m.map((x) => [x.cityId, x.offset, x.together])).toEqual([
+      [SJC_ID, 0, 2],
+      [SJC_ID, 1, 2],
+    ])
+  })
+
+  it('cidade que não veio na leitura: a casa, nunca um ponto em "?"', () => {
+    const m = personMarkers(PEOPLE, [stay(G, 'c-sumiu', '2026-09-20', null)], CITIES, TODAY)
+    expect(m[0].cityId).toBe(SJC_ID)
   })
 })
 

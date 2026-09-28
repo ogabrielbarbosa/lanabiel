@@ -171,13 +171,13 @@ describe('A14 — cada categoria mostra exatamente os campos de R11', () => {
       expect(screen.getByText('Sem local')).toBeInTheDocument()
       expect(
         screen.getByText(
-          'Filmes e séries não viram pin no globo — aparecem só na lista e nas sugestões para as noites separados.',
+          'Filmes e séries não aparecem no globo, só na lista e nas sugestões pras noites em que vocês estão longe.',
         ),
       ).toBeInTheDocument()
       expect(screen.queryByText('Vai virar um pin no globo')).toBeNull()
       expect(screen.queryByRole('combobox')).toBeNull()
     } else {
-      expect(screen.getByText('Escolha a categoria primeiro — os campos se ajustam')).toBeInTheDocument()
+      expect(screen.getByText('Escolha a categoria primeiro. Os campos mudam conforme ela.')).toBeInTheDocument()
       expect(screen.getByText('Vai virar um pin no globo')).toBeInTheDocument()
       expect(screen.queryByText('Sem local')).toBeNull()
       expect(screen.getByRole('combobox')).toBeInTheDocument()
@@ -189,7 +189,7 @@ describe('A14 — cada categoria mostra exatamente os campos de R11', () => {
     await userEvent.click(tile('Países'))
     expect(screen.getByText('Aparece como segunda linha do item na lista')).toBeInTheDocument()
     expect(
-      screen.getByText('O pin fica no centro do país, não num endereço — as cidades acima não viram pins.'),
+      screen.getByText('O pin fica no centro do país, não num endereço. As cidades acima não viram pins.'),
     ).toBeInTheDocument()
 
     await userEvent.click(tile('Cidades'))
@@ -202,7 +202,7 @@ describe('A14 — cada categoria mostra exatamente os campos de R11', () => {
     await userEvent.click(tile('Experiências'))
     expect(screen.getByRole('combobox')).toHaveAttribute(
       'placeholder',
-      'Busque cidade, região ou endereço — ex.: Capadócia',
+      'Busque cidade, região ou endereço (ex.: Capadócia)',
     )
   })
 
@@ -281,7 +281,7 @@ describe('A14 — busca de lugar (R13)', () => {
     expect(options.map((o) => o.textContent)).toEqual([
       'Mocotó RestauranteAv. Nossa Senhora do Loreto, 1100 · São Paulo, SP',
       'Mocotó CaféMercado de Pinheiros · São Paulo, SP',
-      'Não achei — usar só a cidade',
+      'Não achei. Usar só a cidade',
     ])
     expect(screen.getByText('© OpenStreetMap')).toBeInTheDocument()
 
@@ -364,7 +364,7 @@ describe('A14 — busca de lugar (R13)', () => {
     type(local, 'Casa Amarela Bistrô')
     await wait(350)
     expect(screen.getByText('Nada encontrado para “Casa Amarela Bistrô”.')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('option', { name: 'Não achei — usar só a cidade' }))
+    fireEvent.click(screen.getByRole('option', { name: 'Não achei. Usar só a cidade' }))
 
     const endereco = screen.getByLabelText('Endereço')
     expect(endereco).toHaveAttribute('maxLength', '160')
@@ -373,7 +373,7 @@ describe('A14 — busca de lugar (R13)', () => {
     await wait(350)
     expect(searchPlaces.mock.lastCall?.[1].mode).toBe('city')
     // Já na camada de cidade, não se oferece "Não achei" de novo.
-    expect(screen.queryByRole('option', { name: 'Não achei — usar só a cidade' })).toBeNull()
+    expect(screen.queryByRole('option', { name: 'Não achei. Usar só a cidade' })).toBeNull()
     fireEvent.click(screen.getByRole('option', { name: /São Paulo/ }))
     type(endereco, 'Rua Tal, 12 · Vila Madalena')
 
@@ -399,7 +399,7 @@ describe('A14 — busca de lugar (R13)', () => {
     type(local, 'São Paulo')
     await wait(350)
     expect(searchPlaces.mock.calls[0][1].mode).toBe('city')
-    expect(screen.getByText('Busca mundial indisponível — mostrando cidades do Brasil')).toBeInTheDocument()
+    expect(screen.getByText('A busca fora do Brasil não respondeu. Por enquanto, só cidades brasileiras.')).toBeInTheDocument()
     expect(screen.getByRole('option', { name: /São Paulo/ })).toBeInTheDocument()
     expect(screen.queryByText('© OpenStreetMap')).toBeNull()
   })
@@ -414,7 +414,7 @@ describe('A14 — busca de lugar (R13)', () => {
     type(screen.getByRole('combobox', { name: 'Local' }), 'Mocotó')
     await wait(350)
     expect(screen.getByRole('alert')).toHaveTextContent(
-      'A busca de lugares está fora do ar — tente de novo em instantes',
+      'A busca de lugares está fora do ar. Tente de novo daqui a pouco.',
     )
     expect(saveButton()).toBeDisabled()
     fireEvent.click(saveButton())
@@ -555,7 +555,7 @@ describe('A14 — gravar', () => {
     await userEvent.type(screen.getByLabelText('Nome'), 'Aftersun')
     await userEvent.click(screen.getByRole('button', { name: 'MUBI' }))
     await userEvent.click(saveButton())
-    expect(screen.getByRole('alert')).toHaveTextContent('Sua sessão expirou — entre de novo.')
+    expect(screen.getByRole('alert')).toHaveTextContent('Sua sessão expirou. Entre de novo.')
   })
 
   it('R14: editar abre preenchido, com a categoria travada, e chama updateItem', async () => {

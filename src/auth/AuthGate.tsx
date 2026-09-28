@@ -33,6 +33,7 @@ import {
   signUpWithPassword,
 } from './signIn'
 import type { Provider } from './signIn'
+import { HeartHandshake } from './icons'
 import { subscribeToAuth } from './session'
 import type { AuthState } from './session'
 import './auth.css'
@@ -49,12 +50,45 @@ export interface AuthGateProps {
   api?: OnboardingApi
 }
 
+const SKIP_WAITING_KEY = 'lanabiel:skip-waiting'
+
+/** O usuário que já passou da tela Aguardando neste navegador, ou `null`. */
+function readSkippedWaiting(): string | null {
+  try {
+    return localStorage.getItem(SKIP_WAITING_KEY)
+  } catch {
+    return null
+  }
+}
+
+function writeSkippedWaiting(userId: string | null) {
+  try {
+    if (userId) localStorage.setItem(SKIP_WAITING_KEY, userId)
+    else localStorage.removeItem(SKIP_WAITING_KEY)
+  } catch {
+    // localStorage indisponível: o pulo vale só até recarregar.
+  }
+}
+
 function Skeleton() {
   // `loading` não é `signed_out` (I8). Sem este estado o Login aparece por um
-  // instante em toda recarga de quem já está logado.
+  // instante em toda recarga de quem já está logado. Ocupa a tela inteira: é o
+  // que se vê a cada recarga, enquanto a abertura (Splash) toca só uma vez.
+  // Uma luz vai e volta pelo arco entre as duas cidades até a conta chegar.
   return (
-    <div className="auth auth-skeleton">
-      <span className="auth-skeleton-mark" aria-hidden="true" />
+    <div className="auth auth-skeleton auth-loading" role="status">
+      <div className="auth-loading-glow auth-loading-glow--pink" aria-hidden="true" />
+      <div className="auth-loading-glow auth-loading-glow--aqua" aria-hidden="true" />
+      <span className="auth-loading-mark" aria-hidden="true">
+        <HeartHandshake size={34} />
+      </span>
+      <svg className="auth-loading-arc" viewBox="0 0 168 56" fill="none" aria-hidden="true">
+        <path className="auth-loading-track" d="M10 46 Q 84 -6 158 46" />
+        <path className="auth-loading-comet" d="M10 46 Q 84 -6 158 46" />
+        <circle cx="10" cy="46" r="4" fill="#7fd8c4" />
+        <circle cx="158" cy="46" r="4" fill="#f6e3a1" />
+      </svg>
+      <p className="auth-loading-word">lanabiel</p>
       <span className="auth-hint">Carregando…</span>
     </div>
   )
@@ -75,7 +109,9 @@ export function AuthGate({ db, children, loadStage = loadAccountStage, providers
   )
   // Acabou de entrar num casal: Confirmar e Tudo pronto vêm antes do app.
   const [postJoin, setPostJoin] = useState(false)
-  // "Continuar pro app" na tela Aguardando: vale para esta sessão de uso.
+  // "Continuar pro app" na tela Aguardando. Fica guardado neste navegador por
+  // conta: sem isso cada recarga voltava à tela de espera, e quem criou o
+  // espaço não usava a Lista nem as Configurações até o outro aceitar.
   const [skipWaiting, setSkipWaiting] = useState(false)
   // Incrementar relê o estágio sem desmontar a tela (o par abaixo guarda o
   // resultado anterior até o novo chegar).
@@ -102,6 +138,7 @@ export function AuthGate({ db, children, loadStage = loadAccountStage, providers
   const available = providers ?? enabledProviders(import.meta.env.VITE_AUTH_PROVIDERS)
   const userId = auth.status === 'signed_in' ? auth.userId : null
   const stage = stageFor !== null && stageFor.userId === userId ? stageFor.result : null
+  const waitingSkipped = skipWaiting || (userId !== null && readSkippedWaiting() === userId)
 
   // Volta do OAuth. Roda uma vez; sem `code` nem `error` na URL não toca no db.
   useEffect(() => {
@@ -179,6 +216,7 @@ export function AuthGate({ db, children, loadStage = loadAccountStage, providers
     if (!keepInvite) rememberCode(null)
     setPostJoin(false)
     setSkipWaiting(false)
+    writeSkippedWaiting(null)
     void signOut(db)
   }
 
@@ -237,7 +275,7 @@ export function AuthGate({ db, children, loadStage = loadAccountStage, providers
     pendingCode !== null ||
     rows.stage === 'needs_profile' ||
     rows.stage === 'needs_couple' ||
-    (rows.stage === 'awaiting_partner' && !skipWaiting)
+    (rows.stage === 'awaiting_partner' && !waitingSkipped)
 
   if (onboardingNeeded) {
     return (
@@ -257,6 +295,7 @@ export function AuthGate({ db, children, loadStage = loadAccountStage, providers
         onEnterApp={() => {
           setPostJoin(false)
           setSkipWaiting(true)
+          if (userId) writeSkippedWaiting(userId)
           setStageVersion((v) => v + 1)
         }}
         onSignOut={leave}

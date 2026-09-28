@@ -49,60 +49,62 @@ export function NotificationsTab(ctx: TabContext) {
   return (
     <div className="st-stack">
       <Card className="st-matrix">
-        <table>
-          <caption className="visually-hidden">Avisar quando…</caption>
-          <thead>
-            <tr>
-              <th scope="col">Avisar quando…</th>
-              {NOTIFY_CHANNELS.map((channel) => {
-                const Icon = CHANNEL_ICON[channel]
+        <div className="st-matrix-scroll">
+          <table>
+            <caption className="visually-hidden">Avisar quando…</caption>
+            <thead>
+              <tr>
+                <th scope="col">Avisar quando…</th>
+                {NOTIFY_CHANNELS.map((channel) => {
+                  const Icon = CHANNEL_ICON[channel]
+                  return (
+                    <th key={channel} scope="col">
+                      <Icon size={14} aria-hidden="true" />
+                      <span>{CHANNEL_LABEL[channel]}</span>
+                    </th>
+                  )
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {NOTIFY_EVENTS.map((event) => {
+                const { label, hint } = eventText(event, partnerName, Number(data.couple.startedOn.slice(8, 10)))
+                const disabled = event === 'anniversary' && anniversaryOff
                 return (
-                  <th key={channel} scope="col">
-                    <Icon size={14} aria-hidden="true" />
-                    <span>{CHANNEL_LABEL[channel]}</span>
-                  </th>
+                  <tr key={event} className={disabled ? 'st-matrix-off' : undefined}>
+                    <th scope="row">
+                      <span className="st-row-label">{label}</span>
+                      {(hint || disabled) && (
+                        <span className="st-row-hint">{disabled ? 'Desligado em Perfil do casal' : hint}</span>
+                      )}
+                      {NOTIFY_CHANNELS.map((channel) => (
+                        <FieldError key={channel} message={writes.error(notifyColumn(event, channel))} />
+                      ))}
+                    </th>
+                    {NOTIFY_CHANNELS.map((channel) => {
+                      const column: NotifyColumn = notifyColumn(event, channel)
+                      return (
+                        <td key={channel}>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={ps.notify[column]}
+                            aria-label={`${label} — ${CHANNEL_LABEL[channel]}`}
+                            className="st-toggle"
+                            disabled={disabled || writes.pending(column)}
+                            onClick={() => void save(column, { column, value: !ps.notify[column] })}
+                          >
+                            <span className="st-toggle-knob" />
+                          </button>
+                        </td>
+                      )
+                    })}
+                  </tr>
                 )
               })}
-            </tr>
-          </thead>
-          <tbody>
-            {NOTIFY_EVENTS.map((event) => {
-              const { label, hint } = eventText(event, partnerName, Number(data.couple.startedOn.slice(8, 10)))
-              const disabled = event === 'anniversary' && anniversaryOff
-              return (
-                <tr key={event} className={disabled ? 'st-matrix-off' : undefined}>
-                  <th scope="row">
-                    <span className="st-row-label">{label}</span>
-                    {(hint || disabled) && (
-                      <span className="st-row-hint">{disabled ? 'Desligado em Perfil do casal' : hint}</span>
-                    )}
-                    {NOTIFY_CHANNELS.map((channel) => (
-                      <FieldError key={channel} message={writes.error(notifyColumn(event, channel))} />
-                    ))}
-                  </th>
-                  {NOTIFY_CHANNELS.map((channel) => {
-                    const column: NotifyColumn = notifyColumn(event, channel)
-                    return (
-                      <td key={channel}>
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={ps.notify[column]}
-                          aria-label={`${label} — ${CHANNEL_LABEL[channel]}`}
-                          className="st-toggle"
-                          disabled={disabled || writes.pending(column)}
-                          onClick={() => void save(column, { column, value: !ps.notify[column] })}
-                        >
-                          <span className="st-toggle-knob" />
-                        </button>
-                      </td>
-                    )
-                  })}
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       </Card>
 
       <Card className="st-toggles">

@@ -16,6 +16,7 @@ import type { DataResult } from '../data/result'
 import { SETTINGS_TABS } from '../domain/settings'
 import { doneTrips } from '../domain/tripDerive'
 import type { SettingsTab } from '../domain/settings'
+import { PanelSkeleton } from '../app/PanelSkeleton'
 import { navigate } from '../app/router'
 import type { AppearanceControl } from '../app/useAppearance'
 import type { SettingsApi } from './api'
@@ -127,7 +128,7 @@ export function SettingsScreen({ tab, api, appearance, onStageChanged }: Setting
   } else if (result && result.value.status !== 'ok' && result.version === version) {
     const cause = result.value.status === 'error' ? result.value.cause : 'sua sessão expirou'
     body = (
-      <div className="st-card st-load-error" role="alert">
+      <div className="lg st-card st-load-error" role="alert">
         <p>Não deu pra carregar as configurações: {cause}</p>
         <Button onClick={reload}>Tentar de novo</Button>
       </div>
@@ -137,7 +138,7 @@ export function SettingsScreen({ tab, api, appearance, onStageChanged }: Setting
     if (!me) {
       // Saiu do casal em outro aparelho: o portão decide para onde ir.
       body = (
-        <div className="st-card st-load-error" role="alert">
+        <div className="lg st-card st-load-error" role="alert">
           <p>Você não está mais neste espaço.</p>
           <Button onClick={onStageChanged}>Continuar</Button>
         </div>
@@ -176,29 +177,31 @@ export function SettingsScreen({ tab, api, appearance, onStageChanged }: Setting
           <h1>Configurações</h1>
         </header>
         <div className="st-body">
-          <nav className="st-menu" aria-label="Seções das configurações">
-            {SETTINGS_TABS.map((slug) => {
-              const { label, icon: Icon } = TAB_META[slug]
-              const active = slug === tab
-              return (
-                <a
-                  key={slug}
-                  ref={active ? scrollIntoViewIfNeeded : undefined}
-                  href={`/configuracoes/${slug}`}
-                  className={`st-menu-item${slug === 'zona-sensivel' ? ' st-menu-item--danger' : ''}`}
-                  aria-current={active ? 'page' : undefined}
-                  onClick={(event) => {
-                    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return
-                    event.preventDefault()
-                    navigate(`/configuracoes/${slug}`)
-                  }}
-                >
-                  <Icon size={17} aria-hidden="true" />
-                  <span>{label}</span>
-                  {active && <ChevronRight size={14} aria-hidden="true" className="st-menu-chevron" />}
-                </a>
-              )
-            })}
+          <nav className="lg st-menu" aria-label="Seções das configurações">
+            <div className="st-menu-list">
+              {SETTINGS_TABS.map((slug) => {
+                const { label, icon: Icon } = TAB_META[slug]
+                const active = slug === tab
+                return (
+                  <a
+                    key={slug}
+                    ref={active ? scrollIntoViewIfNeeded : undefined}
+                    href={`/configuracoes/${slug}`}
+                    className={`lg st-menu-item${slug === 'zona-sensivel' ? ' st-menu-item--danger' : ''}`}
+                    aria-current={active ? 'page' : undefined}
+                    onClick={(event) => {
+                      if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return
+                      event.preventDefault()
+                      navigate(`/configuracoes/${slug}`)
+                    }}
+                  >
+                    <Icon size={17} aria-hidden="true" />
+                    <span>{label}</span>
+                    {active && <ChevronRight size={14} aria-hidden="true" className="st-menu-chevron" />}
+                  </a>
+                )
+              })}
+            </div>
           </nav>
           <section className="st-section" aria-labelledby="st-section-title">
             <div className="st-section-head">
@@ -209,7 +212,13 @@ export function SettingsScreen({ tab, api, appearance, onStageChanged }: Setting
           </section>
         </div>
       </div>
-      {data && <RightPanel data={data} today={today} urls={urls} listCounts={listCounts} tripCount={tripCount} />}
+      <aside className="lg st-panel" aria-label="O espaço de vocês" aria-busy={(!data && loading) || undefined}>
+        {data ? (
+          <RightPanel data={data} today={today} urls={urls} listCounts={listCounts} tripCount={tripCount} />
+        ) : (
+          <PanelSkeleton busy={loading} cards={[196, 176, 120]} />
+        )}
+      </aside>
     </div>
   )
 }

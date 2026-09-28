@@ -357,8 +357,9 @@ describe('A12 — entrar num casal só pela função (I3)', () => {
 
 describe('A20 — a lista fechada de funções security definer', () => {
   // Doze desde a Fase 3 (A11 de fase-3-configuracoes.md): as sete do convite,
-  // mais sair/apagar/cancelar e as duas de sessão.
-  it('exatamente doze em public, executáveis por authenticated e por nenhum anon', () => {
+  // mais sair/apagar/cancelar e as duas de sessão. Treze com o perfil
+  // provisório (perfil-provisorio.md, ADR 0024).
+  it('exatamente treze em public, executáveis por authenticated e por nenhum anon', () => {
     const rows = sql(`
       select p.proname,
              has_function_privilege('authenticated', p.oid, 'execute') as authenticated,
@@ -379,6 +380,7 @@ describe('A20 — a lista fechada de funções security definer', () => {
       'lookup_invite|t|f',
       'mark_invite_sent|t|f',
       'renew_invite|t|f',
+      'save_pending_partner|t|f',
     ])
   })
 

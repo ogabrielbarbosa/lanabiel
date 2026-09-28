@@ -29,7 +29,7 @@ export function Hearts({
           <button
             key={n}
             type="button"
-            className={`ls-heart ${on ? 'ls-heart--on' : ''}`}
+            className={`ls-heart ${on ? 'ls-heart--on' : ''} lg`}
             aria-label={`${n} de 5`}
             aria-pressed={value === n}
             disabled={disabled}

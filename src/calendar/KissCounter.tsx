@@ -93,7 +93,7 @@ export function KissCounter({ day, count, dayLabel }: KissCounterProps) {
         )}
       </button>
       {open && (
-        <div className="cal-kiss-stepper" role="group" aria-label={`💋 em ${dayLabel}`}>
+        <div className="cal-kiss-stepper lg" role="group" aria-label={`💋 em ${dayLabel}`}>
           <button type="button" aria-label="Menos um" disabled={pending || count <= 0} onClick={() => void step(-1)}>
             <Minus size={12} aria-hidden="true" />
           </button>

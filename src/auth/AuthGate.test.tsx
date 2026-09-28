@@ -61,7 +61,7 @@ describe('A11 — `loading` não é `signed_out`', () => {
     setup(stageOf({ stage: 'needs_profile' }))
 
     expect(screen.getByText('Carregando…')).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Pra quem ama de longe.' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Entrar' })).toBeNull()
     expect(screen.queryByTestId('domain')).toBeNull()
   })
 })
@@ -71,7 +71,7 @@ describe('A9 — deslogado vê o Login, e nenhuma tela de domínio', () => {
     const { emit } = setup(stageOf({ stage: 'ready', profileId: 'p', coupleId: 'c', slot: 1 }))
     emit(null)
 
-    expect(await screen.findByRole('heading', { name: 'Pra quem ama de longe.' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeInTheDocument()
     expect(screen.getByLabelText('Senha')).toBeInTheDocument()
     expect(screen.queryByTestId('domain')).toBeNull()
   })
@@ -80,7 +80,7 @@ describe('A9 — deslogado vê o Login, e nenhuma tela de domínio', () => {
     const { emit } = setup(stageOf({ stage: 'needs_profile' }))
     emit(null)
 
-    await screen.findByRole('heading', { name: 'Pra quem ama de longe.' })
+    await screen.findByRole('heading', { name: 'Entrar' })
     expect(screen.queryByText(/link mágico/i)).toBeNull()
     expect(screen.queryByText(/sem senha pra lembrar/i)).toBeNull()
   })
@@ -104,7 +104,7 @@ describe('A14 — provedor sem credencial não é renderizado', () => {
     )
     emit(null)
 
-    await screen.findByRole('heading', { name: 'Pra quem ama de longe.' })
+    await screen.findByRole('heading', { name: 'Entrar' })
     expect(screen.queryByRole('button', { name: /Continuar com/ })).toBeNull()
     expect(screen.queryByText('ou com e-mail')).toBeNull()
     // O caminho que sempre funciona continua lá.
@@ -183,7 +183,7 @@ describe('A12 — a sessão morrendo no meio do uso leva ao Login', () => {
     // zero linhas — falha silenciosa nº 1 do SOP.
     emit(null)
 
-    expect(await screen.findByRole('heading', { name: 'Pra quem ama de longe.' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeInTheDocument()
     expect(screen.queryByTestId('domain')).toBeNull()
   })
 })
@@ -203,7 +203,7 @@ describe('I2 — falha de rede não vira Escolha nem lista vazia', () => {
     const { emit } = setup(async () => ({ status: 'unauthenticated' }))
     emit(SESSION)
 
-    expect(await screen.findByRole('heading', { name: 'Pra quem ama de longe.' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeInTheDocument()
     expect(screen.queryByTestId('domain')).toBeNull()
   })
 })

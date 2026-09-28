@@ -23,6 +23,7 @@ import type { ReactNode } from 'react'
 import { CalendarCheck, CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { useAddIntent } from '../app/addIntent'
 import { clearCalendarFocus, peekCalendarFocus } from '../app/calendarFocus'
+import { PanelSkeleton } from '../app/PanelSkeleton'
 import type { DataResult } from '../data/result'
 import type { SettingsData } from '../data/settings'
 import { countDrawn } from '../domain/calendar'
@@ -196,9 +197,9 @@ export function CalendarScreen({ api, renderCityPicker = defaultCityPicker }: Ca
             </div>
           </header>
           {loadError !== null ? (
-            <div className="cal-load-error" role="alert">
+            <div className="cal-load-error lg" role="alert">
               <p>Não deu pra carregar o calendário: {loadError}</p>
-              <button type="button" className="cal-btn" onClick={retry}>
+              <button type="button" className="cal-btn lg" onClick={retry}>
                 Tentar de novo
               </button>
             </div>
@@ -206,6 +207,7 @@ export function CalendarScreen({ api, renderCityPicker = defaultCityPicker }: Ca
             <Skeleton />
           )}
         </div>
+        <EmptyPanel busy={loadError === null} />
       </div>
     )
   }
@@ -232,6 +234,20 @@ export function CalendarScreen({ api, renderCityPicker = defaultCityPicker }: Ca
 }
 
 const defaultCityPicker: NonNullable<FirstPeriodCardProps['renderCityPicker']> = (props) => <CalendarCityPicker {...props} />
+
+/**
+ * O painel "Onde a gente está" antes do `ok` (ou sem ele): no mesmo lugar e do
+ * mesmo tamanho, para a grade não se mexer quando os dados chegam.
+ */
+function EmptyPanel({ busy = false }: { busy?: boolean }) {
+  return (
+    <aside className="cal-panel lg" aria-label="Onde a gente está" aria-busy={busy || undefined}>
+      <div className="cal-panel-scroll">
+        <PanelSkeleton busy={busy} cards={[132, 220, 180]} />
+      </div>
+    </aside>
+  )
+}
 
 function Skeleton() {
   return (
@@ -329,8 +345,8 @@ function Loaded({
   const notices = (
     <>
       {stale && (
-        <p className="cal-notice" role="status">
-          Não deu pra atualizar — mostrando o que já estava aqui
+        <p className="cal-notice lg" role="status">
+          Não deu pra atualizar. Você está vendo a última versão carregada.
         </p>
       )}
       {kissFailed && (
@@ -348,14 +364,14 @@ function Loaded({
       <div className="cal">
         <div className="cal-area">
           <Header visibleMonth={visibleMonth} kicker={null} onShift={(d) => setVisibleMonth(shiftYearMonth(visibleMonth, d))}>
-            <button type="button" className="cal-btn" onClick={goToToday}>
+            <button type="button" className="cal-btn lg" onClick={goToToday}>
               <CalendarCheck size={16} aria-hidden="true" />
               Hoje
             </button>
           </Header>
           {notices}
-          <p className="cal-notice" role="status">
-            O calendário precisa de vocês dois — convide de novo em Configurações
+          <p className="cal-notice lg" role="status">
+            O calendário começa quando as duas pessoas estiverem no espaço. Em Configurações, na aba Casal, você convida a outra pessoa ou cria o perfil dela para já ir preenchendo.
           </p>
           <BareMonthGrid
             month={visibleMonth}
@@ -364,6 +380,7 @@ function Loaded({
             today={today}
           />
         </div>
+        <EmptyPanel />
       </div>
     )
   }
@@ -373,10 +390,11 @@ function Loaded({
     return (
       <div className="cal">
         <div className="cal-area">
-          <div className="cal-load-error" role="alert">
-            <p>Este espaço mudou — recarregue.</p>
+          <div className="cal-load-error lg" role="alert">
+            <p>Este espaço mudou. Recarregue a página.</p>
           </div>
         </div>
+        <EmptyPanel />
       </div>
     )
   }
@@ -398,7 +416,7 @@ function Loaded({
             kicker={kicker}
             onShift={(d) => shiftMonth(view === 'year' ? d * 12 : d)}
           >
-            <div className="cal-segmented" role="group" aria-label="Visão">
+            <div className="cal-segmented lg" role="group" aria-label="Visão">
               <button type="button" aria-pressed={view === 'month'} onClick={() => setView('month')}>
                 <CalendarDays size={14} aria-hidden="true" />
                 Mês
@@ -408,7 +426,7 @@ function Loaded({
                 Ano
               </button>
             </div>
-            <button type="button" className="cal-btn" onClick={goToToday}>
+            <button type="button" className="cal-btn lg" onClick={goToToday}>
               <CalendarCheck size={16} aria-hidden="true" />
               Hoje
             </button>
@@ -420,13 +438,15 @@ function Loaded({
 
           {notices}
 
-          {value.stays.length === 0 && <FirstPeriodCard renderCityPicker={renderCityPicker} />}
-
           {view === 'month' ? <MonthView /> : <YearView />}
         </div>
 
-        <aside className="cal-panel" aria-label="Onde a gente está">
-          <CalendarPanel />
+        <aside className="cal-panel lg" aria-label="Onde a gente está">
+          <div className="cal-panel-scroll">
+            <CalendarPanel
+              first={value.stays.length === 0 ? <FirstPeriodCard renderCityPicker={renderCityPicker} /> : undefined}
+            />
+          </div>
         </aside>
       </div>
 
@@ -460,10 +480,10 @@ function Header({
         )}
         <div className="cal-title-row">
           <h1>{title ?? monthTitle(visibleMonth)}</h1>
-          <button type="button" className="cal-round-btn" aria-label="Anterior" onClick={() => onShift(-1)}>
+          <button type="button" className="cal-round-btn lg" aria-label="Anterior" onClick={() => onShift(-1)}>
             <ChevronLeft size={16} aria-hidden="true" />
           </button>
-          <button type="button" className="cal-round-btn" aria-label="Próximo" onClick={() => onShift(1)}>
+          <button type="button" className="cal-round-btn lg" aria-label="Próximo" onClick={() => onShift(1)}>
             <ChevronRight size={16} aria-hidden="true" />
           </button>
         </div>

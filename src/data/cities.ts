@@ -5,6 +5,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../lib/database.types'
 import type { CalCity } from '../domain/calendar'
+import { selectAll } from './paginate'
 import type { DataResult } from './result'
 
 type Db = SupabaseClient<Database>
@@ -35,6 +36,32 @@ export async function searchCities(db: Db, query: string): Promise<DataResult<Ci
   return {
     status: 'ok',
     rows: data.map((c) => ({ id: c.id, name: c.name, stateCode: c.state_code, lat: c.lat, lng: c.lng })),
+  }
+}
+
+/**
+ * Todos os municípios do IBGE de uma UF, por nome — o seletor de cidades da
+ * Home. MG passa de 800: paginado, para não cortar em silêncio. Sem sessão a
+ * policy devolve zero linhas, e a lista vazia diria que o estado não tem cidade.
+ */
+export async function loadStateCities(db: Db, uf: string): Promise<DataResult<City[]>> {
+  const { data: session } = await db.auth.getSession()
+  if (!session.session) return { status: 'unauthenticated' }
+  const result = await selectAll((from, to) =>
+    db
+      .from('cities')
+      .select('id, name, state_code, lat, lng')
+      .eq('country_code', 'BR')
+      .eq('state_code', uf)
+      .is('couple_id', null)
+      .order('name')
+      .order('id')
+      .range(from, to),
+  )
+  if (result.status !== 'ok') return result
+  return {
+    status: 'ok',
+    rows: result.rows.map((c) => ({ id: c.id, name: c.name, stateCode: c.state_code, lat: c.lat, lng: c.lng })),
   }
 }
 

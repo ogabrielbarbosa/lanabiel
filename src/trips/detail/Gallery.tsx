@@ -52,9 +52,9 @@ export function GalleryCard({
       action={photos.length > 0 ? { label: 'Tela cheia', onClick: () => onOpen(0), ariaLabel: 'Abrir a galeria em tela cheia' } : null}
     >
       {photos.length === 0 ? (
-        <div className="td-empty">
+        <div className="lg td-empty">
           <p>Nenhuma foto ainda</p>
-          <button type="button" className="td-pill-btn" onClick={onAddPhotos}>
+          <button type="button" className="lg td-pill-btn" onClick={onAddPhotos}>
             <ImagePlus size={16} aria-hidden="true" />
             Adicionar fotos
           </button>
@@ -227,7 +227,7 @@ export function FullGallery({ trip, start, onClose }: { trip: Trip; start: numbe
       {url && <img className="td-full-ambient" src={url} alt="" aria-hidden="true" />}
       <div className="td-full-top">
         <div className="td-full-left">
-          <button type="button" className="td-round" aria-label="Fechar" onClick={onClose}>
+          <button type="button" className="lg td-round" aria-label="Fechar" onClick={onClose}>
             <X size={18} aria-hidden="true" />
           </button>
           <div className="td-full-title">
@@ -241,13 +241,13 @@ export function FullGallery({ trip, start, onClose }: { trip: Trip; start: numbe
           <span className="td-full-counter" aria-live="polite">
             {count === 0 ? '0 / 0' : `${at + 1} / ${count}`}
           </span>
-          <button type="button" className="td-pill-btn" onClick={setCover} disabled={!current || isCover || pending} aria-pressed={isCover}>
+          <button type="button" className="lg td-pill-btn" onClick={setCover} disabled={!current || isCover || pending} aria-pressed={isCover}>
             <ImageIcon size={16} aria-hidden="true" />
             {isCover ? 'Capa da viagem' : 'Definir como capa'}
           </button>
           <button
             type="button"
-            className={`td-round ${current?.favorite ? 'is-favorite' : ''}`}
+            className={`lg td-round ${current?.favorite ? 'is-favorite' : ''}`}
             aria-label="Favoritar"
             aria-pressed={!!current?.favorite}
             onClick={toggleFavorite}
@@ -256,18 +256,18 @@ export function FullGallery({ trip, start, onClose }: { trip: Trip; start: numbe
             <Heart size={17} fill={current?.favorite ? 'currentColor' : 'none'} aria-hidden="true" />
           </button>
           {url ? (
-            <a className="td-round" href={url} download aria-label="Baixar" target="_blank" rel="noopener noreferrer">
+            <a className="lg td-round" href={url} download aria-label="Baixar" target="_blank" rel="noopener noreferrer">
               <Download size={17} aria-hidden="true" />
             </a>
           ) : (
-            <button type="button" className="td-round" aria-label="Baixar" disabled>
+            <button type="button" className="lg td-round" aria-label="Baixar" disabled>
               <Download size={17} aria-hidden="true" />
             </button>
           )}
           <div className="td-full-menu-wrap">
             <button
               type="button"
-              className="td-round"
+              className="lg td-round"
               aria-label="Mais opções da foto"
               aria-haspopup="menu"
               aria-expanded={menu !== 'closed'}
@@ -309,7 +309,7 @@ export function FullGallery({ trip, start, onClose }: { trip: Trip; start: numbe
       )}
 
       <div className="td-full-stage">
-        <button type="button" className="td-round td-round--nav" aria-label="Anterior" onClick={() => go(-1)} disabled={count < 2}>
+        <button type="button" className="lg td-round td-round--nav" aria-label="Anterior" onClick={() => go(-1)} disabled={count < 2}>
           <ChevronLeft size={20} aria-hidden="true" />
         </button>
         <figure className="td-full-photo">
@@ -334,7 +334,7 @@ export function FullGallery({ trip, start, onClose }: { trip: Trip; start: numbe
             </figcaption>
           )}
         </figure>
-        <button type="button" className="td-round td-round--nav" aria-label="Próxima" onClick={() => go(1)} disabled={count < 2}>
+        <button type="button" className="lg td-round td-round--nav" aria-label="Próxima" onClick={() => go(1)} disabled={count < 2}>
           <ChevronRight size={20} aria-hidden="true" />
         </button>
       </div>

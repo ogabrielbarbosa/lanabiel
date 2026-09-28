@@ -54,7 +54,7 @@ export function MemoriesCard({ trip, onWrite }: { trip: Trip; onWrite: (mine: Tr
       {memories.map((m) => {
         const person = byId.get(m.profileId) as TripPerson
         return (
-          <article key={m.profileId} className="td-memory" aria-label={`Memória de ${person.name}`}>
+          <article key={m.profileId} className="td-memory lg" aria-label={`Memória de ${person.name}`}>
             <Avatar person={person} size={40} />
             <div className="td-memory-text">
               <p className="td-memory-head">
@@ -89,7 +89,7 @@ function ListCard({
 }) {
   const Icon = CATEGORY_ICONS[item.category]
   return (
-    <li className="td-lcard" style={toneStyle(`cat-${item.category}`)}>
+    <li className="td-lcard lg" style={toneStyle(`cat-${item.category}`)}>
       <div className={`td-lcard-photo ${url ? '' : 'is-empty'}`}>
         {url ? <img src={url} alt="" loading="lazy" /> : <Icon size={28} aria-hidden="true" />}
         {badge && (
@@ -163,7 +163,7 @@ export function DoneHereCard({ trip, items }: { trip: Trip; items: readonly List
       action={{ label: itemsLabel(n), to: '/lista', ariaLabel: `${itemsLabel(n)} — abrir a lista` }}
     >
       {n === 0 ? (
-        <div className="td-empty td-empty--left">
+        <div className="lg td-empty td-empty--left">
           <p>Nenhum item da lista feito nesta viagem ainda.</p>
         </div>
       ) : (
@@ -180,7 +180,7 @@ export function DoneHereCard({ trip, items }: { trip: Trip; items: readonly List
               />
             ))}
           </ul>
-          <AppLink to="/lista" className="td-pill-btn td-pill-btn--wide">
+          <AppLink to="/lista" className="lg td-pill-btn td-pill-btn--wide">
             <ListChecks size={16} aria-hidden="true" />
             {n === 1 ? 'Ver o item na lista' : `Ver os ${n} itens na lista`}
           </AppLink>
@@ -244,11 +244,11 @@ export function NearbyCard({
         </ul>
       )}
       {n === 0 && (
-        <div className="td-empty td-empty--left">
+        <div className="lg td-empty td-empty--left">
           <p>Nada da lista a até 30 km de {destName}.</p>
         </div>
       )}
-      <button type="button" className="td-pill-btn td-pill-btn--wide" onClick={() => onAdd()}>
+      <button type="button" className="lg td-pill-btn td-pill-btn--wide" onClick={() => onAdd()}>
         <ListPlus size={16} aria-hidden="true" />
         Adicionar ao roteiro
       </button>

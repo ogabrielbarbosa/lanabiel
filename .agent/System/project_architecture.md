@@ -417,11 +417,18 @@ DDL:
 - `couples` tem trigger que recusa `started_on` futuro em qualquer caminho.
 - `profiles.color` está na paleta do design (`CHECK`) e um trigger recusa a cor
   da outra pessoa do casal (`profiles_color_taken`).
+- `profiles` se liga ao Auth por `user_id` (FK com cascade, `user_id = id`,
+  imutável), não pelo `id`. `user_id` nulo é o **perfil provisório** da outra
+  pessoa (ADR 0024): criado por `save_pending_partner` por quem está sozinho, e
+  herdado no `accept_invite`, que troca o id dele pelo de quem entra em toda FK
+  para `profiles` (lidas do catálogo) e o apaga. "Casal cheio" conta só quem
+  tem conta (`private.real_member_count`).
 
 `private.my_couple_ids()` é `security definer` em `private`, fora da API. Em
-`public` há **exatamente doze** `security definer` — as sete RPCs do convite
+`public` há **exatamente treze** `security definer` — as sete RPCs do convite
 (ADR 0008), mais `leave_couple`, `delete_couple`, `cancel_invite`,
-`list_my_sessions` e `end_my_session` (Fase 3); `mark_item_done` (Fase 4),
+`list_my_sessions` e `end_my_session` (Fase 3), e `save_pending_partner`
+(ADR 0024); `mark_item_done` (Fase 4),
 `paint_stays` e `create_event` (Fase 5) e `create_trip` (Fase 6) são `invoker` e não contam — e
 `supabase/tests/onboarding.test.ts` (A20) falha se aparecer uma décima terceira. Todas têm `revoke execute ... from public, anon`, porque o Postgres
 concede `EXECUTE` a `PUBLIC` por padrão. O `service_role` tem `USAGE` em

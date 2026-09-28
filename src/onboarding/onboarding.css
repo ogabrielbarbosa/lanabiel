@@ -89,7 +89,7 @@
 }
 
 .onb-progress-bar span.is-done {
-  background: var(--accent-gradient);
+  background: var(--accent);
 }
 
 /* --- formulário ----------------------------------------------------------- */
@@ -155,7 +155,7 @@
   white-space: nowrap;
   height: auto;
   min-height: 36px;
-  padding: 8px 14px;
+  padding: 7px 13px; /* 1px a menos: o vidro `.lg` tem borda */
   font-size: 13px;
   text-decoration: none;
   cursor: pointer;
@@ -339,8 +339,11 @@
   gap: 12px;
   padding: 18px;
   border-radius: 20px;
-  border: 1px solid var(--glass-stroke-soft);
-  background: var(--glass-soft);
+}
+
+/* Vidro `.lg` (app.css, que carrega depois: daí o seletor duplo). */
+.onb-card.lg {
+  --lg-fill: linear-gradient(var(--glass-soft), var(--glass-soft));
 }
 
 .onb-card-row {

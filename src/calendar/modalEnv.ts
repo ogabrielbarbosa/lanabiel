@@ -36,9 +36,9 @@ export async function loadModalEnv(api: CalendarApi): Promise<DataResult<ModalEn
 
   const cities = withHomes(ctx.rows, loaded.rows)
   const people = peopleOf(ctx.rows, cities, {})
-  if (!people) return { status: 'error', cause: 'o calendário precisa de vocês dois' }
+  if (!people) return { status: 'error', cause: 'o calendário precisa das duas pessoas no espaço' }
   const me = [people[1], people[2]].find((p) => p.profileId === ctx.rows.me.profileId)
-  if (!me) return { status: 'error', cause: 'este espaço mudou — recarregue' }
+  if (!me) return { status: 'error', cause: 'este espaço mudou, recarregue a página' }
   return {
     status: 'ok',
     rows: {

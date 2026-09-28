@@ -59,6 +59,10 @@
 .td {
   position: relative;
   isolation: isolate;
+  /* Rola por dentro do quadro da casca (app.css), como a área das outras telas. */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -117,9 +121,7 @@
   flex: none;
   height: 40px;
   padding: 0 16px;
-  border: 1px solid var(--glass-stroke-soft);
   border-radius: 999px;
-  background: var(--glass);
   box-shadow: inset 0 1px 1px var(--glass-shine);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -133,7 +135,7 @@
 }
 
 .td-pill-btn:hover:not(:disabled) {
-  background: var(--glass-hover);
+  --lg-fill: linear-gradient(var(--glass-hover), var(--glass-hover));
 }
 
 .td-pill-btn:disabled {
@@ -152,9 +154,7 @@
   width: 40px;
   height: 40px;
   padding: 0;
-  border: 1px solid var(--glass-stroke-soft);
   border-radius: 999px;
-  background: var(--glass);
   box-shadow: inset 0 1px 1px var(--glass-shine);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -163,7 +163,7 @@
 }
 
 .td-round:hover:not(:disabled) {
-  background: var(--glass-hover);
+  --lg-fill: linear-gradient(var(--glass-hover), var(--glass-hover));
 }
 
 .td-round:disabled {
@@ -193,16 +193,20 @@
   align-self: flex-start;
   margin: 0;
   padding: 10px 14px;
-  border: 1px solid var(--glass-stroke-soft);
   border-radius: 14px;
-  background: var(--glass-soft);
   font-size: 13px;
   color: var(--text-secondary);
 }
 
+/* Os ajustes do vidro (`--lg-*`) vão em `.x.lg`: o `.lg` de app.css define os
+   padrões com a mesma especificidade e, no dev, a folha dele entra depois desta. */
+.td-notice.lg {
+  --lg-fill: linear-gradient(var(--glass-soft), var(--glass-soft));
+}
+
 .td-notice.is-failed {
+  --lg-edge: linear-gradient(color-mix(in srgb, var(--danger) 40%, transparent), color-mix(in srgb, var(--danger) 40%, transparent));
   color: var(--danger);
-  border-color: color-mix(in srgb, var(--danger) 40%, transparent);
 }
 
 .td-notice-x {
@@ -270,14 +274,17 @@
 .td-round--dark {
   width: 36px;
   height: 36px;
-  border-color: #ffffff38;
-  background: var(--td-photo-veil);
   box-shadow: inset 0 1px 1px #ffffff40;
   color: var(--td-photo-ink);
 }
 
+.td-round--dark.lg {
+  --lg-fill: linear-gradient(var(--td-photo-veil), var(--td-photo-veil));
+  --lg-edge: linear-gradient(#ffffff38, #ffffff38);
+}
+
 .td-round--dark:hover:not(:disabled) {
-  background: #0a1030e6;
+  --lg-fill: linear-gradient(#0a1030e6, #0a1030e6);
 }
 
 .td-hero-info {
@@ -411,9 +418,7 @@
   min-width: 0;
   height: 73px;
   padding: 16px 18px;
-  border: 1px solid var(--glass-stroke-soft);
   border-radius: 22px;
-  background: var(--glass);
   box-shadow: inset 0 1px 1px var(--glass-shine);
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
@@ -426,8 +431,11 @@
   width: 40px;
   height: 40px;
   border-radius: 14px;
-  background: var(--glass-soft);
   color: var(--tone);
+}
+
+.td-stat-chip.lg {
+  --lg-fill: linear-gradient(var(--glass-soft), var(--glass-soft));
 }
 
 .td-stat-text {
@@ -495,9 +503,7 @@
   flex-direction: column;
   gap: 16px;
   padding: 24px;
-  border: 1px solid var(--glass-stroke-soft);
   border-radius: 24px;
-  background: var(--glass);
   box-shadow: inset 0 1px 1px var(--glass-shine), 0 18px 48px var(--glass-shadow);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -555,16 +561,19 @@ a.td-card-action:hover {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  padding: 24px;
+  padding: 23px;
   border-radius: 20px;
-  background: var(--glass-soft);
   color: var(--text-secondary);
   font-size: 14px;
 }
 
+.td-empty.lg {
+  --lg-fill: linear-gradient(var(--glass-soft), var(--glass-soft));
+}
+
 .td-empty--left {
   align-items: flex-start;
-  padding: 16px 18px;
+  padding: 15px 17px;
 }
 
 .td-empty p {
@@ -778,11 +787,13 @@ button.td-day-title:hover {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  padding: 24px;
+  padding: 23px;
   border-radius: 20px;
-  background: var(--glass-soft);
-  box-shadow: inset 0 0 0 1px var(--glass-stroke);
   text-align: center;
+}
+
+.td-open.lg {
+  --lg-fill: linear-gradient(var(--glass-soft), var(--glass-soft));
 }
 
 .td-open p {
@@ -914,10 +925,12 @@ button.td-day-title:hover {
 .td-memory {
   display: flex;
   gap: 14px;
-  padding: 18px;
+  padding: 17px;
   border-radius: 20px;
-  background: var(--glass-soft);
-  box-shadow: inset 0 0 0 1px var(--glass-stroke-soft);
+}
+
+.td-memory.lg {
+  --lg-fill: linear-gradient(var(--glass-soft), var(--glass-soft));
 }
 
 .td-memory .cal-avatar {
@@ -977,9 +990,7 @@ button.td-day-title:hover {
   flex-direction: column;
   gap: 10px;
   padding: 8px;
-  border: 1px solid var(--glass-stroke-soft);
   border-radius: 24px;
-  background: var(--glass);
   box-shadow: inset 0 1px 1px var(--glass-shine), 0 14px 36px var(--glass-shadow);
 }
 
@@ -1549,9 +1560,7 @@ button.td-day-title:hover {
   gap: 6px;
   height: 34px;
   padding: 0 12px;
-  border: 1px solid var(--glass-stroke-soft);
   border-radius: 999px;
-  background: var(--glass-soft);
   color: var(--text-secondary);
   font: inherit;
   font-size: 13px;
@@ -1559,13 +1568,17 @@ button.td-day-title:hover {
   cursor: pointer;
 }
 
+.td-kind.lg {
+  --lg-fill: linear-gradient(var(--glass-soft), var(--glass-soft));
+}
+
 .td-kind svg {
   color: var(--tone);
 }
 
 .td-kind[aria-pressed='true'] {
-  border-color: color-mix(in srgb, var(--tone) 55%, transparent);
-  background: color-mix(in srgb, var(--tone) 18%, transparent);
+  --lg-fill: linear-gradient(color-mix(in srgb, var(--tone) 18%, transparent), color-mix(in srgb, var(--tone) 18%, transparent));
+  --lg-edge: linear-gradient(color-mix(in srgb, var(--tone) 55%, transparent), color-mix(in srgb, var(--tone) 55%, transparent));
   color: var(--text-primary);
 }
 
@@ -1689,15 +1702,15 @@ button.td-day-title:hover {
 
 .td-full .td-round,
 .td-full .td-pill-btn {
-  border-color: #ffffff38;
-  background: #ffffff12;
+  --lg-fill: linear-gradient(#ffffff12, #ffffff12);
+  --lg-edge: linear-gradient(#ffffff38, #ffffff38);
   box-shadow: inset 0 1px 1px #ffffff40;
   color: #f4f6fb;
 }
 
 .td-full .td-round:hover:not(:disabled),
 .td-full .td-pill-btn:hover:not(:disabled) {
-  background: #ffffff29;
+  --lg-fill: linear-gradient(#ffffff29, #ffffff29);
 }
 
 .td-full .td-round.is-favorite,
@@ -2038,6 +2051,7 @@ button.td-day-title:hover {
 @media (max-width: 760px) {
   .td {
     padding: 8px 0 32px;
+    overflow: visible;
   }
 
   .td-hero {

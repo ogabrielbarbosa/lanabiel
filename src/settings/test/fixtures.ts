@@ -56,6 +56,7 @@ export function settingsData(overrides: Partial<SettingsData> = {}): SettingsDat
           color: '#7FD8C4',
           joinedAt: '2024-09-17T12:00:00Z',
           homeCity: SJC,
+          pending: false,
         },
         {
           profileId: 'u-lana',
@@ -66,6 +67,7 @@ export function settingsData(overrides: Partial<SettingsData> = {}): SettingsDat
           color: '#F4A3B4',
           joinedAt: '2024-09-18T12:00:00Z',
           homeCity: MARAU,
+          pending: false,
         },
       ],
     },
@@ -340,6 +342,7 @@ export function fakeApi(data: SettingsData = settingsData(), overrides: Partial<
     createInvite: vi.fn(async () => ({ status: 'created' as const, inviteId: 'inv-2', code: 'ABC123', expiresAt: '2026-10-02T00:00:00Z' })),
     sendInvite: vi.fn(async () => ({ status: 'send_failed' as const, cause: 'sem Resend' })),
     cancelInvite: vi.fn(async () => ({ status: 'cancelled' as const })),
+    savePendingPartner: vi.fn(async () => ({ status: 'ok' as const, profileId: 'u-pending', created: true })),
     leaveCouple: vi.fn(async () => ({ status: 'left' as const, coupleDeleted: false })),
     deleteCouple: vi.fn(async () => ({ status: 'deleted' as const })),
     download: vi.fn(),

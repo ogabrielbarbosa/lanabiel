@@ -78,10 +78,10 @@ export function Itinerary({
           <span className="td-day-date">{b.rangeLabel}</span>
           <span className="td-day-title is-static">· em aberto</span>
         </div>
-        <div className="td-open">
+        <div className="td-open lg">
           <CalendarPlus size={24} className="td-open-icon" aria-hidden="true" />
           <p>
-            {b.freeDays} dias livres — puxem itens da lista de {destName} pra cá
+            {b.freeDays} dias livres. Dá pra trazer itens da lista de {destName} pra cá.
           </p>
           {b.suggestions.length > 0 && (
             <div className="td-open-suggestions" role="group" aria-label="Sugestões da lista">
@@ -91,7 +91,7 @@ export function Itinerary({
                   <button
                     key={s.id}
                     type="button"
-                    className="td-pill-btn td-suggestion"
+                    className="lg td-pill-btn td-suggestion"
                     style={toneStyle(`cat-${s.category}`)}
                     aria-label={`${s.name} — pôr no roteiro, ${b.freeDays} dias livres`}
                     onClick={() => actions.onAdd(b.from, s.id)}
@@ -117,7 +117,7 @@ export function Itinerary({
       <ol className="td-days">{plan.visible.map(block)}</ol>
       {(plan.moreLabel || expanded) && (
         <div className="td-more">
-          <button type="button" className="td-pill-btn" aria-expanded={expanded} onClick={() => setExpanded((e) => !e)}>
+          <button type="button" className="lg td-pill-btn" aria-expanded={expanded} onClick={() => setExpanded((e) => !e)}>
             {expanded ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
             {expanded ? 'Mostrar menos' : plan.moreLabel}
           </button>

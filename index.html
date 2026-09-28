@@ -21,6 +21,10 @@
         var t = a.theme === 'light' ? 'light' : a.theme === 'system' ? (dark ? 'dark' : 'light') : 'dark'
         document.documentElement.dataset.theme = t
         if (a.density === 'compact') document.documentElement.dataset.density = 'compact'
+        // "Reduzir animações" também vale no login e na abertura, que vêm antes
+        // da casca (appearance.ts, loadAppearance: o padrão é o do sistema).
+        var reduce = typeof a.reduceMotion === 'boolean' ? a.reduceMotion : matchMedia('(prefers-reduced-motion: reduce)').matches
+        document.documentElement.dataset.reduceMotion = reduce ? 'true' : 'false'
       } catch (e) {}
     </script>
   </head>

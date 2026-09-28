@@ -3,6 +3,9 @@ import type { ComponentType } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { installGlassPointer } from './app/glass'
+
+installGlassPointer()
 
 const root = createRoot(document.getElementById('root')!)
 

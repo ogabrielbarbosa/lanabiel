@@ -18,7 +18,7 @@ function message(result: SignUpResult): string | null {
       return 'Já existe conta com esse e-mail. Volte e entre com ela.'
     case 'weak_password':
       return result.reason === 'leaked'
-        ? 'Essa senha já apareceu em vazamentos conhecidos. Não é fraca — é conhecida. Escolha outra.'
+        ? 'Essa senha já apareceu em vazamentos de dados. Escolha outra.'
         : `A senha precisa ter pelo menos ${MIN_PASSWORD} caracteres.`
     case 'invalid_email':
       return 'Esse e-mail não parece válido.'
@@ -83,8 +83,8 @@ export function SignUp({ onSignUp, onBack }: SignUpProps) {
           onChange={(e) => setPassword(e.target.value)}
         >
           <p className="auth-hint">
-            Pelo menos {MIN_PASSWORD} caracteres. Uma frase que só vocês dois sabem vale mais que
-            símbolo no meio da palavra.
+            Pelo menos {MIN_PASSWORD} caracteres. Uma frase comprida protege mais que uma palavra
+            cheia de símbolos.
           </p>
         </AuthField>
 

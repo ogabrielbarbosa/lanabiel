@@ -47,7 +47,7 @@ export function ProfileStep({ api, progress, inviterName, onDone }: ProfileStepP
     if (avatar) {
       const uploaded = await api.uploadAvatar(avatar)
       if (uploaded.status === 'ok') avatarPath = uploaded.path
-      else notice = 'A foto não subiu — seguimos sem ela. Dá pra pôr depois.'
+      else notice = 'A foto não subiu, então seguimos sem ela. Dá pra pôr depois.'
     }
 
     const result = await api.createProfile({ fullName, displayName, homeCityId: city.id, avatarPath })
@@ -66,8 +66,8 @@ export function ProfileStep({ api, progress, inviterName, onDone }: ProfileStepP
   }
 
   const caption = inviterName
-    ? { title: 'Oi!', subtitle: 'Só mais dois passos.' }
-    : { title: displayName.trim() ? `Oi, ${displayName.trim()}.` : 'Oi!', subtitle: 'Vamos montar o cantinho de vocês.' }
+    ? { title: 'Oi!', subtitle: 'São só dois passos.' }
+    : { title: displayName.trim() ? `Oi, ${displayName.trim()}.` : 'Oi!', subtitle: 'Comece pelo seu perfil.' }
 
   return (
     <AuthShell caption={caption}>
@@ -75,7 +75,7 @@ export function ProfileStep({ api, progress, inviterName, onDone }: ProfileStepP
       <div className="auth-heading onb-heading">
         <h1>Primeiro, você</h1>
         <p>
-          Isso aparece {inviterName ? `pra ${inviterName}` : 'pro seu amor'} e ajuda o calendário a saber onde
+          Isso aparece {inviterName ? `pra ${inviterName}` : 'pra outra pessoa'} e ajuda o calendário a saber onde
           você está em cada dia.
         </p>
       </div>

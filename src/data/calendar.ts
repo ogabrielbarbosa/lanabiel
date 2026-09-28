@@ -232,7 +232,7 @@ export async function updateEvent(db: Db, id: string, draft: EventDraft): Promis
   if (!(await hasSession(db))) return { status: 'unauthenticated' }
   const { data, error } = await db.from('calendar_events').update(eventDraftToUpdate(draft)).eq('id', id).select('id')
   if (error) return translateCalendarError(error, 'write')
-  if ((data ?? []).length !== 1) return { status: 'error', cause: 'Este evento não existe mais — recarregue' }
+  if ((data ?? []).length !== 1) return { status: 'error', cause: 'Este evento não existe mais. Recarregue a página' }
   return { status: 'ok' }
 }
 
@@ -259,7 +259,7 @@ function kissFailure(error: PgError): KissWrite {
     case 'error':
       return failure
     case 'not_member':
-      return { status: 'error', cause: 'Este espaço mudou — recarregue' }
+      return { status: 'error', cause: 'Este espaço mudou. Recarregue a página' }
     case 'invalid':
       return { status: 'error', cause: `${failure.constraint}: ${error.message}` }
   }

@@ -46,6 +46,17 @@ export interface MapHandle {
   /** A cada quadro de movimento e ao fim dele; devolve o cancelamento. */
   onMove(cb: () => void): () => void
   setArcs(arcs: readonly Arc[]): void
+  /**
+   * O disco da Terra na tela (centro e raio, px no contêiner) — para a Home
+   * desenhar a atmosfera do `.pen` em volta dele. `null` fora do globo.
+   */
+  globe(): { x: number; y: number; r: number } | null
+  /**
+   * Quanto das bordas está coberto (na Home, o painel à direita e o
+   * cabeçalho em cima, sobre o mapa de tela inteira): o centro da câmera e os
+   * enquadramentos passam a ser os da parte à vista.
+   */
+  setInset(inset: { top: number; right: number }): void
   destroy(): void
 }
 

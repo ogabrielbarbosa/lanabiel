@@ -205,7 +205,12 @@ export function previewHomeApi(store: PreviewStore, trips: TripsApi): HomeApi {
       ok(new Map(paths.flatMap((p) => (p && PATH_URLS.has(p) ? [[p, PATH_URLS.get(p)!] as const] : [])))),
     avatarUrl: () => Promise.resolve(null),
     coverUrl: () => Promise.resolve(null),
-    searchCities: trips.searchCities,
+    stateCities: (uf) =>
+      ok(
+        [...store.cities.values()]
+          .filter((c) => c.countryCode === 'BR' && c.stateCode === uf)
+          .map((c) => ({ id: c.id, name: c.name, stateCode: c.stateCode, lat: c.lat, lng: c.lng })),
+      ),
     mapEngine: mapboxEngine,
   }
 }

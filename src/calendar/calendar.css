@@ -86,13 +86,8 @@
 
 .cal {
   display: flex;
-  align-items: flex-start;
-  min-height: calc(100dvh - 32px);
-}
-
-/* O frame: 12 entre o painel e a barra (a casca dá 16 às outras telas). */
-.shell:has(.cal) {
-  gap: 12px;
+  /* O quadro da casca (app.css): a área rola por dentro, o painel fica. */
+  height: 100%;
 }
 
 /* 40 entre a grade e o painel (a área do frame acaba 40 depois da grade). */
@@ -103,6 +98,7 @@
   flex-direction: column;
   gap: 16px;
   padding: 20px 40px 40px 24px;
+  overflow-y: auto;
 }
 
 .cal p {
@@ -110,28 +106,30 @@
 }
 
 .cal-panel {
-  flex: 0 0 424px;
-  position: sticky;
-  top: 0;
+  flex: 0 0 var(--panel-width);
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-height: calc(100dvh - 32px);
-  overflow-y: auto;
-  padding: 24px 20px;
   border-radius: 36px;
-  background: var(--glass);
-  border: 1px solid var(--glass-stroke-soft);
+  --lg-sweep: 0;
   box-shadow: 0 30px 80px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
   backdrop-filter: blur(60px);
   -webkit-backdrop-filter: blur(60px);
 }
 
-@media (max-width: 1359px) {
-  .cal-panel {
-    flex-basis: clamp(340px, 29vw, 424px);
-  }
+/* A rolagem mora aqui dentro: no próprio painel o `overflow` cortaria o
+   contorno do `.lg`, que fica na faixa da borda. */
+.cal-panel-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px 20px;
+  border-radius: inherit;
+}
 
+@media (max-width: 1359px) {
   .cal-area {
     padding-right: 24px;
   }
@@ -205,9 +203,7 @@
   flex: none;
   height: 40px;
   padding: 0 16px;
-  border: 1px solid var(--glass-stroke-soft);
   border-radius: 999px;
-  background: var(--glass);
   box-shadow: inset 0 1px 1px var(--glass-shine);
   color: var(--text-primary);
   font: inherit;
@@ -216,8 +212,19 @@
   cursor: pointer;
 }
 
-.cal-btn:hover:not(:disabled) {
+/* Sem `.lg` (as variantes cheias e quem ainda não migrou) o vidro é o antigo;
+   especificidade zero para as variantes seguirem mandando. */
+:where(.cal-btn:not(.lg)) {
+  border: 1px solid var(--glass-stroke-soft);
+  background: var(--glass);
+}
+
+:where(.cal-btn:not(.lg)):hover:not(:disabled) {
   background: var(--glass-hover);
+}
+
+.cal-btn.lg:hover:not(:disabled) {
+  --lg-fill: linear-gradient(var(--glass-hover), var(--glass-hover));
 }
 
 .cal-btn:disabled {
@@ -228,14 +235,14 @@
 .cal-btn--primary {
   padding: 0 18px 0 14px;
   border-color: transparent;
-  background: var(--accent-gradient);
+  background: var(--accent);
   box-shadow: 0 8px 24px var(--accent-glow), inset 0 1px 1px var(--glass-shine);
   color: var(--on-accent);
   font-weight: 600;
 }
 
 .cal-btn--primary:hover:not(:disabled) {
-  background: var(--accent-gradient);
+  background: var(--accent);
   filter: brightness(1.05);
 }
 
@@ -249,9 +256,7 @@
   width: 36px;
   height: 36px;
   padding: 0;
-  border: 1px solid var(--glass-stroke-soft);
   border-radius: 999px;
-  background: var(--glass);
   box-shadow: inset 0 1px 1px var(--glass-shine);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
@@ -260,7 +265,7 @@
 }
 
 .cal-round-btn:hover {
-  background: var(--glass-hover);
+  --lg-fill: linear-gradient(var(--glass-hover), var(--glass-hover));
 }
 
 /* Segmentado Mês/Ano (`zXb3Q` ativo / `rKzaf`). */
@@ -268,9 +273,7 @@
   display: inline-flex;
   gap: 2px;
   padding: 4px;
-  border: 1px solid var(--glass-stroke-soft);
   border-radius: 999px;
-  background: var(--glass);
   box-shadow: inset 0 1px 1px var(--glass-shine);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
@@ -314,8 +317,7 @@
 .cal-notice {
   padding: 10px 14px;
   border-radius: 14px;
-  background: var(--glass-soft);
-  border: 1px solid var(--glass-stroke-soft);
+  --lg-fill: linear-gradient(var(--glass-soft), var(--glass-soft));
   font-size: 13px;
   color: var(--text-secondary);
 }
@@ -335,8 +337,6 @@
   gap: 12px;
   padding: 20px;
   border-radius: 22px;
-  background: var(--glass);
-  border: 1px solid var(--glass-stroke-soft);
   font-size: 14px;
 }
 
@@ -376,8 +376,7 @@
   gap: 4px;
   padding: 12px;
   border-radius: 28px;
-  background: var(--glass);
-  border: 1px solid var(--glass-stroke-soft);
+  --lg-sweep: 0;
   box-shadow: 0 30px 80px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
   backdrop-filter: blur(50px);
   -webkit-backdrop-filter: blur(50px);
@@ -705,8 +704,7 @@ span.cal-chip {
   min-width: 96px;
   padding: 6px 8px;
   border-radius: 14px;
-  background: var(--glass-dark);
-  border: 1px solid var(--glass-stroke-soft);
+  --lg-fill: linear-gradient(var(--glass-dark), var(--glass-dark));
   box-shadow: 0 12px 30px var(--glass-shadow);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
@@ -873,11 +871,12 @@ span.cal-chip {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  max-width: 420px;
-  padding: 18px;
+  flex: none;
+  padding: 18.5px;
   border-radius: 24px;
-  background: linear-gradient(var(--glass-strong), var(--glass-strong)), var(--glass-dark);
-  border: 1.5px solid var(--accent);
+  /* O traço de 1.5 no destaque vira o anel de 1px do `.lg`; o respiro cobre o 0.5. */
+  --lg-fill: linear-gradient(var(--glass-strong), var(--glass-strong)), linear-gradient(var(--glass-dark), var(--glass-dark));
+  --lg-edge: linear-gradient(var(--accent), var(--accent));
   box-shadow: 0 0 28px var(--accent-glow), inset 0 1px 1px var(--glass-shine);
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
@@ -919,9 +918,8 @@ span.cal-chip {
   gap: 8px;
   height: 38px;
   padding: 0 12px;
-  border: 1px solid var(--glass-stroke-soft);
   border-radius: 14px;
-  background: var(--glass-soft);
+  --lg-fill: linear-gradient(var(--glass-soft), var(--glass-soft));
   color: var(--text-secondary);
   font: inherit;
   font-size: 12px;
@@ -931,9 +929,8 @@ span.cal-chip {
 }
 
 .cal-first-option[aria-checked='true'] {
-  border: 1.5px solid var(--band);
-  padding: 0 11.5px;
-  background: color-mix(in srgb, var(--band) 12%, transparent);
+  --lg-edge: linear-gradient(var(--band), var(--band));
+  --lg-fill: linear-gradient(color-mix(in srgb, var(--band) 12%, transparent), color-mix(in srgb, var(--band) 12%, transparent));
   color: var(--text-primary);
   font-weight: 600;
 }
@@ -1061,8 +1058,13 @@ span.cal-chip {
 }
 
 @media (max-width: 759px) {
+  .cal {
+    height: auto;
+  }
+
   .cal-area {
     padding: 8px 0 24px;
+    overflow: visible;
   }
 
   .cal-title h1 {
@@ -1104,8 +1106,7 @@ span.cal-chip {
   gap: 9px;
   padding: 18px 20px 20px;
   border-radius: 28px;
-  background: var(--glass);
-  border: 1px solid var(--glass-stroke-soft);
+  --lg-sweep: 0;
   box-shadow: 0 30px 80px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
   backdrop-filter: blur(50px);
   -webkit-backdrop-filter: blur(50px);
@@ -1265,8 +1266,6 @@ span.cal-chip {
   gap: 16px;
   padding: 20px;
   border-radius: 24px;
-  background: var(--glass);
-  border: 1px solid var(--glass-stroke-soft);
   box-shadow: 0 18px 48px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
@@ -1394,8 +1393,7 @@ span.cal-chip {
   gap: 10px;
   padding: 14px;
   border-radius: 18px;
-  background: var(--glass-soft);
-  border: 1px solid var(--glass-stroke-soft);
+  --lg-fill: linear-gradient(var(--glass-soft), var(--glass-soft));
 }
 
 .cal-countdown-icon {
@@ -1607,8 +1605,7 @@ button.cal-event:hover .cal-event-title {
   gap: 4px;
   padding: 14px;
   border-radius: 18px;
-  background: var(--glass-soft);
-  border: 1px solid var(--glass-stroke-soft);
+  --lg-fill: linear-gradient(var(--glass-soft), var(--glass-soft));
 }
 
 .cal-totals strong {

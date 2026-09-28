@@ -101,7 +101,7 @@ export function MarkDoneModal({ item, onClose, onDone }: MarkDoneModalProps) {
     event.target.value = ''
     const free = room - picked.length
     const taken = chosen.slice(0, Math.max(0, free))
-    setPhotoNote(chosen.length > taken.length ? `Cabem só ${LIST_LIMITS.photosPerItem} fotos — as outras ficaram de fora.` : null)
+    setPhotoNote(chosen.length > taken.length ? `Cabem ${LIST_LIMITS.photosPerItem} fotos, as outras ficaram de fora.` : null)
     setBadPhoto(null)
     setPicked((current) => [...current, ...taken.map((file) => ({ file, url: previewUrl(file) }))])
   }
@@ -146,7 +146,7 @@ export function MarkDoneModal({ item, onClose, onDone }: MarkDoneModalProps) {
         return
       case 'upload_failed':
         setBadPhoto(result.index)
-        setError(`A foto ${result.index + 1} não subiu (${result.cause}). Nada foi gravado — tente de novo.`)
+        setError(`A foto ${result.index + 1} não subiu (${result.cause}). Nada foi gravado. Tente de novo.`)
         return
       default:
         setError(failureMessage(result))
@@ -156,7 +156,7 @@ export function MarkDoneModal({ item, onClose, onDone }: MarkDoneModalProps) {
   if (alreadyDone) {
     return (
       <ListDialog title="Marcar como feito" subtitle={subtitleOf(item)} onClose={onDone}>
-        <p className="ls-notice" role="status">
+        <p className="ls-notice lg" role="status">
           {other?.name ?? 'Alguém'} já marcou este item como feito
         </p>
         <div className="ls-dialog-foot">
@@ -180,7 +180,7 @@ export function MarkDoneModal({ item, onClose, onDone }: MarkDoneModalProps) {
             <House size={13} aria-hidden="true" />
             Vira a “Última memória” da Home
           </span>
-          <button type="button" className="ls-btn" disabled={saving} onClick={onClose}>
+          <button type="button" className="ls-btn lg" disabled={saving} onClick={onClose}>
             Cancelar
           </button>
           <button
@@ -225,11 +225,11 @@ export function MarkDoneModal({ item, onClose, onDone }: MarkDoneModalProps) {
             </span>
             <div className="ls-done-who" role="group" aria-labelledby="done-who">
               {people.map((m) => (
-                <button key={m.profileId} type="button" aria-pressed={who === m.profileId} onClick={() => setWho(m.profileId)}>
+                <button key={m.profileId} type="button" className="lg" aria-pressed={who === m.profileId} onClick={() => setWho(m.profileId)}>
                   {m.name}
                 </button>
               ))}
-              <button type="button" aria-pressed={who === 'both'} onClick={() => setWho('both')}>
+              <button type="button" className="lg" aria-pressed={who === 'both'} onClick={() => setWho('both')}>
                 <Heart size={12} fill="currentColor" aria-hidden="true" />
                 Os dois
               </button>
@@ -246,11 +246,11 @@ export function MarkDoneModal({ item, onClose, onDone }: MarkDoneModalProps) {
           </div>
           <div className="ls-done-photos">
             {picked.map((p, index) => (
-              <div key={index} className={`ls-done-photo ${badPhoto === index ? 'ls-done-photo--bad' : ''}`}>
+              <div key={index} className={`ls-done-photo ${badPhoto === index ? 'ls-done-photo--bad' : ''} lg`}>
                 {p.url ? <img src={p.url} alt="" /> : <span className="ls-done-photo-name">{p.file.name}</span>}
                 <button
                   type="button"
-                  className="ls-icon-btn ls-icon-btn--glass"
+                  className="ls-icon-btn ls-icon-btn--glass lg"
                   aria-label={`Tirar a foto ${index + 1}`}
                   onClick={() => removePicked(index)}
                 >
@@ -305,7 +305,7 @@ export function MarkDoneModal({ item, onClose, onDone }: MarkDoneModalProps) {
           </div>
         </div>
 
-        <div className="ls-done-rating">
+        <div className="ls-done-rating lg">
           <div>
             <span className="ls-md-label">Quanto vocês amaram?</span>
             {rating !== null && <span className="ls-done-rating-label">{ratingLabel(rating)}</span>}
@@ -315,7 +315,7 @@ export function MarkDoneModal({ item, onClose, onDone }: MarkDoneModalProps) {
       </fieldset>
 
       {error && (
-        <p className="ls-notice ls-notice--error" role="alert">
+        <p className="ls-notice ls-notice--error lg" role="alert">
           {error}
         </p>
       )}

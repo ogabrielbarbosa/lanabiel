@@ -45,7 +45,7 @@ function oneYearAfter(day: string): string {
 /** O `Glass Card` (`btuiH`): cabeçalho, 16 de vão, e o conteúdo (12 por padrão). */
 function Card({ title, action, className = '', children }: { title: string; action?: ReactNode; className?: string; children: ReactNode }) {
   return (
-    <section className={`cal-card ${className}`} aria-label={title}>
+    <section className={`cal-card lg ${className}`} aria-label={title}>
       <div className="cal-card-head">
         <h3>{title}</h3>
         {action}
@@ -74,7 +74,7 @@ function Now({ c }: { c: CalendarContextValue }) {
     return (
       <Card title="Agora">
         <p className="cal-now-title">{title}</p>
-        <button type="button" className="cal-btn cal-btn--wide" onClick={() => c.openNewPeriod(c.today)}>
+        <button type="button" className="cal-btn lg cal-btn--wide" onClick={() => c.openNewPeriod(c.today)}>
           <Plus size={16} aria-hidden="true" />
           Criar período
         </button>
@@ -124,7 +124,7 @@ function Now({ c }: { c: CalendarContextValue }) {
             const trip = cd.kind === 'trip'
             const Icon = trip ? Plane : Luggage
             return (
-              <li key={cd.kind + cd.label} className={`cal-countdown ${trip ? 'cal-ev--viagem' : 'cal-ev--visita'}`}>
+              <li key={cd.kind + cd.label} className={`cal-countdown lg ${trip ? 'cal-ev--viagem' : 'cal-ev--visita'}`}>
                 <span className="cal-countdown-icon" aria-hidden="true">
                   <Icon size={15} />
                 </span>
@@ -223,7 +223,7 @@ function SelectedDay({ c }: { c: CalendarContextValue }) {
           ))}
         </ul>
       )}
-      <button type="button" className="cal-btn cal-btn--wide" onClick={() => c.openNewEvent(day)}>
+      <button type="button" className="cal-btn lg cal-btn--wide" onClick={() => c.openNewEvent(day)}>
         <Plus size={16} aria-hidden="true" />
         Adicionar evento
       </button>
@@ -287,11 +287,11 @@ function Summary({ c }: { c: CalendarContextValue }) {
       action={c.view === 'year' ? undefined : <CardAction label="Ano" onClick={() => c.setView('year')} />}
     >
       <div className="cal-totals">
-        <p style={{ '--band': settings.colorTogetherHome1 } as CSSProperties}>
+        <p className="lg" style={{ '--band': settings.colorTogetherHome1 } as CSSProperties}>
           <strong>{together}</strong>
           <span>dias juntos</span>
         </p>
-        <p style={{ '--band': settings.colorApart } as CSSProperties}>
+        <p className="lg" style={{ '--band': settings.colorApart } as CSSProperties}>
           <strong>{counts.apart}</strong>
           <span>dias separados</span>
         </p>
@@ -324,7 +324,8 @@ function Summary({ c }: { c: CalendarContextValue }) {
   )
 }
 
-export function CalendarPanel() {
+/** `first`: o cartão do primeiro período (sem estadia nenhuma), no lugar do _Agora_. */
+export function CalendarPanel({ first }: { first?: ReactNode }) {
   const c = useCalendar()
   return (
     <>
@@ -332,7 +333,7 @@ export function CalendarPanel() {
         <p>{weekdayDayMonthLabel(c.today)}</p>
         <h2>Onde a gente está</h2>
       </div>
-      <Now c={c} />
+      {first ?? <Now c={c} />}
       <SelectedDay c={c} />
       <Upcoming c={c} />
       <Summary c={c} />

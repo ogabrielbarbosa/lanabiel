@@ -3,6 +3,10 @@
 // Spec: R5 (Fase 3), R26 (Fase 4) e R28 (Fase 6). "Itens na lista" mostra o
 // total real e "viagens" as viagens FEITAS (— se a contagem falhar, …
 // enquanto lê).
+//
+// Só o miolo: a caixa (`st-panel`) é da `SettingsScreen`, montada desde a
+// primeira pintura com o esqueleto dentro, para a área não se mexer quando os
+// dados chegam — como na Home.
 
 import { Info, MessageSquareHeart } from 'lucide-react'
 import { cityLabel } from '../data/cities'
@@ -46,11 +50,11 @@ export function RightPanel({
   const since = togetherFor(couple.startedOn, today)
 
   return (
-    <aside className="st-panel" aria-label="O espaço de vocês">
+    <>
       <p className="st-panel-date">{weekdayDayMonthLabel(today)}</p>
       <h2 className="st-panel-title">O espaço de vocês</h2>
 
-      <div className="st-card st-panel-couple">
+      <div className="lg st-card st-panel-couple">
         <p className="st-panel-name">{coupleLabel(couple.name, couple.members)}</p>
         <div className="st-panel-avatars">
           {couple.members.map((m) => (
@@ -77,7 +81,7 @@ export function RightPanel({
         )}
       </div>
 
-      <div className="st-card">
+      <div className="lg st-card">
         <h3 className="st-panel-subtitle">Resumo rápido</h3>
         <dl className="st-metrics">
           <div>
@@ -95,7 +99,7 @@ export function RightPanel({
         </dl>
       </div>
 
-      <div className="st-card">
+      <div className="lg st-card">
         <h3 className="st-panel-subtitle">Sobre o app</h3>
         <ul className="st-about">
           <li>
@@ -114,6 +118,6 @@ export function RightPanel({
           )}
         </ul>
       </div>
-    </aside>
+    </>
   )
 }

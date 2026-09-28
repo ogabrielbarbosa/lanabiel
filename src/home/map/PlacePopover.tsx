@@ -65,7 +65,7 @@ export function PlacePopover({
 
   return (
     <div
-      className={`hm-popover${anchor ? '' : ' hm-popover--docked'}`}
+      className={`hm-popover lg${anchor ? '' : ' hm-popover--docked'}`}
       style={placement(anchor, bounds)}
       role="dialog"
       aria-label={item.name}

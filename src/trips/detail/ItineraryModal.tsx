@@ -187,7 +187,7 @@ export function ItineraryModal({ trip, mode, onClose }: { trip: Trip; mode: Itin
                 <button
                   key={k}
                   type="button"
-                  className="td-kind"
+                  className="td-kind lg"
                   style={toneStyle(V.tone)}
                   aria-pressed={kind === k}
                   onClick={() => {

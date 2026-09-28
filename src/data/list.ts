@@ -82,7 +82,7 @@ export function translateError(error: PgError): ListFailure {
   const constraint = error.hint || CONSTRAINT_IN_MESSAGE.exec(error.message)?.[1] || null
   if (constraint === 'list_photos_limit' || error.message.includes('list_photos_limit')) return { status: 'photo_limit' }
   // RLS com sessão presente: a pessoa saiu do casal em outro aparelho (seção 7).
-  if (error.code === '42501') return { status: 'error', cause: 'este espaço mudou — recarregue' }
+  if (error.code === '42501') return { status: 'error', cause: 'este espaço mudou, recarregue a página' }
   if (error.code === 'PGRST301' || error.code === '401') return { status: 'unauthenticated' }
   // FK composta das filhas: o item sumiu entre a leitura e a escrita.
   if (error.code === '23503') return { status: 'not_found' }
@@ -322,7 +322,7 @@ export type MarkDoneResult =
   | ListFailure
 
 /** Falha de transporte na RPC: não se sabe se gravou. */
-export const CONNECTION_DROPPED = 'A conexão caiu — confira se o item ficou marcado antes de tentar de novo'
+export const CONNECTION_DROPPED = 'A conexão caiu. Confira se o item ficou marcado antes de tentar de novo'
 
 /**
  * O erro veio do banco (SQLSTATE) ou do PostgREST (`PGRST…`)? Então a

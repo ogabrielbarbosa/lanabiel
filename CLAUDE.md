@@ -195,7 +195,10 @@ história.
 
 ### Convenções
 
-Identificadores em inglês, texto de interface em português. CSS é arquivo único
+Identificadores em inglês, texto de interface em português. **Texto de
+interface sem refrão** (travessão emendando frases, "Hmm."/"Opa." como título,
+"seu amor" e "de vocês dois" em toda tela, frase de efeito): leia
+[`.agent/SOP/copy.md`](.agent/SOP/copy.md) antes de escrever qualquer copy. CSS é arquivo único
 por feature (`list/list.css`), sem framework nem CSS-in-JS. Exceções registradas:
 o Calendário tem `calendar.css` e `modals.css`; as Viagens, `trips.css` e
 `detail/trip-detail.css`; a Home, `home.css` (área do mapa) e `panel.css`.
@@ -284,6 +287,7 @@ resposta legítima; "presumo que funcione" não é.
 | Por que decidimos assim?   | `.agent/Decisions/` (ADRs)       |
 | Como o sistema funciona?   | `.agent/System/`                 |
 | O que a revisão cobra?     | `.agent/SOP/review-checklist.md` |
+| Como escrever copy?        | `.agent/SOP/copy.md`             |
 | O que estamos construindo? | `.agent/Tasks/<feature>.md`      |
 | Como se prova algo aqui?   | `.devkit/profile.sh`             |
 

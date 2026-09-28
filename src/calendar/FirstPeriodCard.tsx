@@ -1,4 +1,5 @@
-// "Onde vocês estão hoje?" (`W9BK5`, R9): o estado vazio do Calendário. Só
+// "Onde vocês estão hoje?" (`W9BK5`, R9): o estado vazio do Calendário, no
+// painel "Onde a gente está" no lugar do _Agora_. Só
 // aparece com leitura `ok`, zero estadias e os dois integrantes — nunca com
 // erro de leitura (seção 7), senão o casal regravaria a história por cima.
 //
@@ -87,7 +88,7 @@ export function FirstPeriodCard({ renderCityPicker }: FirstPeriodCardProps) {
   )
 
   return (
-    <section className="cal-first" aria-labelledby="cal-first-title">
+    <section className="cal-first lg" aria-labelledby="cal-first-title">
       <header className="cal-first-head">
         <CouplePair people={[people[1], people[2]]} together />
         <div>
@@ -103,7 +104,7 @@ export function FirstPeriodCard({ renderCityPicker }: FirstPeriodCardProps) {
             type="button"
             role="radio"
             aria-checked={choice === o.choice}
-            className="cal-first-option"
+            className="cal-first-option lg"
             style={{ '--band': bandColor(settings, o.choice) } as CSSProperties}
             disabled={o.disabled || pending}
             title={o.disabled ? 'Em breve' : undefined}

@@ -30,8 +30,8 @@ import { useCalendar } from './context'
 import './calendar.css'
 import './modals.css'
 
-const ALL_DOWN = 'A busca de cidades está fora do ar — tente de novo em instantes'
-const WORLD_DOWN = 'Busca mundial indisponível — mostrando cidades do Brasil'
+const ALL_DOWN = 'A busca de cidades está fora do ar. Tente de novo daqui a pouco.'
+const WORLD_DOWN = 'A busca fora do Brasil não respondeu. Por enquanto, só cidades brasileiras.'
 
 export interface CityPickerFullProps extends CityPickerProps {
   api: Pick<CalendarApi, 'searchCities' | 'searchWorldCities'>
@@ -204,7 +204,7 @@ export function CityPicker({
       <label className="cal-mf-label" htmlFor={inputId}>
         {label}
       </label>
-      <div className={`cal-mf-input ${invalid ? 'is-invalid' : ''}`}>
+      <div className={`cal-mf-input lg ${invalid ? 'is-invalid' : ''}`}>
         <MapPin size={15} aria-hidden="true" />
         <input
           id={inputId}
@@ -238,7 +238,7 @@ export function CityPicker({
           {search.notice}
         </p>
       )}
-      <div className="cal-city-results" hidden={!expanded}>
+      <div className="cal-city-results lg" hidden={!expanded}>
         <ul id={listId} role="listbox" aria-label={`${label}: resultados`}>
           {options.map((option, index) => {
             const Icon = option.kind === 'home' ? House : option.kind === 'world' ? Globe : MapPin

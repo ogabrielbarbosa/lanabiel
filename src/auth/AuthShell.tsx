@@ -2,6 +2,7 @@
 // frame `Login [LMpij]`: o globo ocupa a tela inteira e o painel de vidro flutua
 // à direita, 16px afastado das bordas.
 
+import { useEffect, useState } from 'react'
 import type { InputHTMLAttributes, ReactNode } from 'react'
 import globeUrl from './assets/globe.webp'
 import { HeartHandshake, Lock } from './icons'
@@ -10,21 +11,32 @@ export interface AuthShellProps {
   children: ReactNode
   /**
    * A legenda grande sobre o globo. O Login usa a do desenho; cada tela de
-   * onboarding tem a sua ("Oi, Rafa. / Vamos montar o cantinho de vocês.").
+   * onboarding tem a sua ("Oi, Rafa. / Comece pelo seu perfil.").
    */
   caption?: { title: string; subtitle: string }
 }
 
-const DEFAULT_CAPTION = { title: 'Duas cidades.', subtitle: 'Um lugar só de vocês.' }
+const DEFAULT_CAPTION = { title: 'Que bom te ver.', subtitle: 'Entre pra continuar de onde parou.' }
+
+// A abertura (o globo surgindo, o painel deslizando) toca uma vez por carga da
+// página. Cada tela do login e do onboarding monta a própria moldura; sem isto,
+// ir do Login ao Cadastro faria o globo nascer de novo a cada passo. Do segundo
+// passo em diante só o conteúdo do painel entra.
+let introPlayed = false
 
 export function AuthShell({ children, caption = DEFAULT_CAPTION }: AuthShellProps) {
+  const [intro] = useState(() => !introPlayed)
+  useEffect(() => {
+    introPlayed = true
+  }, [])
   return (
-    <div className="auth">
+    <div className={`auth ${intro ? 'auth--intro' : ''}`}>
       {/* Decorativo: fora da árvore de acessibilidade. As camadas seguem a
           ordem do `Globe Area` no .pen — halo, atmosfera, imagem, sombra,
           luz de borda. A imagem é o IMAGEFILL do nó `Globe [tebI3]`, exportado. */}
       <div className="auth-stage" aria-hidden="true">
         <div className="auth-halo" />
+        <div className="auth-stars" />
         <div className="auth-atmosphere" />
         <img className="auth-globe" src={globeUrl} alt="" />
         <div className="auth-shading" />
@@ -32,11 +44,11 @@ export function AuthShell({ children, caption = DEFAULT_CAPTION }: AuthShellProp
       </div>
 
       <p className="auth-caption">
-        {caption.title}
+        <span className="auth-caption-title">{caption.title}</span>
         <span>{caption.subtitle}</span>
       </p>
 
-      <div className="auth-panel">
+      <div className="lg auth-panel">
         <div className="auth-top">
           <div className="auth-logo">
             <span className="auth-mark" aria-hidden="true">
@@ -46,7 +58,7 @@ export function AuthShell({ children, caption = DEFAULT_CAPTION }: AuthShellProp
           </div>
           <span className="auth-pill">
             <Lock />
-            Só vocês dois
+            Privado
           </span>
         </div>
         <div className="auth-main">{children}</div>

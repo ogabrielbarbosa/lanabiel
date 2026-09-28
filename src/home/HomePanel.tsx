@@ -35,7 +35,7 @@ export interface HomePanelProps {
 export function HomePanel({ onShowOnMap = requestMapFocus }: HomePanelProps) {
   const { today, people } = useHome()
   return (
-    <aside className="home-panel" aria-label="Painel">
+    <aside className="home-panel lg" aria-label="Painel">
       <div className="hp-scroll">
         <header className="hp-head">
           <p>{weekdayDayMonthLabel(today)}</p>

@@ -454,7 +454,7 @@ describe('addKiss', () => {
     const { db } = fakeDb({
       responses: { 'day_kisses.insert': { data: null, error: { code: '42501', message: 'row-level security' } } },
     })
-    expect(await addKiss(db, 'couple-1', '2026-09-26')).toEqual({ status: 'error', cause: 'Este espaço mudou — recarregue' })
+    expect(await addKiss(db, 'couple-1', '2026-09-26')).toEqual({ status: 'error', cause: 'Este espaço mudou. Recarregue a página' })
   })
 
   it('sem sessão → `unauthenticated`', async () => {

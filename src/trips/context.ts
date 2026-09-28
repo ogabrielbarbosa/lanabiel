@@ -127,11 +127,11 @@ export function tripFailureMessage(failure: TripFailure): string {
     case 'invalid':
       return RULE_MESSAGES[failure.constraint] ?? `o banco recusou (${failure.constraint})`
     case 'not_found':
-      return 'isso não existe mais — alguém apagou antes; recarregue'
+      return 'isso já tinha sido apagado, recarregue a página'
     case 'not_member':
-      return 'este espaço mudou — recarregue'
+      return 'este espaço mudou, recarregue a página'
     case 'unauthenticated':
-      return 'sua sessão expirou — entre de novo'
+      return 'sua sessão expirou, entre de novo'
     case 'error':
       return failure.cause
   }
@@ -143,8 +143,8 @@ const RULE_MESSAGES: Record<string, string> = {
   trip_prep_limit: 'a preparação já tem 20 itens',
   trip_budget_limit: 'o orçamento já tem 12 linhas',
   trip_photos_limit: 'a viagem já tem 500 fotos',
-  trip_member: 'essa pessoa não é mais do casal — recarregue',
-  trips_cover_same_trip: 'essa foto não é desta viagem — recarregue',
+  trip_member: 'essa pessoa não está mais no espaço, recarregue a página',
+  trips_cover_same_trip: 'essa foto não é desta viagem, recarregue a página',
 }
 
 // ---------------------------------------------------------------------------

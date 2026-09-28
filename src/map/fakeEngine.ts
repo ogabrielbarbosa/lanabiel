@@ -12,6 +12,7 @@ export interface FakeMap {
   flights: Camera[]
   zooms: (1 | -1)[]
   arcs: (readonly Arc[])[]
+  insets: { top: number; right: number }[]
   destroyed: number
   /** Dispara os ouvintes de `onMove` (depois de mudar `hidden`, por exemplo). */
   emitMove(): void
@@ -26,6 +27,7 @@ export function fakeMapEngine(opts: { fail?: MapFailureReason } = {}): FakeMap {
     flights: [],
     zooms: [],
     arcs: [],
+    insets: [],
     destroyed: 0,
     hidden: new Set(),
     emitMove: () => listeners.forEach((l) => l()),
@@ -47,6 +49,10 @@ export function fakeMapEngine(opts: { fail?: MapFailureReason } = {}): FakeMap {
           },
           setArcs: (arcs) => {
             fake.arcs.push(arcs)
+          },
+          globe: () => null,
+          setInset: (inset) => {
+            fake.insets.push(inset)
           },
           destroy: () => {
             fake.destroyed += 1

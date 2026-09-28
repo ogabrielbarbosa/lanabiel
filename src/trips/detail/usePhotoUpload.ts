@@ -33,7 +33,7 @@ export function usePhotoUpload(trip: Trip) {
       setState({ phase: 'sending', done: 0, total: files.length })
       const result = await api.uploadPhotos(coupleId, trip, files, (done, total) => setState({ phase: 'sending', done, total }))
       if (result.status === 'unauthenticated') {
-        setState({ phase: 'done', failed: true, message: 'Sua sessão expirou — entre de novo.' })
+        setState({ phase: 'done', failed: true, message: 'Sua sessão expirou. Entre de novo.' })
         return
       }
       if (result.status === 'rejected') {

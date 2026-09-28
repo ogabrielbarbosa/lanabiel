@@ -20,7 +20,9 @@ vi.mock('./MarkDoneModal', () => ({
 
 async function renderPanel(api: ListApi) {
   render(<ListScreen api={api} />)
-  return screen.findByRole('complementary', { name: 'Painel da lista' })
+  // O painel existe desde o esqueleto; o carregado é o que tem o título.
+  await screen.findByRole('heading', { name: 'O que vem por aí' })
+  return screen.getByRole('complementary', { name: 'Painel da lista' })
 }
 
 const region = (panel: HTMLElement, name: string) => within(panel).getByRole('region', { name })
@@ -66,9 +68,9 @@ describe('A17 — onde o casal está hoje decide sugestão e "Perto de vocês"',
   it('sem estadia: os textos de unknown, nenhuma distância, e a cidade-casa nunca vira palpite', async () => {
     const panel = await renderPanel(seededListApi({ stays: STAYS.unknown }))
     const near = region(panel, 'Perto de vocês')
-    expect(near).toHaveTextContent('Sem registro de onde vocês estão hoje — marque no Calendário.')
+    expect(near).toHaveTextContent('Sem registro de onde vocês estão hoje. Marque no Calendário.')
     // R23: o "marque no Calendário" leva ao Calendário, sem recarregar a página.
-    const link = within(near).getByRole('link', { name: 'marque no Calendário' })
+    const link = within(near).getByRole('link', { name: 'Marque no Calendário' })
     // Fase 7: `/` virou a Home; o Calendário mora em `/calendario`.
     expect(link).toHaveAttribute('href', '/calendario')
     window.history.pushState(null, '', '/lista')
@@ -142,7 +144,7 @@ describe('R23 — o sorteio', () => {
     const panel = await renderPanel(
       seededListApi({ stays: STAYS.togetherInSJC, settings: { hiddenCategories: ['parque', 'comida', 'experiencia'] } }),
     )
-    expect(region(panel, 'Sugestão do momento')).toHaveTextContent('Nada pra sugerir por aqui — adicione algo à lista.')
+    expect(region(panel, 'Sugestão do momento')).toHaveTextContent('Ainda não há o que sugerir. Adicione algo à lista.')
     expect(region(panel, 'Perto de vocês')).toHaveTextContent('0 itens da lista na cidade')
   })
 })

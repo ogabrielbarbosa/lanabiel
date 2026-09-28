@@ -18,7 +18,7 @@ export function AppearanceTab({ appearance }: TabContext) {
     <div className="st-stack">
       {!storable && (
         <p className="st-warning" role="status">
-          Não dá pra guardar neste navegador — a aparência vale só até fechar a aba.
+          Este navegador não deixa guardar a preferência. A aparência vale até você fechar a aba.
         </p>
       )}
       <Card className="st-theme">
@@ -36,7 +36,7 @@ export function AppearanceTab({ appearance }: TabContext) {
               type="button"
               role="radio"
               aria-checked={a.theme === value}
-              className={`st-theme-preview st-theme-preview--${value}`}
+              className={`lg st-theme-preview st-theme-preview--${value}`}
               onClick={() => update({ theme: value })}
             >
               <span className="st-theme-mini" aria-hidden="true">

@@ -93,7 +93,8 @@ export interface EventModalProps {
 }
 
 const SUBTITLE = 'Visitas e viagens já criam o período de onde vocês vão estar'
-const EDIT_TRAVEL_NOTICE = 'Mudar datas ou destino aqui não muda o período — ajuste no calendário.'
+const EDIT_TRAVEL_NOTICE = 'Mudar datas ou destino aqui não muda o período. Pra isso, ajuste no calendário.'
+const NO_PAINT_NOTICE = 'Só visita e viagem mudam onde cada um está. Este evento aparece no dia, sem mexer no período.'
 
 const isTravel = (kind: EventKind): boolean => (TRAVEL_KINDS as readonly EventKind[]).includes(kind)
 /** Tipos com hora de começo e o _Dia inteiro_ (a hora do lembrete é o _Até_). */
@@ -391,7 +392,7 @@ export function EventModal({ env, mode, onClose, onSaved }: EventModalProps) {
   ) => {
     const error = errorFor(field)
     return (
-      <div className={`cal-mf-input ${error ? 'is-invalid' : ''}`}>
+      <div className={`cal-mf-input lg ${error ? 'is-invalid' : ''}`}>
         {icon}
         <input
           id={fid(field)}
@@ -420,7 +421,7 @@ export function EventModal({ env, mode, onClose, onSaved }: EventModalProps) {
     const time = extra.time && !s.allDaySwitch ? extra.time : null
     const timeError = time ? errorFor(time.field) : null
     return (
-      <div className={`cal-mf-input ${error || timeError ? 'is-invalid' : ''}`}>
+      <div className={`cal-mf-input lg ${error || timeError ? 'is-invalid' : ''}`}>
         <DateField
           value={field === 'startsOn' ? s.startsOn : s.endsOn}
           onChange={(v) => set(field === 'startsOn' ? { startsOn: v } : { endsOn: v })}
@@ -457,7 +458,7 @@ export function EventModal({ env, mode, onClose, onSaved }: EventModalProps) {
   const timeInput = (field: 'startsAt' | 'endsAt', label: string) => {
     const error = errorFor(field)
     return (
-      <div className={`cal-mf-input cal-mf-input--time ${error ? 'is-invalid' : ''}`}>
+      <div className={`cal-mf-input lg cal-mf-input--time ${error ? 'is-invalid' : ''}`}>
         <Clock size={15} aria-hidden="true" />
         <input
           id={fid(field)}
@@ -479,7 +480,7 @@ export function EventModal({ env, mode, onClose, onSaved }: EventModalProps) {
 
   const noteField = (
     <ModalField label="Nota" htmlFor={fid('note')} field="note" error={errorFor('note')} errorId={fid('note-error')}>
-      <div className={`cal-mf-input ${errorFor('note') ? 'is-invalid' : ''}`}>
+      <div className={`cal-mf-input lg ${errorFor('note') ? 'is-invalid' : ''}`}>
         <StickyNote size={15} aria-hidden="true" />
         <input
           id={fid('note')}
@@ -534,7 +535,7 @@ export function EventModal({ env, mode, onClose, onSaved }: EventModalProps) {
 
   const travelersField = (
     <ModalField label="Quem viaja" field="travelers" error={errorFor('travelers', 'travelerId')}>
-      <div className="cal-mf-seg" role="radiogroup" aria-label="Quem viaja" id={fid('travelers')} tabIndex={-1}>
+      <div className="cal-mf-seg lg" role="radiogroup" aria-label="Quem viaja" id={fid('travelers')} tabIndex={-1}>
         {([people[1], people[2]] as CalendarPerson[]).map((p) => (
           <button
             key={p.profileId}
@@ -686,16 +687,22 @@ export function EventModal({ env, mode, onClose, onSaved }: EventModalProps) {
 
   // --- prévia ----------------------------------------------------------------
 
-  let side: ReactNode = null
+  // A coluna da direita existe em todo tipo: o modal tem um tamanho só, e
+  // trocar de tipo não pode encolher a largura (layout shift).
+  let side: ReactNode = (
+    <aside className="cal-eprev lg cal-eprev--notice" aria-label="Período">
+      <p>{NO_PAINT_NOTICE}</p>
+    </aside>
+  )
   if (travel && editing) {
     side = (
-      <aside className="cal-eprev cal-eprev--notice" aria-label="Período">
+      <aside className="cal-eprev lg cal-eprev--notice" aria-label="Período">
         <p>{EDIT_TRAVEL_NOTICE}</p>
       </aside>
     )
   } else if (auto) {
     side = (
-      <aside className="cal-eprev" aria-label="Período automático">
+      <aside className="cal-eprev lg" aria-label="Período automático">
         <div className="cal-eprev-head">
           <p className="cal-eprev-kicker">
             <Sparkles size={13} aria-hidden="true" />
@@ -705,7 +712,7 @@ export function EventModal({ env, mode, onClose, onSaved }: EventModalProps) {
         </div>
         {auto.ready ? (
           <>
-            <div className="cal-eprev-card" style={{ '--band': auto.color } as CSSProperties}>
+            <div className="cal-eprev-card lg" style={{ '--band': auto.color } as CSSProperties}>
               <BigPair
                 people={[people[1], people[2]]}
                 together={auto.band !== 'apart'}
@@ -779,7 +786,7 @@ export function EventModal({ env, mode, onClose, onSaved }: EventModalProps) {
     <div className="cal-modal-confirm" role="group" aria-label="Apagar evento">
       <p>{travel ? `Apagar ${savedTitle}? O período no calendário continua.` : `Apagar ${savedTitle}?`}</p>
       <span className="cal-modal-actions">
-        <button type="button" className="cal-btn" onClick={() => setConfirmDelete(false)} disabled={pending}>
+        <button type="button" className="cal-btn lg" onClick={() => setConfirmDelete(false)} disabled={pending}>
           Voltar
         </button>
         <button type="button" className="cal-btn cal-btn--danger" onClick={() => void erase()} disabled={pending}>
@@ -797,7 +804,7 @@ export function EventModal({ env, mode, onClose, onSaved }: EventModalProps) {
         </button>
       )}
       <span className="cal-modal-actions">
-        <button type="button" className="cal-btn" onClick={onClose} disabled={pending}>
+        <button type="button" className="cal-btn lg" onClick={onClose} disabled={pending}>
           Cancelar
         </button>
         <button type="button" className="cal-btn cal-btn--primary" onClick={() => void save()} disabled={pending}>
@@ -818,7 +825,7 @@ export function EventModal({ env, mode, onClose, onSaved }: EventModalProps) {
       iconClass={`cal-ev--${s.kind}`}
       onClose={onClose}
       closeDisabled={pending}
-      wide={side !== null}
+      wide
       footer={footer}
     >
       <fieldset className="cal-mf-fieldset" disabled={pending} aria-busy={pending}>
@@ -831,7 +838,7 @@ export function EventModal({ env, mode, onClose, onSaved }: EventModalProps) {
                   key={kind}
                   id={kind === EVENT_KINDS[0] ? fid('kind') : undefined}
                   type="button"
-                  className={`cal-kind cal-ev--${kind}`}
+                  className={`cal-kind lg cal-ev--${kind}`}
                   aria-pressed={s.kind === kind}
                   disabled={editing && s.kind !== kind}
                   onClick={() => pickKind(kind)}
@@ -845,7 +852,7 @@ export function EventModal({ env, mode, onClose, onSaved }: EventModalProps) {
           {editing && <p className="cal-mf-hint">O tipo não muda na edição.</p>}
         </ModalField>
 
-        <div className={`cal-ebody ${side ? 'cal-ebody--split' : ''}`}>
+        <div className="cal-ebody cal-ebody--split">
           <div className="cal-eform">{fields()}</div>
           {side}
         </div>
@@ -894,7 +901,7 @@ function ListLink({
   if (value !== null) {
     const item = items.find((i) => i.id === value)
     return (
-      <div className="cal-mf-input cal-mf-input--chosen">
+      <div className="cal-mf-input lg cal-mf-input--chosen">
         <Link2 size={15} aria-hidden="true" />
         <span className="cal-mf-chosen" id={id} tabIndex={-1}>
           {item ? item.name : 'Item da lista'}
@@ -940,7 +947,7 @@ function ListLink({
 
   return (
     <div className="cal-city">
-      <div className="cal-mf-input">
+      <div className="cal-mf-input lg">
         <Link2 size={15} aria-hidden="true" />
         <input
           id={id}
@@ -963,7 +970,7 @@ function ListLink({
           onKeyDown={onKeyDown}
         />
       </div>
-      <div className="cal-city-results" hidden={!expanded}>
+      <div className="cal-city-results lg" hidden={!expanded}>
         <ul id={listId} role="listbox" aria-label="Itens da lista">
           {matches.map((item, index) => (
             <li

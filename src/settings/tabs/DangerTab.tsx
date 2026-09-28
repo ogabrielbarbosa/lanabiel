@@ -37,7 +37,9 @@ export function DangerTab(ctx: TabContext) {
   // Sozinho no espaço, sair é apagar: `leave_couple` apaga o casal quando
   // ninguém fica — e depois disso ninguém alcança mais a pasta de fotos dele.
   // Então o caminho é o de apagar (fotos primeiro, RPC depois).
-  const alone = partner === null
+  // Com o perfil provisório (ADR 0024) também: `leave_couple` apaga o espaço
+  // quando não sobra ninguém com conta.
+  const alone = partner === null || partner.pending
 
   return (
     <div className="st-stack">
@@ -49,7 +51,7 @@ export function DangerTab(ctx: TabContext) {
         <p>
           {alone
             ? `Você está sozinho no espaço ${label}: sair apaga o espaço e tudo que está nele, pra sempre.`
-            : `Você sai do espaço ${label} e perde o acesso. O acervo inteiro — estadias, lista, viagens, memórias e fotos — fica com ${partner!.displayName}, e o convite aberto deixa de valer.`}{' '}
+            : `Você sai do espaço ${label} e perde o acesso. Estadias, lista, viagens, memórias e fotos ficam com ${partner!.displayName}, e o convite aberto deixa de valer.`}{' '}
           Sua conta continua: dá pra criar um espaço novo depois.
         </p>
         <div className="st-danger-foot">
@@ -133,7 +135,7 @@ export function DangerTab(ctx: TabContext) {
               case 'couple_failed':
                 return `A foto do casal foi apagada, mas o espaço não. Tente de novo. (${result.cause})`
               case 'unauthenticated':
-                return 'Sua sessão expirou — entre de novo.'
+                return 'Sua sessão expirou. Entre de novo.'
             }
           }}
         />
@@ -199,7 +201,7 @@ function ConfirmByName({
         }}
       >
         {kind === 'delete' && photos !== null && photos > 0 && (
-          <p className="st-hint">As fotos de perfil ficam — são de cada um. A do casal vai junto.</p>
+          <p className="st-hint">As fotos de perfil ficam, porque são de cada um. A foto do casal é apagada junto.</p>
         )}
         <label className="st-field">
           <span className="st-field-label">Digite “{label}” pra confirmar</span>

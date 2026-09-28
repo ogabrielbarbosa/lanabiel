@@ -36,7 +36,7 @@ function useCouple(api: OnboardingApi, known: CoupleView | null = null) {
 
 function Loading({ load }: { load: Exclude<Load, { kind: 'ok' }> }) {
   return (
-    <AuthShell caption={{ title: 'Um instante.', subtitle: 'Buscando o espaço de vocês.' }}>
+    <AuthShell caption={{ title: 'Buscando o espaço', subtitle: '' }}>
       {load.kind === 'failed' ? (
         <p className="auth-error" role="alert">
           Não deu pra carregar o espaço: {load.cause}
@@ -208,19 +208,19 @@ export function AllSet({ api, couple: known, onEnter }: AllSetProps) {
     km === null
       ? null
       : km === 0
-        ? 'Vocês estão na mesma cidade — melhor ainda.'
-        : `Lá fora são ${km.toLocaleString('pt-BR')} km — aqui dentro, nenhum.`
+        ? 'Vocês moram na mesma cidade.'
+        : `Vocês moram a ${km.toLocaleString('pt-BR')} km um do outro.`
   const years = yearsLabel(togetherFor(couple.startedOn, api.today()))
 
   return (
-    <AuthShell caption={{ title: `${title}.`, subtitle: 'Agora sim, completo.' }}>
+    <AuthShell caption={{ title: `${title}.`, subtitle: 'Os dois já estão aqui.' }}>
       <div className="auth-heading onb-heading">
         <span className="onb-kicker">Você entrou no espaço {title}</span>
         <h1>Tudo pronto, {title}!</h1>
-        <p>Agora são dois no espaço de vocês.{distance ? ` ${distance}` : ''}</p>
+        <p>Agora o espaço tem as duas pessoas.{distance ? ` ${distance}` : ''}</p>
       </div>
 
-      <div className="onb-card">
+      <div className="lg onb-card">
         <div className="onb-card-row">
           <span>Juntos desde</span>
           <strong>

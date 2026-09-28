@@ -25,6 +25,7 @@ import {
   removeSavedCity,
   replaceCover,
   saveCity,
+  savePendingPartner,
   updateCouple,
   updateCoupleSettings,
   updateProfile,
@@ -74,6 +75,8 @@ export interface SettingsApi {
   createInvite: (input: Parameters<typeof createInvite>[1]) => ReturnType<typeof createInvite>
   sendInvite: (inviteId: string) => ReturnType<typeof sendInvite>
   cancelInvite: () => ReturnType<typeof cancelInvite>
+  /** Cria ou edita o perfil provisório de quem vai entrar (ADR 0024). */
+  savePendingPartner: (input: Parameters<typeof savePendingPartner>[1]) => ReturnType<typeof savePendingPartner>
   leaveCouple: () => ReturnType<typeof leaveCouple>
   deleteCouple: (coupleId: string) => ReturnType<typeof deleteCouple>
   /** Entrega o arquivo ao navegador. Injetável: o jsdom não baixa nada. */
@@ -122,6 +125,7 @@ export function settingsApi(db: Db): SettingsApi {
     createInvite: (input) => createInvite(db, input),
     sendInvite: (inviteId) => sendInvite(db, inviteId),
     cancelInvite: () => cancelInvite(db),
+    savePendingPartner: (input) => savePendingPartner(db, input),
     leaveCouple: () => leaveCouple(db),
     deleteCouple: (coupleId) => deleteCouple(db, coupleId),
     download: downloadInBrowser,

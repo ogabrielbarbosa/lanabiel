@@ -65,7 +65,7 @@ export function seededHomeApi(seed: HomeSeed = {}, overrides: Partial<HomeApi> =
     })),
     avatarUrl: vi.fn<HomeApi['avatarUrl']>(async () => null),
     coverUrl: vi.fn<HomeApi['coverUrl']>(async () => null),
-    searchCities: vi.fn<HomeApi['searchCities']>(async () => ({ status: 'ok', rows: [] })),
+    stateCities: vi.fn<HomeApi['stateCities']>(async () => ({ status: 'ok', rows: [] })),
     mapEngine: (seed.map ?? fakeMapEngine()).engine,
     ...overrides,
   }

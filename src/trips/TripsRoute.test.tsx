@@ -26,6 +26,10 @@ describe('A17 — leitura: esqueleto, erro e nunca a Grade vazia', () => {
     renderTripsRoute(seededTripsApi({}, { loadTrips: vi.fn<TripsApi['loadTrips']>(() => new Promise(() => undefined)) }))
     expect(screen.getByText('Carregando as viagens…')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Nossas viagens' })).not.toBeInTheDocument()
+    // Na Grade, o painel já está no lugar (sem layout shift), só com o esqueleto.
+    const panel = screen.getByRole('complementary', { name: 'Pelo mundo, juntos' })
+    expect(panel).toHaveAttribute('aria-busy', 'true')
+    expect(panel.querySelector('h2, h3')).toBeNull()
   })
 
   it.each(['loadContext', 'loadTrips', 'loadListItems', 'loadCities'] as const)(
@@ -89,7 +93,7 @@ describe('ADR 0015 — releitura ao voltar à aba', () => {
     expect(api.loadTrips).toHaveBeenCalledTimes(1)
     await act(async () => setVisibility('visible'))
     await waitFor(() => expect(api.loadTrips).toHaveBeenCalledTimes(2))
-    expect(await screen.findByText('Não deu pra atualizar — mostrando o que já estava aqui')).toBeInTheDocument()
+    expect(await screen.findByText('Não deu pra atualizar. Você está vendo a última versão carregada.')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Nossas viagens' })).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
@@ -100,7 +104,7 @@ describe('a outra pessoa saiu', () => {
     const alone = settingsData()
     alone.couple.members = alone.couple.members.slice(0, 1)
     renderTripsRoute(seededTripsApi({ context: alone }))
-    expect(await screen.findByText('As viagens são de vocês dois — convide de novo em Configurações.')).toBeInTheDocument()
+    expect(await screen.findByText('As viagens aparecem quando as duas pessoas estiverem no espaço. Em Configurações, na aba Casal, você convida a outra pessoa ou cria o perfil dela para já ir preenchendo.')).toBeInTheDocument()
   })
 })
 

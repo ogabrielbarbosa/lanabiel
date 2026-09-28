@@ -36,7 +36,7 @@ export function HomeScreen({ api }: HomeScreenProps) {
     return (
       <div className="home-screen" aria-busy="true">
         <div className="home-map-blank" aria-hidden="true" />
-        <aside className="home-panel-state">
+        <aside className="home-panel-state lg">
           <span className="visually-hidden">Carregando a Home…</span>
           <div className="home-skeleton" aria-hidden="true">
             {Array.from({ length: 5 }, (_, i) => (
@@ -52,7 +52,7 @@ export function HomeScreen({ api }: HomeScreenProps) {
     return (
       <div className="home-screen">
         <div className="home-map-blank" aria-hidden="true" />
-        <aside className="home-panel-state">
+        <aside className="home-panel-state lg">
           <div className="home-state" role="alert">
             <p>Não deu para carregar a Home.</p>
             <p className="visually-hidden">{load.cause}</p>
@@ -70,12 +70,12 @@ export function HomeScreen({ api }: HomeScreenProps) {
     return (
       <div className="home-screen">
         <div className="home-map-blank" aria-hidden="true" />
-        <aside className="home-panel-state">
+        <aside className="home-panel-state lg">
           <div className="home-state" role="status">
             <p>
               {load.problem === 'alone'
-                ? 'A Home é de vocês dois — convide de novo em Configurações.'
-                : 'Este espaço mudou — recarregue.'}
+                ? 'O mapa aparece quando as duas pessoas estiverem no espaço. Em Configurações, na aba Casal, você convida a outra pessoa ou cria o perfil dela para já ir preenchendo.'
+                : 'Este espaço mudou. Recarregue a página.'}
             </p>
           </div>
         </aside>
@@ -90,7 +90,7 @@ export function HomeScreen({ api }: HomeScreenProps) {
           <MapArea request={focusRequest} />
           {load.value.stale && (
             <p className="home-notice" role="status">
-              Não deu pra atualizar — mostrando o que já estava aqui
+              Não deu pra atualizar. Você está vendo a última versão carregada.
             </p>
           )}
         </div>

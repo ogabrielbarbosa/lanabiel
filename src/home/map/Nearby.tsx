@@ -70,7 +70,7 @@ function QuickCard({ pin, km, active, photo, onClick }: { pin: Pin; km: number; 
   return (
     <button
       type="button"
-      className={`hm-card ${catClass(pin.category)}${active ? ' is-active' : ''}`}
+      className={`hm-card lg ${catClass(pin.category)}${active ? ' is-active' : ''}`}
       aria-pressed={active}
       onClick={onClick}
     >

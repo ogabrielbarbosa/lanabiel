@@ -45,7 +45,7 @@ describe('R17 — os dias', () => {
     renderInTrips(<TripDetail id={TRIP_LISBOA_ID} />)
     expect(dayPills()).toEqual(['Dia 1', 'Dia 2', 'Dia 3 a 9'])
     expect(roteiro().getByText('Sáb, 3 → Sex, 9 out')).toBeInTheDocument()
-    expect(roteiro().getByText('7 dias livres — puxem itens da lista de Lisboa pra cá')).toBeInTheDocument()
+    expect(roteiro().getByText('7 dias livres. Dá pra trazer itens da lista de Lisboa pra cá.')).toBeInTheDocument()
     const suggestions = within(roteiro().getByRole('group', { name: 'Sugestões da lista' }))
     expect(suggestions.getAllByRole('button').map((b) => b.textContent)).toEqual(['LX Factory', 'Pastéis de Belém'])
     expect(roteiro().getByRole('button', { name: 'Montar roteiro' })).toBeInTheDocument()

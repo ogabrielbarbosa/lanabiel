@@ -37,8 +37,14 @@ describe('A14 — leitura: esqueleto, erro, e nunca padrão no lugar de dado', (
     renderTab('perfil-do-casal', api)
     expect(screen.getByText('Carregando…')).toBeInTheDocument()
     expect(screen.queryAllByRole('switch')).toHaveLength(0)
+    // O painel já está no lugar, só com o esqueleto — o mesmo nó que recebe os dados.
+    const panel = screen.getByRole('complementary', { name: 'O espaço de vocês' })
+    expect(panel).toHaveAttribute('aria-busy', 'true')
+    expect(within(panel).queryByText('Resumo rápido')).not.toBeInTheDocument()
     resolve({ status: 'ok', rows: settingsData() })
     expect(await screen.findAllByRole('switch')).toHaveLength(3)
+    expect(within(panel).getByText('Resumo rápido')).toBeInTheDocument()
+    expect(panel).not.toHaveAttribute('aria-busy')
   })
 
   it('com erro, mostra a causa e tenta de novo', async () => {
@@ -204,6 +210,75 @@ describe('A16a — convite pendente com um integrante só', () => {
   })
 })
 
+describe('A10/A11 de perfil-provisorio.md — o perfil de quem vai entrar', () => {
+  const alone = () => {
+    const data = settingsData()
+    data.couple.members = [data.couple.members[0]!]
+    return data
+  }
+  const withPending = () => {
+    const data = settingsData()
+    data.couple.members[1] = { ...data.couple.members[1]!, pending: true }
+    return data
+  }
+
+  it('sozinho: cria o perfil com nome, cidade e cor, e o mostra como "Ainda não entrou"', async () => {
+    const api = fakeApi(alone())
+    renderTab('perfil-do-casal', api)
+    await userEvent.click(await screen.findByRole('button', { name: 'Criar o perfil dela' }))
+    const dialog = screen.getByRole('dialog', { name: 'Perfil de quem vai entrar' })
+    const save = within(dialog).getByRole('button', { name: 'Salvar' })
+    expect(save).toBeDisabled()
+
+    await userEvent.type(within(dialog).getByLabelText('Nome'), 'Lana')
+    await userEvent.type(within(dialog).getByLabelText('Cidade onde ela mora'), 'Mar')
+    await userEvent.click(await within(dialog).findByRole('button', { name: /Marau/ }))
+    // A cor de quem cria não pode ser escolhida; a sugerida é a outra padrão.
+    expect(within(dialog).getByRole('radio', { name: /#7FD8C4/ })).toBeDisabled()
+    expect(within(dialog).getByRole('radio', { name: '#F4A3B4' })).toHaveAttribute('aria-checked', 'true')
+    await userEvent.click(save)
+
+    expect(api.savePendingPartner).toHaveBeenCalledWith({ displayName: 'Lana', homeCityId: MARAU.id, color: '#F4A3B4' })
+    expect(await screen.findByText('Ainda não entrou')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Editar' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Criar o perfil dela' })).not.toBeInTheDocument()
+    // O convite continua ali.
+    expect(screen.getByRole('button', { name: /Convidar/ })).toBeInTheDocument()
+  })
+
+  it('recusa do banco aparece no diálogo', async () => {
+    const api = fakeApi(alone(), {
+      savePendingPartner: vi.fn<SettingsApi['savePendingPartner']>(async () => ({ status: 'couple_full' })),
+    })
+    renderTab('perfil-do-casal', api)
+    await userEvent.click(await screen.findByRole('button', { name: 'Criar o perfil dela' }))
+    const dialog = screen.getByRole('dialog', { name: 'Perfil de quem vai entrar' })
+    await userEvent.type(within(dialog).getByLabelText('Nome'), 'Lana')
+    await userEvent.type(within(dialog).getByLabelText('Cidade onde ela mora'), 'Mar')
+    await userEvent.click(await within(dialog).findByRole('button', { name: /Marau/ }))
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Salvar' }))
+    expect(await within(dialog).findByText(/já entrou no espaço/)).toBeInTheDocument()
+  })
+
+  it('com o provisório: Editar abre o formulário preenchido', async () => {
+    const api = fakeApi(withPending())
+    renderTab('perfil-do-casal', api)
+    expect(await screen.findByText('Ainda não entrou')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Editar' }))
+    const dialog = screen.getByRole('dialog', { name: 'Perfil de quem vai entrar' })
+    expect(within(dialog).getByLabelText('Nome')).toHaveValue('Lana')
+    expect(within(dialog).getByText('Marau, RS')).toBeInTheDocument()
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Salvar' }))
+    expect(api.savePendingPartner).toHaveBeenCalledWith({ displayName: 'Lana', homeCityId: MARAU.id, color: '#F4A3B4' })
+  })
+
+  it('Zona sensível com o provisório: sair é apagar', async () => {
+    const api = fakeApi(withPending())
+    renderTab('zona-sensivel', api)
+    expect(await screen.findByText(/sair apaga o espaço/)).toBeInTheDocument()
+  })
+})
+
 describe('A17 — Cidades', () => {
   it('Trocar cidade só no próprio cartão', async () => {
     renderTab('cidades')
@@ -306,7 +381,7 @@ describe('A19 — Aparência', () => {
 
   it('sem localStorage, avisa', async () => {
     renderTab('aparencia', fakeApi(), { appearance: appearanceControl({ storable: false }) })
-    expect(await screen.findByText(/Não dá pra guardar neste navegador/)).toBeInTheDocument()
+    expect(await screen.findByText(/não deixa guardar a preferência/)).toBeInTheDocument()
   })
 })
 

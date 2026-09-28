@@ -55,12 +55,12 @@ export function CoupleStep({ api, progress, notice, onBack, onDone }: CoupleStep
   }
 
   return (
-    <AuthShell caption={{ title: 'Agora, a história', subtitle: 'de vocês dois.' }}>
+    <AuthShell caption={{ title: 'Agora, o casal', subtitle: 'Quando começou e como se chama.' }}>
       <StepProgress {...progress} />
       {notice && <p className="onb-notice">{notice}</p>}
       <div className="auth-heading onb-heading">
         <h1>Sobre a gente</h1>
-        <p>Isso monta o contador e a história de vocês no app. Dá pra editar depois.</p>
+        <p>Com isso o app conta há quanto tempo vocês estão juntos. Dá pra mudar depois.</p>
       </div>
 
       <form className="auth-form" onSubmit={submit}>
@@ -104,7 +104,7 @@ export function CoupleStep({ api, progress, notice, onBack, onDone }: CoupleStep
         </Field>
 
         <p className="auth-hint onb-note">
-          No próximo passo você convida seu amor por e-mail — seu amor confirma esses dados ao entrar.
+          No próximo passo você manda o convite por e-mail. Quem receber confere esses dados ao entrar.
         </p>
 
         {error && (
@@ -114,7 +114,7 @@ export function CoupleStep({ api, progress, notice, onBack, onDone }: CoupleStep
         )}
 
         <div className="onb-actions">
-          <button type="button" className="auth-btn" onClick={onBack}>
+          <button type="button" className="lg auth-btn" onClick={onBack}>
             Voltar
           </button>
           <button type="submit" className="auth-btn auth-btn-primary" disabled={!valid || busy}>

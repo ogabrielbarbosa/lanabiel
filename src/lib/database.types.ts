@@ -759,6 +759,7 @@ export type Database = {
           full_name: string
           home_city_id: string
           id: string
+          user_id: string | null
         }
         Insert: {
           avatar_path?: string | null
@@ -768,6 +769,7 @@ export type Database = {
           full_name: string
           home_city_id: string
           id: string
+          user_id?: string | null
         }
         Update: {
           avatar_path?: string | null
@@ -777,6 +779,7 @@ export type Database = {
           full_name?: string
           home_city_id?: string
           id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -1270,6 +1273,14 @@ export type Database = {
       }
       paint_stays: { Args: { p_entries: Json }; Returns: Json }
       renew_invite: { Args: never; Returns: Json }
+      save_pending_partner: {
+        Args: {
+          p_color: string
+          p_display_name: string
+          p_home_city_id: string
+        }
+        Returns: Json
+      }
       search_cities: {
         Args: { p_limit?: number; p_query: string }
         Returns: {

@@ -8,6 +8,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { X } from 'lucide-react'
 import type { CoupleSettings } from '../data/settings'
 import type { Band } from '../domain/calendar'
+import { useExitTransition } from '../app/motion'
 import { bandColor } from './view'
 import './calendar.css'
 import './modals.css'
@@ -37,12 +38,14 @@ export function CalDialog({
 }) {
   const titleId = useId()
   const ref = useRef<HTMLDivElement>(null)
-  const closeRef = useRef(onClose)
+  // Fechar pelo ×, Esc ou véu anima a saída antes de o dono desmontar.
+  const { ref: exitRef, closing, requestClose } = useExitTransition<HTMLDivElement>(onClose)
+  const closeRef = useRef(requestClose)
   const disabledRef = useRef(closeDisabled)
   useEffect(() => {
-    closeRef.current = onClose
+    closeRef.current = requestClose
     disabledRef.current = closeDisabled
-  }, [onClose, closeDisabled])
+  }, [requestClose, closeDisabled])
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null
@@ -59,8 +62,9 @@ export function CalDialog({
 
   return (
     <div
-      className="cal-modal-overlay"
-      onMouseDown={(e) => e.target === e.currentTarget && !closeDisabled && onClose()}
+      ref={exitRef}
+      className={`cal-modal-overlay ${closing ? 'is-closing' : ''}`}
+      onMouseDown={(e) => e.target === e.currentTarget && !closeDisabled && requestClose()}
     >
       <div
         ref={ref}
@@ -80,7 +84,7 @@ export function CalDialog({
             <h2 id={titleId}>{title}</h2>
             {subtitle && <p>{subtitle}</p>}
           </div>
-          <button type="button" className="cal-modal-close" aria-label="Fechar" onClick={onClose} disabled={closeDisabled}>
+          <button type="button" className="cal-modal-close lg" aria-label="Fechar" onClick={requestClose} disabled={closeDisabled}>
             <X size={16} aria-hidden="true" />
           </button>
         </div>

@@ -79,7 +79,7 @@ export function failureMessage(result: ListFailure): string {
     case 'not_found':
       return 'Este item não está mais na lista.'
     case 'unauthenticated':
-      return 'Sua sessão expirou — entre de novo.'
+      return 'Sua sessão expirou. Entre de novo.'
     case 'error':
       return result.cause
   }

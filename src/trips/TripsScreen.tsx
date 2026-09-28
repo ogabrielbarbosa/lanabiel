@@ -98,7 +98,7 @@ export function TripsScreen() {
             <h1>Nossas viagens</h1>
           </div>
           <div className="tr-controls">
-            <div className="tr-segmented" role="group" aria-label="Visão">
+            <div className="tr-segmented lg" role="group" aria-label="Visão">
               <button type="button" aria-pressed={view === 'grid'} onClick={() => setView('grid')}>
                 <LayoutGrid size={14} aria-hidden="true" />
                 Grade
@@ -122,7 +122,7 @@ export function TripsScreen() {
         <div className="tr-fade" aria-hidden="true" />
       </div>
 
-      <aside className="tr-panel" aria-label="Pelo mundo, juntos">
+      <aside className="tr-panel lg" aria-label="Pelo mundo, juntos">
         <TripsPanel onPlan={(query) => openNew(query)} />
       </aside>
 
@@ -151,7 +151,7 @@ function Stats() {
 
 function Stat({ icon, tone, value, unit, label }: { icon: ReactNode; tone: string; value: string; unit?: string; label: string }) {
   return (
-    <li className="tr-stat">
+    <li className="tr-stat lg">
       <span className={`tr-stat-icon tr-tone--${tone}`} aria-hidden="true">
         {icon}
       </span>
@@ -213,7 +213,7 @@ function GridView({ onNew, today }: { onNew: () => void; today: string }) {
               {[years, where].map(
                 (group, g) =>
                   group.length > 0 && (
-                    <div key={g} className="tr-chips">
+                    <div key={g} className="tr-chips lg">
                       {group.map((o) => {
                         // No .pen só Brasil e Exterior têm ícone; o de Todas
                         // e o dos anos estão desligados (`enabled: false`).
@@ -292,7 +292,7 @@ function Hero({ trip }: { trip: Trip }) {
           </div>
         </div>
       </div>
-      <div className="tr-prep">
+      <div className="tr-prep lg">
         <div className="tr-prep-top">
           {!on ? (
             <span className="tr-prep-count">
@@ -354,7 +354,7 @@ function EmptyHero({ onNew }: { onNew: () => void }) {
 function PlannedCard({ trip, today }: { trip: Trip; today: string }) {
   const until = daysUntil(trip, today)
   return (
-    <TripLink id={trip.id} className="tr-pcard">
+    <TripLink id={trip.id} className="tr-pcard lg">
       <Cover path={coverPath(trip)} className="tr-pcard-cover" />
       <span className="tr-pcard-body">
         <span className="tr-pcard-kicker">{plannedKicker(trip)}</span>
@@ -363,7 +363,7 @@ function PlannedCard({ trip, today }: { trip: Trip; today: string }) {
           {tripDateRange(trip, { year: true })} · {daysLabel(tripDays(trip))}
         </span>
       </span>
-      <span className="tr-countdown">
+      <span className="tr-countdown lg">
         <span>em</span>
         <strong>{until}</strong>
         <span>{until === 1 ? 'dia' : 'dias'}</span>
@@ -377,7 +377,7 @@ function DoneCard({ trip }: { trip: Trip }) {
   const { cities, members, names } = useTrips()
   const dest = cities.get(trip.cityId)
   return (
-    <TripLink id={trip.id} className="tr-dcard">
+    <TripLink id={trip.id} className="tr-dcard lg">
       <Cover path={coverPath(trip)} className="tr-dcard-cover">
         {dest && (
           <span className="tr-badge">
@@ -459,7 +459,7 @@ function TimelineRow({ entry }: { entry: TimelineEntry }) {
         <span className="tr-tl-year">{entry.year}</span>
       </span>
       <span className="tr-tl-dot" aria-hidden="true" />
-      <TripLink id={trip.id} className="tr-tl-card">
+      <TripLink id={trip.id} className="tr-tl-card lg">
         <Cover path={coverPath(trip)} className="tr-tl-cover" />
         <span className="tr-tl-text">
           <span className="tr-tl-kicker">{kicker}</span>

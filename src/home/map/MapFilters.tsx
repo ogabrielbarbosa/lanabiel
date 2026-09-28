@@ -36,7 +36,7 @@ export function MapFilters({
   const counts = statusCounts(items, hidden, filters.category)
   return (
     <div className="hm-filters">
-      <div className="hm-filters-status" role="group" aria-label="Status">
+      <div className="hm-filters-status lg" role="group" aria-label="Status">
         {STATUS.map(({ key, label }) => (
           <button
             key={key}
@@ -54,7 +54,7 @@ export function MapFilters({
       <div className="hm-filters-cats" role="group" aria-label="Categoria">
         <button
           type="button"
-          className={`hm-chip${filters.category === 'all' ? ' is-active' : ''}`}
+          className={`hm-chip lg${filters.category === 'all' ? ' is-active' : ''}`}
           aria-pressed={filters.category === 'all'}
           onClick={() => onChange({ ...filters, category: 'all' })}
         >
@@ -67,7 +67,7 @@ export function MapFilters({
             <button
               key={c}
               type="button"
-              className={`hm-chip${filters.category === c ? ' is-active' : ''}`}
+              className={`hm-chip lg${filters.category === c ? ' is-active' : ''}`}
               aria-pressed={filters.category === c}
               onClick={() => onChange({ ...filters, category: c })}
             >

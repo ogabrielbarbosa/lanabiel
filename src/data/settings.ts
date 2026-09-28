@@ -105,7 +105,7 @@ export async function updateCoupleSettings(
   if (isCheckViolation(error) || error?.code === '23514') return { status: 'invalid', cause: error!.message }
   if (error) return { status: 'error', cause: error.message }
   // Zero linhas: a policy não deixou (saiu do casal em outro aparelho).
-  if (!data || data.length !== 1) return { status: 'error', cause: 'este espaço mudou — recarregue' }
+  if (!data || data.length !== 1) return { status: 'error', cause: 'este espaço mudou, recarregue a página' }
   return { status: 'ok', value: toCoupleSettings(data[0]) }
 }
 
@@ -164,6 +164,8 @@ export interface SettingsMember {
   color: PersonColor
   joinedAt: string
   homeCity: City
+  /** Perfil provisório: criado por quem está sozinho, ainda sem conta (ADR 0024). */
+  pending: boolean
 }
 
 export interface SettingsCouple {
@@ -214,7 +216,7 @@ export async function loadSettings(db: Db): Promise<DataResult<SettingsData>> {
     db
       .from('couple_members')
       .select(
-        'slot, joined_at, profiles!inner(id, display_name, full_name, avatar_path, color, cities!inner(id, name, state_code, lat, lng))',
+        'slot, joined_at, profiles!inner(id, user_id, display_name, full_name, avatar_path, color, cities!inner(id, name, state_code, lat, lng))',
       )
       .order('slot'),
     db.from('couple_settings').select('*').maybeSingle(),
@@ -254,6 +256,7 @@ export async function loadSettings(db: Db): Promise<DataResult<SettingsData>> {
           color: m.profiles.color as PersonColor,
           joinedAt: m.joined_at,
           homeCity: toCity(m.profiles.cities),
+          pending: m.profiles.user_id === null,
         })),
       },
       coupleSettings: toCoupleSettings(coupleSettings.data),
@@ -292,7 +295,7 @@ export async function updateCouple(db: Db, coupleId: string, patch: CouplePatch)
     return { status: 'invalid', field }
   }
   if (error) return error.code === '42501' ? { status: 'unauthenticated' } : { status: 'error', cause: error.message }
-  if (!data || data.length === 0) return { status: 'error', cause: 'este espaço mudou — recarregue' }
+  if (!data || data.length === 0) return { status: 'error', cause: 'este espaço mudou, recarregue a página' }
   return { status: 'ok' }
 }
 
@@ -515,4 +518,39 @@ export async function coverUrl(db: Db, path: string | null): Promise<string | nu
   if (!path) return null
   const { data } = await db.storage.from('couple-media').createSignedUrl(path, 3600)
   return data?.signedUrl ?? null
+}
+
+// ---------------------------------------------------------------------------
+// O perfil provisório da outra pessoa (spec perfil-provisorio.md, ADR 0024)
+// ---------------------------------------------------------------------------
+export interface PendingPartnerInput {
+  displayName: string
+  homeCityId: string
+  color: PersonColor
+}
+
+export type PendingPartnerResult =
+  | { status: 'ok'; profileId: string; created: boolean }
+  | { status: 'not_member' }
+  | { status: 'couple_full' }
+  | { status: 'invalid'; field: 'display_name' | 'home_city' | 'color' }
+  | Failure
+
+export async function savePendingPartner(db: Db, input: PendingPartnerInput): Promise<PendingPartnerResult> {
+  const result = await callRpc(db, 'save_pending_partner', {
+    p_display_name: input.displayName.trim(),
+    p_home_city_id: input.homeCityId,
+    p_color: input.color,
+  })
+  if (result.status !== 'ok') return result
+  const raw = result.data
+  if (raw.status === 'created' || raw.status === 'updated') {
+    return { status: 'ok', profileId: String(raw.profile_id), created: raw.status === 'created' }
+  }
+  if (raw.status === 'not_member') return { status: 'not_member' }
+  if (raw.status === 'couple_full') return { status: 'couple_full' }
+  if (raw.status === 'invalid' && (raw.field === 'display_name' || raw.field === 'home_city' || raw.field === 'color')) {
+    return { status: 'invalid', field: raw.field }
+  }
+  return { status: 'error', cause: `save_pending_partner: status inesperado ${String(raw.status)}` }
 }

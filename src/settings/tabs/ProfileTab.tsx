@@ -245,7 +245,7 @@ function PasswordDialog({ ctx, onClose }: { ctx: TabContext; onClose: () => void
               setMessage({ kind: 'error', text: 'Essa já é a sua senha.' })
               break
             case 'unauthenticated':
-              setMessage({ kind: 'error', text: 'Sua sessão expirou — entre de novo.' })
+              setMessage({ kind: 'error', text: 'Sua sessão expirou. Entre de novo.' })
               break
             case 'error':
               setMessage({ kind: 'error', text: `Não deu pra alterar: ${result.cause}` })

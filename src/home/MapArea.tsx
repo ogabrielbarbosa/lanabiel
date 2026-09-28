@@ -27,15 +27,23 @@ import { MapFailed } from '../map/MapFailed'
 import type { MapHandle } from '../map/engine'
 import { useMap, useMapTick } from '../map/useMap'
 import { usePhotoUrls, useHome } from './context'
+import { Atmosphere } from './map/Atmosphere'
 import { Breadcrumb } from './map/Breadcrumb'
 import { CoupleStatus } from './map/CoupleStatus'
 import { MapFilters } from './map/MapFilters'
 import { Nearby } from './map/Nearby'
+import { PeopleDots } from './map/PeopleDots'
 import { Pins } from './map/Pins'
 import { PlacePopover } from './map/PlacePopover'
 import { cameraOf, initialNav, useMapNav, viewerCenter } from './map/useMapNav'
 import type { MapNav, NavWorld } from './map/useMapNav'
 import '../list/list.css'
+
+/**
+ * O cabeçalho (casal e breadcrumb) ocupa o alto da tela: a câmera centra
+ * abaixo dele, e o globo desce como no `.pen` (eocRt), saindo por baixo.
+ */
+const HEADER_INSET = 160
 
 /** Um clique que andou mais que isso foi arrasto do mapa, não "tocar fora". */
 const DRAG_PX = 5
@@ -153,8 +161,18 @@ export function MapArea({ request = null }: { request?: FocusRequest | null }) {
     navRef.current.goFocus(request.focus)
   }, [request])
 
+  // O mapa ocupa a tela inteira, com o painel flutuando por cima (eocRt); o
+  // que é da área — cabeçalho, zoom, filtros, cartão — mora no palco, a parte
+  // à vista. A diferença de largura é o que o painel cobre, e a câmera centra
+  // na parte à vista.
   const rootRef = useRef<HTMLElement>(null)
-  const bounds = useBounds(rootRef)
+  const stageRef = useRef<HTMLDivElement>(null)
+  const full = useBounds(rootRef)
+  const bounds = useBounds(stageRef)
+  const inset = full.width > 0 && bounds.width > 0 ? Math.max(0, full.width - bounds.width) : 0
+  useEffect(() => {
+    handle?.setInset({ top: HEADER_INSET, right: inset })
+  }, [handle, inset])
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS)
   const [sort, setSort] = useState<NearbySort>('near')
   const pins = useMemo(() => applyFilters(all, filters), [all, filters])
@@ -176,9 +194,13 @@ export function MapArea({ request = null }: { request?: FocusRequest | null }) {
   return (
     <section ref={rootRef} className={`home-map hm-level--${level}`} aria-label="Mapa">
       <div ref={mapRef} className="hm-canvas" />
+      {handle && level === 'world' && <Atmosphere handle={handle} />}
       {level !== 'world' && <div className="hm-vignette" aria-hidden="true" />}
+      <div className="hm-veil hm-veil--top" aria-hidden="true" />
+      <div className="hm-veil hm-veil--bottom" aria-hidden="true" />
       {mapState.status === 'failed' && <MapFailed reason={mapState.reason} onRetry={retry} />}
 
+      {handle && <PeopleDots handle={handle} />}
       {handle && (
         <Pins
           handle={handle}
@@ -191,39 +213,41 @@ export function MapArea({ request = null }: { request?: FocusRequest | null }) {
         />
       )}
 
-      <div className="hm-top">
-        <CoupleStatus />
-        <Breadcrumb nav={nav} pins={pins} searchCities={api.searchCities} />
+      <div ref={stageRef} className="hm-stage">
+        <div className="hm-top">
+          <CoupleStatus />
+          <Breadcrumb nav={nav} pins={pins} stateCities={api.stateCities} />
+        </div>
+
+        <div className="hm-zoom lg" role="group" aria-label="Zoom">
+          <button type="button" aria-label="Aproximar" disabled={!handle} onClick={() => handle?.zoomBy(1)}>
+            <Plus size={17} aria-hidden="true" />
+          </button>
+          <button type="button" aria-label="Afastar" disabled={!handle} onClick={() => handle?.zoomBy(-1)}>
+            <Minus size={17} aria-hidden="true" />
+          </button>
+          <button type="button" aria-label="Onde estou" onClick={nav.locate}>
+            <LocateFixed size={17} aria-hidden="true" />
+          </button>
+        </div>
+
+        {level === 'city' && (
+          <Nearby
+            rows={nearbyRows}
+            sort={sort}
+            onSort={setSort}
+            selectedId={selectedId}
+            grouped={group !== null}
+            onClearGroup={nav.clearGroup}
+            onFocus={nav.focusPin}
+            photoUrl={photoUrl}
+          />
+        )}
+
+        {selected && <AnchoredPopover handle={handle} pin={selected} bounds={bounds} photoUrl={photoUrl(selected)} />}
+
+        <MapFilters items={items} hidden={hidden} filters={filters} onChange={setFilters} />
       </div>
-
-      <div className="hm-zoom" role="group" aria-label="Zoom">
-        <button type="button" aria-label="Aproximar" disabled={!handle} onClick={() => handle?.zoomBy(1)}>
-          <Plus size={17} aria-hidden="true" />
-        </button>
-        <button type="button" aria-label="Afastar" disabled={!handle} onClick={() => handle?.zoomBy(-1)}>
-          <Minus size={17} aria-hidden="true" />
-        </button>
-        <button type="button" aria-label="Onde estou" onClick={nav.locate}>
-          <LocateFixed size={17} aria-hidden="true" />
-        </button>
-      </div>
-
-      {level === 'city' && (
-        <Nearby
-          rows={nearbyRows}
-          sort={sort}
-          onSort={setSort}
-          selectedId={selectedId}
-          grouped={group !== null}
-          onClearGroup={nav.clearGroup}
-          onFocus={nav.focusPin}
-          photoUrl={photoUrl}
-        />
-      )}
-
-      {selected && <AnchoredPopover handle={handle} pin={selected} bounds={bounds} photoUrl={photoUrl(selected)} />}
-
-      <MapFilters items={items} hidden={hidden} filters={filters} onChange={setFilters} />
     </section>
   )
 }

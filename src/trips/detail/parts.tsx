@@ -68,7 +68,7 @@ export function Card({
     </>
   ) : null
   return (
-    <section className={`td-card ${className}`} aria-labelledby={labelledBy}>
+    <section className={`td-card lg ${className}`} aria-labelledby={labelledBy}>
       <header className="td-card-head">
         <h2 id={labelledBy}>{title}</h2>
         {action &&

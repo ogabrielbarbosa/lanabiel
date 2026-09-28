@@ -19,7 +19,7 @@ export function PanelCard({
   className?: string
 }) {
   return (
-    <section className={`hp-card ${className}`} aria-label={title}>
+    <section className={`hp-card lg ${className}`} aria-label={title}>
       <div className="hp-card-head">
         <h3>{title}</h3>
         {action}

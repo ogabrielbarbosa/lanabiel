@@ -81,9 +81,13 @@ describe('A12 — leitura: esqueleto, erro, e nunca o vazio antes do ok', () => 
     renderList(api)
     expect(screen.getByText('Carregando a lista…')).toBeInTheDocument()
     expect(document.querySelector('[aria-busy="true"]')).not.toBeNull()
-    expect(screen.queryByText('A lista de vocês começa aqui')).not.toBeInTheDocument()
+    expect(screen.queryByText('A lista está vazia')).not.toBeInTheDocument()
     expect(screen.queryByRole('group', { name: 'Categorias' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
+    // O painel já está no lugar (sem layout shift), mas só com o esqueleto.
+    const panel = screen.getByRole('complementary', { name: 'Painel da lista' })
+    expect(panel).toHaveAttribute('aria-busy', 'true')
+    expect(within(panel).queryByRole('heading')).not.toBeInTheDocument()
+    expect(within(panel).queryByText(/feitas/)).not.toBeInTheDocument()
   })
 
   it('com erro, a causa e "Tentar de novo" — que relê e mostra a lista', async () => {
@@ -93,7 +97,7 @@ describe('A12 — leitura: esqueleto, erro, e nunca o vazio antes do ok', () => 
       .mockResolvedValueOnce({ status: 'ok', rows: listData() })
     renderList(seededListApi({}, { loadList: load }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Não deu pra carregar a lista: projeto pausado')
-    expect(screen.queryByText('A lista de vocês começa aqui')).not.toBeInTheDocument()
+    expect(screen.queryByText('A lista está vazia')).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }))
     await loaded()
     expect(cardNames()).toContain('Mocotó')
@@ -105,21 +109,21 @@ describe('A12 — leitura: esqueleto, erro, e nunca o vazio antes do ok', () => 
     const api = fakeListApi({ loadContext: vi.fn<ListApi['loadContext']>(() => new Promise((r) => (resolve = r))) })
     renderList(api)
     await waitFor(() => expect(api.loadList).toHaveBeenCalled())
-    expect(screen.queryByText('A lista de vocês começa aqui')).not.toBeInTheDocument()
+    expect(screen.queryByText('A lista está vazia')).not.toBeInTheDocument()
     await act(async () => resolve({ status: 'ok', rows: listContext() }))
-    expect(await screen.findByText('A lista de vocês começa aqui')).toBeInTheDocument()
+    expect(await screen.findByText('A lista está vazia')).toBeInTheDocument()
   })
 
   it('erro no contexto também é erro — nunca o vazio', async () => {
     renderList(fakeListApi({ loadContext: vi.fn<ListApi['loadContext']>(async () => ({ status: 'error', cause: 'rede caiu' })) }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Não deu pra carregar a lista: rede caiu')
-    expect(screen.queryByText('A lista de vocês começa aqui')).not.toBeInTheDocument()
+    expect(screen.queryByText('A lista está vazia')).not.toBeInTheDocument()
   })
 
   it('R10: zero itens com ok → o começo da lista, e o painel só com progresso e recentes vazios', async () => {
     renderList(fakeListApi())
-    expect(await screen.findByText('A lista de vocês começa aqui')).toBeInTheDocument()
-    expect(screen.getByText('Lugares, comidas, filmes — tudo que vocês querem fazer juntos.')).toBeInTheDocument()
+    expect(await screen.findByText('A lista está vazia')).toBeInTheDocument()
+    expect(screen.getByText('Adicione lugares, comidas, filmes ou qualquer coisa que vocês queiram fazer juntos.')).toBeInTheDocument()
     const panel = screen.getByRole('complementary', { name: 'Painel da lista' })
     expect(within(panel).getByText('de 0 feitas')).toBeInTheDocument()
     expect(within(panel).getByText('Nada adicionado ainda.')).toBeInTheDocument()
@@ -389,7 +393,7 @@ describe('A18 — releitura ao voltar à aba (ADR 0015)', () => {
     renderList(seededListApi({}, { loadList: load }))
     await loaded()
     await act(async () => showTab())
-    expect(await screen.findByText('Não deu pra atualizar — mostrando o que já estava aqui')).toBeInTheDocument()
+    expect(await screen.findByText('Não deu pra atualizar. Você está vendo a última versão carregada.')).toBeInTheDocument()
     expect(cardNames()).toHaveLength(13)
     expect(screen.queryByText(/Não deu pra carregar a lista/)).not.toBeInTheDocument()
   })
@@ -421,7 +425,7 @@ describe('R10 com categorias ocultas', () => {
       listItem({ id: 'b', name: 'Severance', category: 'serie', platform: 'Apple TV+' }),
     ]
     renderList(seededListApi({ items, settings: { hiddenCategories: ['filme', 'serie'] } }))
-    expect(await screen.findByText('A lista de vocês começa aqui')).toBeInTheDocument()
+    expect(await screen.findByText('A lista está vazia')).toBeInTheDocument()
     expect(screen.getByText(/Algumas categorias estão escondidas nas Configurações\./)).toBeInTheDocument()
     expect(screen.queryByRole('list', { name: 'Itens da lista' })).not.toBeInTheDocument()
     expect(screen.queryByRole('group', { name: 'Categorias' })).not.toBeInTheDocument()
@@ -434,7 +438,7 @@ describe('R10 com categorias ocultas', () => {
 
   it('lista realmente vazia: sem a dica das ocultas', async () => {
     renderList(fakeListApi())
-    expect(await screen.findByText('A lista de vocês começa aqui')).toBeInTheDocument()
+    expect(await screen.findByText('A lista está vazia')).toBeInTheDocument()
     expect(screen.queryByText(/Algumas categorias estão escondidas/)).not.toBeInTheDocument()
   })
 })

@@ -2,23 +2,32 @@
    painel ESTENDEM este arquivo; aqui mora só o esqueleto e os estados da
    leitura (carregando, erro, sozinho, `stale`).
 
-   Frame `Home — Escuro` (eocRt), 1440×900: a área do mapa de 928, o painel de
-   424 com a mesma margem das outras telas (12 até a borda), sobre a casca de
-   16. Fundo escuro com os dois brilhos da casca (`.shell::before/::after`);
-   o mapa é o mesmo nos dois temas (seção 14), o painel segue os tokens.
-   Tokens de `app.css`. */
+   Frame `Home — Escuro` (eocRt, XwYKK), 1440×900: o mapa é o FUNDO da tela
+   inteira, de borda a borda, e o painel de 424 e a barra flutuam por cima dele
+   (o `City Map` do XwYKK passa por baixo dos dois). O que é da área do mapa —
+   cabeçalho, zoom, filtros — fica na parte à vista, à esquerda do painel
+   (`.hm-stage`). O mapa é o mesmo nos dois temas (seção 14), o painel segue os
+   tokens. Tokens de `app.css`. */
 
-.shell:has(.home-screen) {
-  gap: 12px;
+/* O frame da Home não tem os brilhos da casca (Glow Pink/Aqua): o fundo é só
+   `bg-deep`. Com eles, o vidro do painel desfocava o aqua e o pé do painel
+   saía esverdeado. */
+.shell:has(.home-screen)::before,
+.shell:has(.home-screen)::after {
+  display: none;
 }
 
 .home-screen {
+  /* O que o painel cobre da borda direita: a casca (16), a barra (64), o vão
+     (12), o painel (`--panel-width`, app.css) e o vão até a área do mapa (12). */
+  --home-cover: calc(16px + 64px + 12px + var(--panel-width) + 12px);
   position: relative;
   display: flex;
   align-items: stretch;
+  justify-content: flex-end;
   gap: 12px;
-  height: calc(100dvh - 32px);
-  min-height: 560px;
+  /* O quadro da casca (app.css): a tela inteira, sem rolar. */
+  height: 100%;
 }
 
 .home-screen p {
@@ -27,12 +36,13 @@
 
 /* --- a área do mapa ------------------------------------------------------ */
 
+/* A tela inteira, atrás da casca: a barra (z 2, `.shell-nav`) e o painel (z 1)
+   ficam por cima. */
 .home-map-slot,
 .home-map-blank {
-  position: relative;
-  flex: 1;
-  min-width: 0;
-  border-radius: 36px;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
   overflow: hidden;
   /* O espaço sideral do .pen atrás do globo: o fundo da casca, mais fundo. */
   background:
@@ -48,20 +58,27 @@
 
 /* --- o painel ------------------------------------------------------------ */
 
+/* Vidro `.lg` (app.css). A rolagem é do `.hp-scroll` de dentro, não da
+   caixa: o contorno do vidro é um anel absoluto, e numa caixa que rola ele
+   subiria junto com o conteúdo (e o `overflow` o cortaria). Sem o brilho
+   correndo pela borda: o painel é grande e fica sob o cursor o tempo todo. */
 .home-panel,
 .home-panel-state {
-  flex: 0 0 424px;
+  --lg-sweep: 0;
+  position: relative;
+  z-index: 1;
+  --lg-radius: 220px;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 var(--panel-width);
+  /* Sem `overflow` na caixa, o mínimo automático do item flex viraria a
+     largura mínima do conteúdo (e o painel empurraria o mapa). */
+  min-width: 0;
   max-height: 100%;
-  overflow-y: auto;
   border-radius: 36px;
-  border: 1px solid transparent;
-  background:
-    linear-gradient(var(--glass), var(--glass)) padding-box,
-    linear-gradient(180deg, var(--glass-shine), var(--glass-stroke-soft) 45%, var(--glass-stroke)) border-box;
   box-shadow: 0 30px 80px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
   backdrop-filter: blur(60px);
   -webkit-backdrop-filter: blur(60px);
-  scrollbar-width: none;
 }
 
 .home-panel-state {
@@ -105,7 +122,7 @@
   position: absolute;
   z-index: 5;
   top: 16px;
-  left: 50%;
+  left: calc((100% - var(--home-cover)) / 2);
   translate: -50% 0;
   max-width: calc(100% - 32px);
   padding: 10px 14px;
@@ -122,6 +139,8 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .home-skeleton span {
@@ -151,13 +170,17 @@
    em cima, o painel embaixo. */
 @media (max-width: 759px) {
   .home-screen {
+    --home-cover: 0px;
     flex-direction: column;
     height: auto;
   }
 
   .home-map-slot,
   .home-map-blank {
+    position: relative;
+    z-index: auto;
     flex: 0 0 60dvh;
+    border-radius: 36px;
   }
 
   .home-panel,
@@ -239,6 +262,119 @@
   position: absolute;
   inset: 0;
   z-index: 0;
+  /* O satélite do Mapbox sai lavado perto do `.pen`: o verde da mata e o
+     turquesa do mar pedem mais cor. */
+  filter: saturate(1.45) contrast(1.05) brightness(1.1);
+}
+
+/* A parte à vista, à esquerda do painel: é nela que o cabeçalho, o zoom, os
+   filtros e o cartão do lugar se medem. Mesma origem do mapa — as posições
+   que `project` devolve valem aqui dentro. */
+.hm-stage {
+  position: absolute;
+  inset: 0 var(--home-cover, 0px) 0 0;
+}
+
+/* Os véus: em cima (casal e breadcrumb) e embaixo (filtros), o mapa desfoca e
+   escurece aos poucos, para o texto ler sobre um satélite claro. O desfoque
+   some junto com o degradê (a máscara vale para os dois). */
+/* A atmosfera do globo (Atmosphere.tsx): tudo em múltiplos do raio do disco
+   (`--r`), com as medidas do `.pen` sobre o disco de 463 px. Acima do
+   satélite e abaixo dos véus e dos pins. O "raio" de desfoque do `.pen` é o
+   dobro do `blur()` do CSS (que recebe o desvio): 28 → 14 px. */
+.hm-atmo {
+  position: absolute;
+  z-index: 1;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.hm-atmo > span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: -50% -50%;
+  border-radius: 50%;
+}
+
+/* Halo Outer: 1380 de diâmetro, verde-água até 55% e some na borda, com
+   desfoque de 60. Só por FORA do disco — por cima do satélite ele o velaria. */
+.hm-atmo-halo {
+  width: calc(var(--r) * 2.98);
+  height: calc(var(--r) * 2.98);
+  background: radial-gradient(closest-side, #7fd8c455 55%, #7fd8c400 100%);
+  filter: blur(calc(var(--r) * 0.065));
+  mask-image: radial-gradient(closest-side, transparent 66%, #000 69%);
+  -webkit-mask-image: radial-gradient(closest-side, transparent 66%, #000 69%);
+}
+
+/* Atmosphere: anel de 970 (22 de traço, desfoque 28) em degradê a 200°. O
+   recorte do anel mora no `::before`: o `filter` vem antes da máscara no
+   mesmo elemento, e o anel sairia nítido. */
+.hm-atmo-ring {
+  --w: calc(var(--r) * 0.0475);
+  width: calc(var(--r) * 2.095);
+  height: calc(var(--r) * 2.095);
+  filter: blur(calc(var(--r) * 0.03));
+}
+
+.hm-atmo-ring::before,
+.hm-atmo-rim::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+.hm-atmo-ring::before {
+  background: linear-gradient(200deg, #7fd8c4 0%, #f4a3b4 50%, #f6e3a1 100%);
+  mask-image: radial-gradient(closest-side, transparent calc(100% - var(--w)), #000 calc(100% - var(--w)));
+  -webkit-mask-image: radial-gradient(closest-side, transparent calc(100% - var(--w)), #000 calc(100% - var(--w)));
+}
+
+/* Rim Light: o contorno de 2 px, branco no alto e sumindo na metade. */
+.hm-atmo-rim {
+  width: calc(var(--r) * 2.01);
+  height: calc(var(--r) * 2.01);
+}
+
+.hm-atmo-rim::before {
+  background: linear-gradient(225deg, #ffffff99 0%, #ffffff00 50%);
+  mask-image: radial-gradient(closest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+  -webkit-mask-image: radial-gradient(closest-side, transparent calc(100% - 2px), #000 calc(100% - 2px));
+}
+
+/* O logo e a atribuição do Mapbox (obrigatórios) ficam à vista, no canto da
+   área do mapa, e não debaixo do painel. */
+.home-map .mapboxgl-ctrl-bottom-right {
+  right: var(--home-cover, 0px);
+}
+
+.hm-veil {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  backdrop-filter: blur(16px) saturate(1.1);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+}
+
+.hm-veil--top {
+  top: 0;
+  height: 260px;
+  background: linear-gradient(180deg, #060a1ca6 0%, #060a1c4d 55%, #060a1c00 100%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 40%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 40%, transparent 100%);
+}
+
+.hm-veil--bottom {
+  bottom: 0;
+  height: 220px;
+  background: linear-gradient(0deg, #060a1cb3 0%, #060a1c4d 55%, #060a1c00 100%);
+  mask-image: linear-gradient(0deg, #000 0%, #000 40%, transparent 100%);
+  -webkit-mask-image: linear-gradient(0deg, #000 0%, #000 40%, transparent 100%);
 }
 
 /* O `Map Vignette` do XwYKK: escurece em cima e embaixo para o texto ler
@@ -280,13 +416,19 @@
   font-weight: 600;
 }
 
-/* Vidro do `.pen`: fundo translúcido, borda em degradê, brilho em cima. */
-.hm-picker,
+/* Vidro do `.pen`: fundo translúcido, borda em degradê, brilho em cima. Os
+   vidros do mapa são `.lg` (app.css) com as cores fixas do escuro. `:where`
+   deixa a especificidade na de uma classe: vence o `.lg` de app.css e perde
+   para a regra de cada vidro. */
+.home-map :where(.lg) {
+  --lg-fill: linear-gradient(var(--hm-glass), var(--hm-glass));
+  --lg-edge: var(--hm-edge);
+}
+
 .hm-popover,
 .hm-zoom,
 .hm-filters-status,
 .hm-chip {
-  border: 1px solid transparent;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
@@ -419,9 +561,9 @@
    "raiz de fundo" do seletor que pende dele, e o seletor desfocaria só a
    barra, deixando o mapa nítido por trás. */
 .hm-crumbs {
+  --lg-fill: linear-gradient(#ffffff12, #ffffff12), linear-gradient(var(--hm-dark), var(--hm-dark));
   position: relative;
   isolation: isolate;
-  border: 1px solid transparent;
   display: flex;
   align-items: center;
   gap: 2px;
@@ -429,10 +571,6 @@
   max-width: 100%;
   padding: 0 8px 0 6px;
   border-radius: 999px;
-  background:
-    linear-gradient(#ffffff12, #ffffff12) padding-box,
-    linear-gradient(var(--hm-dark), var(--hm-dark)) padding-box,
-    var(--hm-edge) border-box;
   box-shadow: inset 0 1px 1px var(--hm-shine), 0 18px 48px var(--hm-shadow);
 }
 
@@ -496,46 +634,85 @@
   outline-offset: -1px;
 }
 
-/* O seletor (OspYO/XXySj): pende do segmento numa silhueta só com a barra —
-   280 de largura, 10 à esquerda do segmento, com os cantos de dentro
-   arredondados para fora (16) onde encosta na barra. */
+/* Com o seletor aberto, a pílula e ele são UMA silhueta (OspYO/XXySj): a
+   barra larga o próprio vidro e `CrumbShape` (Breadcrumb.tsx) desenha a forma
+   inteira — desfoque, preenchimento, contorno e sombra correndo pelos cantos
+   invertidos. Ver crumbShape.ts. */
+.hm-crumbs.is-joined {
+  --lg-fill: none;
+  box-shadow: none;
+}
+
+.hm-crumbs.is-joined::before,
+.hm-crumbs.is-joined::after {
+  display: none;
+}
+
+.hm-crumbs-shape {
+  position: absolute;
+  top: -1px;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.hm-crumbs-shape-layer,
+.hm-crumbs-shape-glass {
+  position: absolute;
+  inset: 0;
+}
+
+.hm-crumbs-shape-glass {
+  background: linear-gradient(#ffffff12, #ffffff12), var(--hm-dark);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* O seletor: 280 de largura, rente ao pé da barra (o segmento está no meio
+   dos 44), 10 à esquerda do segmento — ou recuado para caber a curva
+   invertida, `--picker-shift` (panelSnap). Sem vidro próprio: é a silhueta. */
 .hm-picker {
   position: absolute;
   z-index: 1;
-  top: 37px;
-  left: -10px;
+  top: calc(50% + 22px);
+  left: calc(-10px + var(--picker-shift, 0px));
   width: 280px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 12px 8px 8px;
-  border-top: 0;
-  border-radius: 0 0 26px 26px;
-  background:
-    linear-gradient(#ffffff12, #ffffff12) padding-box,
-    linear-gradient(var(--hm-dark), var(--hm-dark)) padding-box,
-    var(--hm-edge) border-box;
-  box-shadow: 0 18px 48px var(--hm-shadow);
 }
 
-.hm-picker::before,
-.hm-picker::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  width: 16px;
-  height: 16px;
-  pointer-events: none;
+/* O conteúdo acompanha a silhueta (useCrumbSilhouette): entra depois que a
+   forma começa a crescer e sai antes de ela recolher. Nos filhos, e não no
+   `.hm-picker`: um `transform` nele mudaria a caixa que a silhueta mede. */
+.hm-picker > * {
+  animation: hm-picker-in 0.32s 0.08s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.hm-picker::before {
-  left: -16px;
-  background: radial-gradient(circle at 0 100%, transparent 15.5px, #1a2040d9 16px);
+.hm-crumb-slot.is-leaving .hm-picker > * {
+  animation: hm-picker-out 0.14s ease-in both;
 }
 
-.hm-picker::after {
-  right: -16px;
-  background: radial-gradient(circle at 100% 100%, transparent 15.5px, #1a2040d9 16px);
+@keyframes hm-picker-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes hm-picker-out {
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hm-picker > *,
+  .hm-crumb-slot.is-leaving .hm-picker > * {
+    animation-duration: 0s;
+    animation-delay: 0s;
+  }
 }
 
 .hm-picker-head {
@@ -607,23 +784,6 @@
   padding: 10px;
   font-size: 13px;
   color: var(--hm-text-3);
-}
-
-.hm-picker-foot {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 10px 4px;
-  border: 0;
-  background: transparent;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--hm-text-2);
-}
-
-.hm-picker-foot:hover {
-  color: var(--hm-text);
 }
 
 /* `Region Item` (LptF9). */
@@ -707,9 +867,6 @@
   gap: 2px;
   padding: 4px;
   border-radius: 999px;
-  background:
-    linear-gradient(var(--hm-glass), var(--hm-glass)) padding-box,
-    var(--hm-edge) border-box;
   box-shadow: inset 0 1px 1px var(--hm-shine);
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
@@ -735,6 +892,45 @@
 .hm-zoom button:disabled {
   cursor: default;
   opacity: 0.4;
+}
+
+/* --- Onde cada um está: a bolinha na cor da pessoa ----------------------- */
+
+/* Acima dos pins (z 2), senão o grupo da cidade a esconde; sem clique, o pin
+   que cair embaixo segue tocável. */
+.hm-people {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hm-person {
+  position: absolute;
+  translate: -50% -50%;
+}
+
+.hm-person-dot {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--person);
+  outline: 2px solid #fff;
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--person) 30%, transparent), 0 0 14px var(--person);
+}
+
+.hm-person-name {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* --- Pins (PfsUA, shqGO, GxIWr) ------------------------------------------ */
@@ -913,10 +1109,7 @@
   gap: 12px;
   padding: 10px;
   border-radius: 24px;
-  background:
-    linear-gradient(#ffffff1f, #ffffff1f) padding-box,
-    linear-gradient(var(--hm-dark), var(--hm-dark)) padding-box,
-    var(--hm-edge) border-box;
+  --lg-fill: linear-gradient(#ffffff1f, #ffffff1f), linear-gradient(var(--hm-dark), var(--hm-dark));
   box-shadow: inset 0 1px 1px var(--hm-shine), 0 24px 56px var(--hm-shadow);
 }
 
@@ -1148,12 +1341,8 @@
   gap: 10px;
   width: 100%;
   padding: 7px 12px 7px 7px;
-  border: 1px solid transparent;
   border-radius: 18px;
-  background:
-    linear-gradient(#ffffff12, #ffffff12) padding-box,
-    linear-gradient(var(--hm-dark), var(--hm-dark)) padding-box,
-    var(--hm-edge) border-box;
+  --lg-fill: linear-gradient(#ffffff12, #ffffff12), linear-gradient(var(--hm-dark), var(--hm-dark));
   box-shadow: inset 0 1px 1px var(--hm-shine), 0 10px 28px var(--hm-shadow);
   text-align: left;
   backdrop-filter: blur(15px);
@@ -1161,10 +1350,8 @@
 }
 
 .hm-card.is-active {
-  border-color: var(--hm-accent);
-  background:
-    linear-gradient(#ffffff29, #ffffff29) padding-box,
-    linear-gradient(var(--hm-dark), var(--hm-dark)) padding-box;
+  --lg-fill: linear-gradient(#ffffff29, #ffffff29), linear-gradient(var(--hm-dark), var(--hm-dark));
+  --lg-edge: linear-gradient(var(--hm-accent), var(--hm-accent));
   box-shadow: inset 0 1px 1px var(--hm-shine), 0 0 22px var(--hm-accent-glow);
 }
 
@@ -1249,9 +1436,6 @@
   gap: 4px;
   padding: 4px;
   border-radius: 999px;
-  background:
-    linear-gradient(var(--hm-glass), var(--hm-glass)) padding-box,
-    var(--hm-edge) border-box;
   box-shadow: inset 0 1px 1px var(--hm-shine);
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
@@ -1297,9 +1481,6 @@
   height: 36px;
   padding: 0 14px;
   border-radius: 999px;
-  background:
-    linear-gradient(var(--hm-glass), var(--hm-glass)) padding-box,
-    var(--hm-edge) border-box;
   box-shadow: inset 0 1px 1px var(--hm-shine), 0 18px 48px var(--hm-shadow);
   font-size: 13px;
   font-weight: 500;
@@ -1310,14 +1491,12 @@
 }
 
 .hm-chip:hover {
-  background:
-    linear-gradient(var(--hm-glass-strong), var(--hm-glass-strong)) padding-box,
-    var(--hm-edge) border-box;
+  --lg-fill: linear-gradient(var(--hm-glass-strong), var(--hm-glass-strong));
 }
 
 .hm-chip.is-active {
-  border-color: var(--hm-accent);
-  background: var(--hm-glass-hover);
+  --lg-fill: linear-gradient(var(--hm-glass-hover), var(--hm-glass-hover));
+  --lg-edge: linear-gradient(var(--hm-accent), var(--hm-accent));
   box-shadow: 0 0 18px var(--hm-accent-glow), inset 0 1px 1px var(--hm-shine);
   font-weight: 600;
 }

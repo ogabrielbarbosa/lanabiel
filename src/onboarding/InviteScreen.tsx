@@ -91,7 +91,7 @@ export function InviteScreen(props: InviteScreenProps) {
 
   if (state.kind === 'loading') {
     return (
-      <AuthShell caption={{ title: 'Um instante.', subtitle: 'Conferindo o código.' }}>
+      <AuthShell caption={{ title: 'Conferindo o código', subtitle: '' }}>
         <p className="auth-hint onb-center">Conferindo o código…</p>
       </AuthShell>
     )
@@ -99,12 +99,12 @@ export function InviteScreen(props: InviteScreenProps) {
 
   if (state.kind === 'failed') {
     return (
-      <AuthShell caption={{ title: 'Hmm.', subtitle: 'Não deu pra conferir.' }}>
+      <AuthShell caption={{ title: 'Não deu pra conferir o código', subtitle: 'Pode ser a conexão.' }}>
         <p className="auth-error" role="alert">
           Não deu pra conferir o código: {state.cause}
         </p>
         <div className="onb-actions">
-          <button type="button" className="auth-btn" onClick={props.onDismiss}>
+          <button type="button" className="lg auth-btn" onClick={props.onDismiss}>
             Voltar
           </button>
           <button type="button" className="auth-btn auth-btn-primary" onClick={() => setAttempt((n) => n + 1)}>
@@ -120,8 +120,8 @@ export function InviteScreen(props: InviteScreenProps) {
   const invite = state.invite
   const space = invite.coupleName ? `o espaço ${invite.coupleName}` : 'o espaço de vocês'
   const caption = fromLink
-    ? { title: 'Oi!', subtitle: 'Alguém quer dividir o mundo com você.' }
-    : { title: 'Oi!', subtitle: `${invite.inviterName} te passou o código.` }
+    ? { title: 'Você recebeu um convite.', subtitle: 'Confira os dados antes de entrar.' }
+    : { title: 'Você recebeu um convite.', subtitle: `${invite.inviterName} te passou o código.` }
 
   return (
     <AuthShell caption={caption}>
@@ -130,10 +130,10 @@ export function InviteScreen(props: InviteScreenProps) {
         <h1>
           {invite.inviterName} te convidou para {space}
         </h1>
-        <p>Confere se é mesmo seu amor antes de entrar.</p>
+        <p>Confira se é a pessoa certa antes de entrar.</p>
       </div>
 
-      <div className="onb-card">
+      <div className="lg onb-card">
         <strong className="onb-card-title">{invite.coupleName ?? 'Espaço de vocês'}</strong>
         <span className="onb-card-sub">
           Espaço criado por {invite.inviterFullName}
@@ -148,7 +148,7 @@ export function InviteScreen(props: InviteScreenProps) {
       </div>
 
       <div className="onb-actions onb-bottom">
-        <button type="button" className="auth-btn" onClick={props.onDismiss}>
+        <button type="button" className="lg auth-btn" onClick={props.onDismiss}>
           Não é essa pessoa?
         </button>
         <button
@@ -170,14 +170,14 @@ function Refusal({ refusal, code, onRetype, onDismiss, onSignOut }: InviteScreen
   switch (refusal.status) {
     case 'not_found':
       return (
-        <AuthShell caption={{ title: 'Hmm.', subtitle: 'Esse código não bateu.' }}>
+        <AuthShell caption={{ title: 'Código não encontrado', subtitle: 'Confira as letras e os números.' }}>
           <Heading title="Digite o código de convite" />
           {boxes}
           <Problem title="Esse código não existe">
-            Confere se digitou certinho — é o código de 6 caracteres que seu amor recebeu.
+            Confira se digitou certo. São os 6 caracteres que vieram no convite.
           </Problem>
           <div className="onb-actions onb-bottom">
-            <button type="button" className="auth-btn" onClick={onDismiss}>
+            <button type="button" className="lg auth-btn" onClick={onDismiss}>
               Voltar
             </button>
             <button type="button" className="auth-btn auth-btn-primary" onClick={onRetype}>
@@ -189,7 +189,7 @@ function Refusal({ refusal, code, onRetype, onDismiss, onSignOut }: InviteScreen
 
     case 'expired':
       return (
-        <AuthShell caption={{ title: 'Quase!', subtitle: 'Esse convite passou da validade.' }}>
+        <AuthShell caption={{ title: 'Convite vencido', subtitle: 'Peça um novo pra quem te convidou.' }}>
           <Heading title="Digite o código de convite" />
           {boxes}
           <Problem title="Esse convite expirou">
@@ -198,7 +198,7 @@ function Refusal({ refusal, code, onRetype, onDismiss, onSignOut }: InviteScreen
             {refusal.inviterName}.
           </Problem>
           <div className="onb-actions onb-bottom">
-            <button type="button" className="auth-btn" onClick={onDismiss}>
+            <button type="button" className="lg auth-btn" onClick={onDismiss}>
               Voltar
             </button>
             <button type="button" className="auth-btn auth-btn-primary" onClick={onRetype}>
@@ -210,7 +210,7 @@ function Refusal({ refusal, code, onRetype, onDismiss, onSignOut }: InviteScreen
 
     case 'used':
       return (
-        <AuthShell caption={{ title: 'Opa.', subtitle: 'Esse espaço já tem dois.' }}>
+        <AuthShell caption={{ title: 'Espaço completo', subtitle: 'Esse espaço já tem duas pessoas.' }}>
           <Heading title="Digite o código de convite" />
           {boxes}
           <Problem title="Esse convite já foi usado">
@@ -218,7 +218,7 @@ function Refusal({ refusal, code, onRetype, onDismiss, onSignOut }: InviteScreen
             código. Se foi você, é só entrar com a mesma conta.
           </Problem>
           <div className="onb-actions onb-bottom">
-            <button type="button" className="auth-btn" onClick={onDismiss}>
+            <button type="button" className="lg auth-btn" onClick={onDismiss}>
               Voltar
             </button>
             <button type="button" className="auth-btn auth-btn-primary" onClick={() => onSignOut(false)}>
@@ -230,10 +230,10 @@ function Refusal({ refusal, code, onRetype, onDismiss, onSignOut }: InviteScreen
 
     case 'own_couple':
       return (
-        <AuthShell caption={{ title: 'Esse é seu.', subtitle: 'Quem cria o espaço já está dentro.' }}>
+        <AuthShell caption={{ title: 'Esse código é seu', subtitle: 'Você criou esse espaço e já está nele.' }}>
           <Heading title="Esse é o código do seu espaço" />
           {boxes}
-          <p className="auth-hint">Mande pra seu amor — é com esse código que seu amor entra.</p>
+          <p className="auth-hint">Esse código é pra outra pessoa usar quando for entrar.</p>
           <button type="button" className="auth-btn auth-btn-primary onb-bottom" onClick={onDismiss}>
             Voltar pro meu espaço
           </button>
@@ -242,13 +242,13 @@ function Refusal({ refusal, code, onRetype, onDismiss, onSignOut }: InviteScreen
 
     case 'already_member':
       return (
-        <AuthShell caption={{ title: 'Opa.', subtitle: 'Você já tem um espaço.' }}>
+        <AuthShell caption={{ title: 'Você já tem um espaço', subtitle: 'Cada conta participa de um espaço só.' }}>
           <Heading title="Você já está num espaço" />
           <Problem title={refusal.coupleName ? `Você já está no espaço ${refusal.coupleName}` : 'Esta conta já está num espaço'}>
             Cada conta fica num espaço só. Pra aceitar este convite, entre com a conta que você quer usar nele.
           </Problem>
           <div className="onb-actions onb-bottom">
-            <button type="button" className="auth-btn" onClick={onDismiss}>
+            <button type="button" className="lg auth-btn" onClick={onDismiss}>
               Continuar no meu espaço
             </button>
             <button type="button" className="auth-btn auth-btn-primary" onClick={() => onSignOut(true)}>
@@ -260,13 +260,13 @@ function Refusal({ refusal, code, onRetype, onDismiss, onSignOut }: InviteScreen
 
     case 'rate_limited':
       return (
-        <AuthShell caption={{ title: 'Calma aí.', subtitle: 'Foram muitas tentativas.' }}>
+        <AuthShell caption={{ title: 'Muitas tentativas', subtitle: 'Espere alguns minutos.' }}>
           <Heading title="Muitas tentativas" />
           <Problem title="Espere um pouco">
             Por segurança, espere {Math.max(1, Math.ceil(refusal.retryAfterS / 60))} min antes de tentar outro
             código.
           </Problem>
-          <button type="button" className="auth-btn onb-bottom" onClick={onDismiss}>
+          <button type="button" className="lg auth-btn onb-bottom" onClick={onDismiss}>
             Voltar
           </button>
         </AuthShell>

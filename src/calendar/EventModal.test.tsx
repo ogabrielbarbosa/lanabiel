@@ -325,7 +325,7 @@ describe('A18 — Editar evento (R20)', () => {
     expect(screen.getByRole('heading', { name: 'Editar evento' })).toBeInTheDocument()
     expect(chip('Viagem')).toHaveAttribute('aria-pressed', 'true')
     expect(chip('Date')).toBeDisabled()
-    expect(screen.getByText('Mudar datas ou destino aqui não muda o período — ajuste no calendário.')).toBeInTheDocument()
+    expect(screen.getByText('Mudar datas ou destino aqui não muda o período. Pra isso, ajuste no calendário.')).toBeInTheDocument()
     expect(screen.queryByRole('complementary', { name: 'Período automático' })).not.toBeInTheDocument()
     expect(screen.getByRole('combobox', { name: 'Destino' })).toHaveValue('Lisboa · Portugal')
 

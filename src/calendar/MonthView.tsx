@@ -237,7 +237,7 @@ export function MonthView() {
 
   return (
     <div className="cal-month">
-      <div className="cal-grid" role="group" aria-label="Dias do mês">
+      <div className="cal-grid lg" role="group" aria-label="Dias do mês">
         <div className="cal-weekdays" aria-hidden="true">
           {weekdayHeads(settings.weekStartsOn).map((w) => (
             <span key={w}>{w}</span>
@@ -313,7 +313,7 @@ export function BareMonthGrid({ month, weekStartsOn, showAdjacentDays, today }: 
   const weeks = monthWeeks(month.year, month.month, weekStartsOn)
   const bounds = monthBounds(month)
   return (
-    <div className="cal-grid" role="group" aria-label="Dias do mês">
+    <div className="cal-grid lg" role="group" aria-label="Dias do mês">
       <div className="cal-weekdays" aria-hidden="true">
         {weekdayHeads(weekStartsOn).map((w) => (
           <span key={w}>{w}</span>

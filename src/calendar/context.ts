@@ -179,9 +179,9 @@ export function writeFailureMessage(result: Exclude<CalendarWrite<unknown>, { st
     case 'invalid':
       return `o banco recusou (${result.constraint})`
     case 'not_member':
-      return 'este espaço mudou — recarregue'
+      return 'este espaço mudou, recarregue a página'
     case 'unauthenticated':
-      return 'sua sessão expirou — entre de novo'
+      return 'sua sessão expirou, entre de novo'
     case 'error':
       return result.cause
   }

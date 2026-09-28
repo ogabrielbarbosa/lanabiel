@@ -59,7 +59,7 @@ export interface HomeContextValue {
   stays: readonly Stay[]
   /** Casas, cidades das estadias e destinos de viagem. Uma que faltar é `undefined` no `get` (mostre "?"). */
   cities: CityMap
-  /** A cidade de quem vê HOJE: a estadia dele, senão a casa (`viewerCityId`, R7). */
+  /** A cidade de quem vê HOJE: a estadia, senão a última posição, senão a casa (`viewerCityId`, R7). */
   viewerCity: CalCity
 
   /** Os itens da Lista inteiros, na ordem da leitura (mais recentes primeiro). */

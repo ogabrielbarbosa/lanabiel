@@ -12,7 +12,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { avatarUrl } from '../data/avatar'
-import { loadCalCities, searchCities } from '../data/cities'
+import { loadCalCities, loadStateCities } from '../data/cities'
 import type { City } from '../data/cities'
 import { loadList } from '../data/list'
 import type { ListData } from '../data/list'
@@ -55,14 +55,16 @@ export interface HomeApi {
   avatarUrl: (path: string | null) => Promise<string | null>
   /** A foto do casal (`couples.cover_path`), para o `Couple Status` com `use_couple_cover` (R4). */
   coverUrl: (path: string | null) => Promise<string | null>
-  /** Municípios do IBGE por nome — _Ver cidades sem lugares_ (R9). */
-  searchCities: (query: string) => Promise<DataResult<City[]>>
+  /** Todos os municípios do IBGE de uma UF — o seletor de cidades (R9). */
+  stateCities: (uf: string) => Promise<DataResult<City[]>>
 
   /** A engine do mapa. Em produção, o Mapbox (ADR 0022); nos testes, `fakeMapEngine`. */
   mapEngine: MapEngine
 }
 
 export function homeApi(db: Db): HomeApi {
+  // Os municípios não mudam: cada UF é lida uma vez por sessão da tela.
+  const byUf = new Map<string, Promise<DataResult<City[]>>>()
   return {
     today: todayISO,
     loadContext: () => loadSettings(db),
@@ -72,7 +74,16 @@ export function homeApi(db: Db): HomeApi {
     signedUrls: (paths) => signedMediaUrls(db, paths),
     avatarUrl: (path) => avatarUrl(db, path),
     coverUrl: (path) => coverUrl(db, path),
-    searchCities: (query) => searchCities(db, query),
+    stateCities: (uf) => {
+      const cached = byUf.get(uf)
+      if (cached) return cached
+      const pending = loadStateCities(db, uf).then((result) => {
+        if (result.status !== 'ok') byUf.delete(uf)
+        return result
+      })
+      byUf.set(uf, pending)
+      return pending
+    },
     mapEngine: mapboxEngine,
   }
 }

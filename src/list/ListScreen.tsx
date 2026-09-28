@@ -32,6 +32,7 @@ import {
 } from 'lucide-react'
 import { useAddIntent } from '../app/addIntent'
 import { clearListFocus, peekListFocus } from '../app/listFocus'
+import { PanelSkeleton } from '../app/PanelSkeleton'
 import { navigate } from '../app/router'
 import type { City } from '../data/cities'
 import { SIGNED_URL_SECONDS } from '../data/list'
@@ -223,9 +224,9 @@ export function ListScreen({ api }: ListScreenProps) {
             </div>
           </header>
           {loadError !== null ? (
-            <div className="ls-load-error" role="alert">
+            <div className="ls-load-error lg" role="alert">
               <p>Não deu pra carregar a lista: {loadError}</p>
-              <button type="button" className="ls-btn" onClick={retry}>
+              <button type="button" className="ls-btn lg" onClick={retry}>
                 Tentar de novo
               </button>
             </div>
@@ -234,7 +235,22 @@ export function ListScreen({ api }: ListScreenProps) {
           )}
         </div>
       )}
+      {!snap && <EmptyPanel busy={loadError === null} />}
     </div>
+  )
+}
+
+/**
+ * O painel da Lista antes do `ok` (ou sem ele): no mesmo lugar e do mesmo
+ * tamanho, para a grade não se mexer quando os dados chegam.
+ */
+function EmptyPanel({ busy = false }: { busy?: boolean }) {
+  return (
+    <aside className="ls-panel lg" aria-label="Painel da lista" aria-busy={busy || undefined}>
+      <div className="ls-panel-scroll">
+        <PanelSkeleton busy={busy} cards={[236, 168, 168, 200]} />
+      </div>
+    </aside>
   )
 }
 
@@ -249,7 +265,7 @@ function Skeleton() {
       </div>
       <div className="ls-grid" aria-hidden="true">
         {Array.from({ length: 8 }, (_, i) => (
-          <div key={i} className="ls-skeleton-card" />
+          <div key={i} className="ls-skeleton-card lg" />
         ))}
       </div>
     </div>
@@ -356,11 +372,14 @@ function Loaded({
   if (!value) {
     // Saiu do casal em outro aparelho: nada aqui é mais dele.
     return (
-      <div className="ls-area">
-        <div className="ls-load-error" role="alert">
-          <p>Este espaço mudou — recarregue.</p>
+      <>
+        <div className="ls-area">
+          <div className="ls-load-error lg" role="alert">
+            <p>Este espaço mudou. Recarregue a página.</p>
+          </div>
         </div>
-      </div>
+        <EmptyPanel />
+      </>
     )
   }
 
@@ -417,13 +436,13 @@ function Loaded({
   let body: ReactNode
   if (visibleCount === 0) {
     body = (
-      <div className="ls-empty">
-        <span className="ls-empty-icon ls-empty-icon--accent" aria-hidden="true">
+      <div className="ls-empty lg">
+        <span className="ls-empty-icon ls-empty-icon--accent lg" aria-hidden="true">
           <Sparkles size={36} />
         </span>
         <div className="ls-empty-text">
-          <h2>A lista de vocês começa aqui</h2>
-          <p>Lugares, comidas, filmes — tudo que vocês querem fazer juntos.</p>
+          <h2>A lista está vazia</h2>
+          <p>Adicione lugares, comidas, filmes ou qualquer coisa que vocês queiram fazer juntos.</p>
           {items.length > 0 && (
             <p>
               Algumas categorias estão escondidas nas Configurações.{' '}
@@ -452,8 +471,8 @@ function Loaded({
     const category = filters.category === 'all' ? null : filters.category
     const Icon = category ? CATEGORY_ICONS[category] : Search
     body = (
-      <div className="ls-empty">
-        <span className={`ls-empty-icon ${category ? catClass(category) : 'ls-empty-icon--accent'}`} aria-hidden="true">
+      <div className="ls-empty lg">
+        <span className={`ls-empty-icon ${category ? catClass(category) : 'ls-empty-icon--accent'} lg`} aria-hidden="true">
           <Icon size={36} />
         </span>
         <div className="ls-empty-text">
@@ -471,7 +490,7 @@ function Loaded({
           ))}
         </ul>
         <div className="ls-empty-actions">
-          <button type="button" className="ls-btn" onClick={() => setFilters(EMPTY_FILTERS)}>
+          <button type="button" className="ls-btn lg" onClick={() => setFilters(EMPTY_FILTERS)}>
             <FunnelX size={16} aria-hidden="true" />
             Limpar filtros
           </button>
@@ -532,7 +551,7 @@ function Loaded({
             <h1>Nossa lista</h1>
           </div>
           <div className="ls-controls">
-            <label className="ls-search">
+            <label className="ls-search lg">
               <Search size={16} aria-hidden="true" />
               <span className="visually-hidden">Buscar na lista</span>
               <input
@@ -552,12 +571,12 @@ function Loaded({
         </header>
 
         {stale && (
-          <p className="ls-notice" role="status">
-            Não deu pra atualizar — mostrando o que já estava aqui
+          <p className="ls-notice lg" role="status">
+            Não deu pra atualizar. Você está vendo a última versão carregada.
           </p>
         )}
         {notice && (
-          <p className="ls-notice ls-notice--error" role="alert">
+          <p className="ls-notice ls-notice--error lg" role="alert">
             {notice}
           </p>
         )}
@@ -589,7 +608,7 @@ function Loaded({
             </div>
 
             <div className="ls-filters">
-              <div className="ls-segmented" role="group" aria-label="Status">
+              <div className="ls-segmented lg" role="group" aria-label="Status">
                 {(
                   [
                     ['want', 'Quero fazer'],
@@ -613,7 +632,7 @@ function Loaded({
                   <span className="ls-meta ls-meta--small" aria-hidden="true">
                     Quem
                   </span>
-                  <div className="ls-who-options" role="group" aria-label="Quem">
+                  <div className="ls-who-options lg" role="group" aria-label="Quem">
                     {memberList.map((m) => (
                       <button
                         key={m.profileId}
@@ -641,7 +660,7 @@ function Loaded({
                 </div>
               )}
 
-              <label className="ls-sort">
+              <label className="ls-sort lg">
                 <ArrowDownUp size={13} aria-hidden="true" />
                 <span className="visually-hidden">Ordenar</span>
                 <select value={sort} onChange={(e) => setSort(e.target.value as ListSort)}>
@@ -752,7 +771,7 @@ function CategoryChip({
   onClick: () => void
 }) {
   return (
-    <button type="button" className={`ls-chip ${className}`} aria-pressed={active} onClick={onClick}>
+    <button type="button" className={`ls-chip ${className} lg`} aria-pressed={active} onClick={onClick}>
       {icon}
       <span className="ls-chip-label">{label}</span>{' '}
       <span className="ls-chip-count">{count}</span>
@@ -781,10 +800,10 @@ function Featured({
           <span className="ls-meta">{items.length} com ênfase</span>
         </div>
         <div className="ls-arrows">
-          <button type="button" className="ls-icon-btn ls-icon-btn--glass" aria-label="Destaques anteriores" onClick={() => scroll(-1)}>
+          <button type="button" className="ls-icon-btn ls-icon-btn--glass lg" aria-label="Destaques anteriores" onClick={() => scroll(-1)}>
             <ChevronLeft size={15} aria-hidden="true" />
           </button>
-          <button type="button" className="ls-icon-btn ls-icon-btn--glass" aria-label="Próximos destaques" onClick={() => scroll(1)}>
+          <button type="button" className="ls-icon-btn ls-icon-btn--glass lg" aria-label="Próximos destaques" onClick={() => scroll(1)}>
             <ChevronRight size={15} aria-hidden="true" />
           </button>
         </div>
@@ -792,12 +811,12 @@ function Featured({
       <ul ref={rowRef} className="ls-featured" aria-label="Em destaque">
         {items.map((item) => (
           <li key={item.id}>
-            <button type="button" className="ls-feature" onClick={() => onOpen(item.id)}>
+            <button type="button" className="ls-feature lg" onClick={() => onOpen(item.id)}>
               <ItemPhoto category={item.category} url={item.photoPath ? (urls.get(item.photoPath) ?? null) : null} className="ls-feature-photo" />
               <span className="ls-feature-scrim">
                 <span className="ls-feature-top">
                   <CategoryTag category={item.category} className="ls-tag--glass" />
-                  <span className="ls-feature-badge" aria-hidden="true">
+                  <span className="ls-feature-badge lg" aria-hidden="true">
                     <Sparkles size={14} />
                   </span>
                 </span>
@@ -856,7 +875,7 @@ function ItemCard({
   }
 
   return (
-    <article className={`ls-card ${catClass(item.category)}`} aria-label={item.name}>
+    <article className={`ls-card ${catClass(item.category)} lg`} aria-label={item.name}>
       <ItemPhoto category={item.category} url={url} className="ls-card-photo">
         {item.featured && (
           <span className="ls-card-emphasis" title="Em destaque">
@@ -873,7 +892,7 @@ function ItemCard({
         <span className="ls-card-actions">
           <button
             type="button"
-            className="ls-card-action"
+            className="ls-card-action lg"
             aria-label={item.featured ? 'Tirar ênfase' : 'Dar ênfase'}
             title={item.featured ? 'Tirar ênfase' : 'Dar ênfase'}
             aria-pressed={item.featured}
@@ -883,11 +902,11 @@ function ItemCard({
             <Sparkles size={15} aria-hidden="true" />
           </button>
           {!done && (
-            <button type="button" className="ls-card-action" aria-label="Marcar como feito" title="Marcar como feito" onClick={onMarkDone}>
+            <button type="button" className="ls-card-action lg" aria-label="Marcar como feito" title="Marcar como feito" onClick={onMarkDone}>
               <Check size={15} aria-hidden="true" />
             </button>
           )}
-          <span className="ls-card-action ls-card-action--static" aria-hidden="true">
+          <span className="ls-card-action ls-card-action--static lg" aria-hidden="true">
             <ArrowUpRight size={15} />
           </span>
         </span>

@@ -24,19 +24,19 @@ export function StartChoice({ onCreate, onHaveCode, onSignOut }: StartChoiceProp
       </div>
 
       <div className="auth-choices">
-        <button type="button" className="auth-choice" onClick={onCreate}>
+        <button type="button" className="lg auth-choice" onClick={onCreate}>
           <strong>Criar nosso espaço</strong>
-          <span>Você monta o cantinho e convida seu amor por e-mail.</span>
+          <span>Você cria o espaço e manda um convite por e-mail pra outra pessoa.</span>
         </button>
 
-        <button type="button" className="auth-choice" onClick={onHaveCode}>
+        <button type="button" className="lg auth-choice" onClick={onHaveCode}>
           <strong>Tenho um código</strong>
           <span>Seu amor já criou o espaço e te passou um código de 6 caracteres.</span>
         </button>
       </div>
 
       <p className="auth-hint">
-        Recebeu um e-mail de convite? Abra o link por lá — o código já vai junto.
+        Recebeu um convite por e-mail? Abra o link que está nele, o código já vem preenchido.
       </p>
 
       <div className="auth-footer">

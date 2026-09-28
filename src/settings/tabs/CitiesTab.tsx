@@ -75,7 +75,7 @@ export function CitiesTab(ctx: TabContext) {
                 { value: 'straight', label: 'Em linha reta' },
               ]}
             />
-            <p className="st-hint">Pela estrada precisa de um serviço de rotas — fica para depois.</p>
+            <p className="st-hint">A distância pela estrada precisa de um serviço de rotas. Fica pra depois.</p>
           </div>
         </Card>
       )}
@@ -104,7 +104,7 @@ export function CitiesTab(ctx: TabContext) {
                   <Ellipsis size={16} />
                 </button>
                 {menuFor === c.id && (
-                  <div className="st-popover" role="menu">
+                  <div className="lg st-popover" role="menu">
                     <button
                       type="button"
                       role="menuitem"
@@ -125,7 +125,7 @@ export function CitiesTab(ctx: TabContext) {
         </ul>
         {saved.length === 0 && (
           <p className="st-hint st-list-empty">
-            Salve as cidades que vocês visitam sempre — elas aparecem primeiro no Calendário e na Lista.
+            Salve as cidades que vocês visitam sempre. Elas aparecem primeiro no Calendário e na Lista.
           </p>
         )}
       </Card>
@@ -245,7 +245,7 @@ export function ChangeHomeCity({ ctx, onClose }: { ctx: TabContext; onClose: () 
           </p>
           <p className="st-warning">
             Isso recalcula a história inteira: dias em que vocês estavam juntos em {me.homeCity.name} passam a contar
-            como viajando juntos. Nenhuma estadia é apagada — dá pra voltar trocando de novo.
+            como viajando juntos. Nenhuma estadia é apagada, e dá pra desfazer trocando de novo.
           </p>
           <FieldError message={error} />
           <div className="st-dialog-actions">

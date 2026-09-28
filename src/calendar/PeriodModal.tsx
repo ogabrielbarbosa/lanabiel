@@ -184,7 +184,7 @@ export function PeriodModal({ env, mode, onClose, onSaved }: PeriodModalProps) {
     <div className="cal-modal-confirm" role="group" aria-label="Apagar período">
       <p>{DELETE_CONFIRM}</p>
       <span className="cal-modal-actions">
-        <button type="button" className="cal-btn" onClick={() => setConfirmDelete(false)} disabled={pending}>
+        <button type="button" className="cal-btn lg" onClick={() => setConfirmDelete(false)} disabled={pending}>
           Voltar
         </button>
         <button type="button" className="cal-btn cal-btn--danger" onClick={erase} disabled={pending}>
@@ -202,7 +202,7 @@ export function PeriodModal({ env, mode, onClose, onSaved }: PeriodModalProps) {
         </button>
       )}
       <span className="cal-modal-actions">
-        <button type="button" className="cal-btn" onClick={onClose} disabled={pending}>
+        <button type="button" className="cal-btn lg" onClick={onClose} disabled={pending}>
           Cancelar
         </button>
         <button type="button" className="cal-btn cal-btn--primary" onClick={save} disabled={invalid !== null || pending}>
@@ -230,7 +230,7 @@ export function PeriodModal({ env, mode, onClose, onSaved }: PeriodModalProps) {
                 type="button"
                 role="radio"
                 aria-checked={choice === c.choice}
-                className="cal-pcard"
+                className="cal-pcard lg"
                 style={{ '--band': bandColor(settings, c.choice) } as CSSProperties}
                 onClick={() => {
                   setChoice(c.choice)
@@ -270,7 +270,7 @@ export function PeriodModal({ env, mode, onClose, onSaved }: PeriodModalProps) {
 
         <div className="cal-mf-row">
           <ModalField label="Início" htmlFor={fid('from')} field="from">
-            <div className="cal-mf-input">
+            <div className="cal-mf-input lg">
               <DateField
                 value={from}
                 onChange={setFrom}
@@ -279,7 +279,7 @@ export function PeriodModal({ env, mode, onClose, onSaved }: PeriodModalProps) {
             </div>
           </ModalField>
           <ModalField label="Fim" htmlFor={fid('to')} field="to">
-            <div className={`cal-mf-input ${invalid?.field === 'to' ? 'is-invalid' : ''}`}>
+            <div className={`cal-mf-input lg ${invalid?.field === 'to' ? 'is-invalid' : ''}`}>
               <DateField
                 value={to}
                 onChange={setTo}

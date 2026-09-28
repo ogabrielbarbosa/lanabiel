@@ -51,7 +51,7 @@ export function Region({ onShowOnMap }: { onShowOnMap: (focus: MapFocus) => void
             <div className="hp-tabs" role="group" aria-label="Categoria">
               <button
                 type="button"
-                className="hp-tab hp-tab--all"
+                className="hp-tab hp-tab--all lg"
                 aria-pressed={category === 'all'}
                 onClick={() => setCategory('all')}
               >
@@ -62,7 +62,7 @@ export function Region({ onShowOnMap }: { onShowOnMap: (focus: MapFocus) => void
                 <button
                   key={c}
                   type="button"
-                  className={`hp-tab ${catClass(c)}`}
+                  className={`hp-tab lg ${catClass(c)}`}
                   aria-pressed={category === c}
                   onClick={() => setCategory(c)}
                 >

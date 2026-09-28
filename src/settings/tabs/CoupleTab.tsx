@@ -2,22 +2,29 @@
 // integrantes — e, quando o casal tem um só, o convite pendente (R22a).
 
 import { useEffect, useRef, useState } from 'react'
-import { CalendarHeart, Cake, Camera, Heart, House, Image, Send, Type, UserPlus, X } from 'lucide-react'
+import { CalendarHeart, Cake, Camera, Heart, House, Image, Pencil, Send, Type, UserPlus, X } from 'lucide-react'
 import type { OpenInvite } from '../../data/invites'
 import type { DataResult } from '../../data/result'
 import { cityLabel } from '../../data/cities'
+import type { City } from '../../data/cities'
+import type { SettingsMember } from '../../data/settings'
 import { LIMITS, formatInviteCode, isValidEmail, togetherFor } from '../../domain/onboarding'
-import { coupleLabel, isCreator } from '../../domain/settings'
+import { DEFAULT_COLOR_BY_SLOT, PERSON_COLORS, coupleLabel, isCreator } from '../../domain/settings'
+import type { PersonColor } from '../../domain/settings'
 import { dayOfMonth, diffDays, longDateBR } from '../../lib/date'
 import { dayMonth, shortDate } from '../../onboarding/format'
-import { Avatar, Button, Card, Dialog, FieldError, TextField, Toggle } from '../parts'
+import { Avatar, Button, Card, CitySearch, Dialog, FieldError, Swatches, TextField, Toggle } from '../parts'
 import { failureMessage } from '../context'
 import type { TabContext } from '../context'
 
 export function CoupleTab(ctx: TabContext) {
   const { data, api, writes, update, today, me } = ctx
   const { couple, coupleSettings: cs } = data
-  const alone = couple.members.length < 2
+  const partner = couple.members.find((m) => m.profileId !== me.profileId) ?? null
+  // Sozinho = sem outra pessoa COM CONTA. Com o perfil provisório (ADR 0024) o
+  // convite continua aberto e operável.
+  const alone = partner === null || partner.pending
+  const [pendingDialog, setPendingDialog] = useState(false)
 
   const saveSetting = (key: 'remindAnniversary' | 'showHomeCounter' | 'useCoupleCover', value: boolean) =>
     writes.run(key, async () => {
@@ -107,20 +114,48 @@ export function CoupleTab(ctx: TabContext) {
 
       <div className="st-members">
         {couple.members.map((m) => (
-          <div key={m.profileId} className="st-member">
+          <div key={m.profileId} className="lg st-member">
             <Avatar url={ctx.urls.avatar(m.profileId)} name={m.displayName} color={m.color} size={40} />
             <div>
               <p className="st-member-name">{m.fullName}</p>
               <p className="st-hint">
                 {m.profileId === me.profileId ? 'Você · ' : ''}
-                {isCreator(m, couple) ? 'criou o espaço' : `Entrou em ${shortDate(m.joinedAt.slice(0, 10))}`}
+                {m.pending
+                  ? 'Ainda não entrou'
+                  : isCreator(m, couple)
+                    ? 'criou o espaço'
+                    : `Entrou em ${shortDate(m.joinedAt.slice(0, 10))}`}
               </p>
               <p className="st-hint">{cityLabel(m.homeCity)}</p>
             </div>
+            {m.pending && (
+              <div className="st-member-actions">
+                <Button icon={Pencil} onClick={() => setPendingDialog(true)}>
+                  Editar
+                </Button>
+              </div>
+            )}
           </div>
         ))}
         {alone && <PendingInvite {...ctx} />}
+        {partner === null && (
+          <div className="st-member st-member--empty">
+            <span className="st-member-slot" aria-hidden="true">
+              <Pencil size={18} />
+            </span>
+            <div>
+              <p className="st-member-name">Preencher antes de a pessoa entrar</p>
+              <p className="st-hint">Com o perfil dela criado, o calendário, o mapa e as viagens já abrem.</p>
+            </div>
+            <div className="st-member-actions">
+              <Button variant="primary" onClick={() => setPendingDialog(true)}>
+                Criar o perfil dela
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
+      {pendingDialog && <PendingPartnerDialog ctx={ctx} current={partner} onClose={() => setPendingDialog(false)} />}
     </div>
   )
 }
@@ -246,7 +281,7 @@ function PendingInvite({ api, writes }: TabContext) {
             {open.lastSentAt === null && (
               // O e-mail pode não ter saído (Resend no fim do roadmap). Dizer
               // "enviado" sem ter saído é a falha silenciosa que a Fase 2 proíbe.
-              <p className="st-hint">O e-mail não foi enviado — passe o código por mensagem.</p>
+              <p className="st-hint">O e-mail não foi enviado. Copie o código e mande por mensagem.</p>
             )}
           </>
         ) : (
@@ -376,6 +411,139 @@ function InviteDialog({
           <Button onClick={onClose}>Voltar</Button>
           <Button type="submit" variant="primary" icon={Send} disabled={!valid || busy}>
             {busy ? 'Criando…' : 'Criar convite'}
+          </Button>
+        </div>
+      </form>
+    </Dialog>
+  )
+}
+
+/**
+ * O perfil provisório de quem vai entrar (ADR 0024): nome, cidade-casa e cor.
+ * Quando a pessoa aceitar o convite, vale o perfil que ela preencher.
+ */
+function PendingPartnerDialog({
+  ctx,
+  current,
+  onClose,
+}: {
+  ctx: TabContext
+  current: SettingsMember | null
+  onClose: () => void
+}) {
+  const { api, update, me } = ctx
+  const freeSlot: 1 | 2 = me.slot === 1 ? 2 : 1
+  const suggested: PersonColor =
+    DEFAULT_COLOR_BY_SLOT[freeSlot] !== me.color
+      ? DEFAULT_COLOR_BY_SLOT[freeSlot]
+      : (PERSON_COLORS.find((c) => c !== me.color) as PersonColor)
+  const [name, setName] = useState(current?.displayName ?? '')
+  const [city, setCity] = useState<City | null>(current?.homeCity ?? null)
+  const [pickingCity, setPickingCity] = useState(current === null)
+  const [color, setColor] = useState<PersonColor>(current?.color ?? suggested)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const valid = name.trim().length >= 1 && name.trim().length <= LIMITS.displayName && city !== null && color !== me.color
+
+  async function submit() {
+    if (!valid || city === null) return
+    setBusy(true)
+    setError(null)
+    const result = await api.savePendingPartner({ displayName: name, homeCityId: city.id, color })
+    setBusy(false)
+    if (result.status === 'ok') {
+      const displayName = name.trim()
+      update((d) => {
+        const others = d.couple.members.filter((m) => m.profileId !== result.profileId)
+        const member: SettingsMember = {
+          profileId: result.profileId,
+          slot: current?.slot ?? freeSlot,
+          displayName,
+          fullName: displayName,
+          avatarPath: null,
+          color,
+          joinedAt: current?.joinedAt ?? new Date(api.now()).toISOString(),
+          homeCity: city,
+          pending: true,
+        }
+        return { ...d, couple: { ...d.couple, members: [...others, member].sort((a, b) => a.slot - b.slot) } }
+      })
+      onClose()
+      return
+    }
+    switch (result.status) {
+      case 'invalid':
+        setError(
+          result.field === 'display_name'
+            ? `O nome pode ter até ${LIMITS.displayName} caracteres.`
+            : result.field === 'home_city'
+              ? 'Essa cidade não pode ser a cidade-casa.'
+              : 'Escolha uma cor diferente da sua.',
+        )
+        return
+      case 'couple_full':
+        setError('A pessoa já entrou no espaço. Recarregue a página.')
+        return
+      case 'not_member':
+        setError('Você não está mais neste espaço.')
+        return
+      default:
+        setError(failureMessage(result))
+    }
+  }
+
+  return (
+    <Dialog title="Perfil de quem vai entrar" onClose={onClose}>
+      <form
+        className="st-dialog-form"
+        onSubmit={(event) => {
+          event.preventDefault()
+          void submit()
+        }}
+      >
+        <p className="st-hint">
+          Você pode preencher o calendário, a lista e as viagens com esta pessoa. Quando ela aceitar o convite, tudo
+          passa para a conta dela, com o nome e a cor que ela escolher.
+        </p>
+        <label className="st-field">
+          <span className="st-field-label">Nome</span>
+          <span className="st-input">
+            <input value={name} maxLength={LIMITS.displayName} onChange={(e) => setName(e.target.value)} />
+          </span>
+        </label>
+        {pickingCity ? (
+          <CitySearch
+            label="Cidade onde ela mora"
+            search={api.searchCities}
+            onPick={(picked) => {
+              setCity(picked)
+              setPickingCity(false)
+            }}
+          />
+        ) : (
+          <div className="st-field">
+            <span className="st-field-label">Cidade onde ela mora</span>
+            <button type="button" className="st-input st-input--button" onClick={() => setPickingCity(true)}>
+              <span>{city ? cityLabel(city) : 'Escolher cidade'}</span>
+            </button>
+          </div>
+        )}
+        <div className="st-field">
+          <span className="st-field-label">Cor</span>
+          <Swatches
+            label="Cor dela"
+            colors={PERSON_COLORS}
+            value={color}
+            disabledColors={[me.color]}
+            disabledHint="sua cor"
+            onChange={(c) => setColor(c as PersonColor)}
+          />
+        </div>
+        <FieldError message={error} />
+        <div className="st-dialog-actions">
+          <Button onClick={onClose}>Voltar</Button>
+          <Button type="submit" variant="primary" disabled={!valid || busy}>
+            {busy ? 'Salvando…' : 'Salvar'}
           </Button>
         </div>
       </form>

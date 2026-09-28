@@ -7,6 +7,7 @@
 import { AuthGate } from './auth/AuthGate'
 import { supabase } from './lib/supabase'
 import { Shell } from './app/Shell'
+import { Splash } from './app/Splash'
 import { calendarApi } from './calendar/api'
 import { homeApi } from './home/api'
 import { listApi } from './list/api'
@@ -30,8 +31,11 @@ try {
 
 export default function App() {
   return (
-    <AuthGate db={supabase}>
-      <Shell calendarApi={calendar} api={settings} listApi={list} tripsApi={trips} homeApi={home} />
-    </AuthGate>
+    <>
+      <AuthGate db={supabase}>
+        <Shell calendarApi={calendar} api={settings} listApi={list} tripsApi={trips} homeApi={home} />
+      </AuthGate>
+      <Splash />
+    </>
   )
 }

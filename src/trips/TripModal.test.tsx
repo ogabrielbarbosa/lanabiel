@@ -290,7 +290,7 @@ describe('R26 — Editar viagem', () => {
     expect(screen.getByRole('combobox', { name: 'Destino' })).toHaveValue('Lisboa · Portugal')
     expect(screen.getByLabelText('Hospedagem')).toHaveValue('Casa do Largo')
     expect(screen.getByLabelText('Como Gabriel vai')).toHaveValue('voo GRU → LIS · 10h')
-    expect(screen.getByText('Mudar datas ou destino aqui não muda o período — ajuste no calendário.')).toBeInTheDocument()
+    expect(screen.getByText('Mudar datas ou destino aqui não muda o período. Pra isso, ajuste no calendário.')).toBeInTheDocument()
     expect(screen.queryByText('Ao salvar')).not.toBeInTheDocument()
   })
 

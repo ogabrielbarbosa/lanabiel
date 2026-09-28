@@ -27,6 +27,7 @@ import { requestAdd } from './addIntent'
 import type { AddIntent } from './addIntent'
 import { canonicalPath, navigate, parseRoute, usePathname } from './router'
 import type { Route } from './router'
+import { useExitTransition } from './motion'
 import { useAppearance } from './useAppearance'
 import './app.css'
 
@@ -71,7 +72,7 @@ export function Shell({ calendarApi, api, listApi, tripsApi, homeApi, onStageCha
 
   return (
     <div className="shell">
-      <nav className="shell-nav" aria-label="Navegação principal">
+      <nav className="shell-nav lg" aria-label="Navegação principal">
         <ul className="shell-nav-group">
           {NAV.map(({ name, label, path, icon: Icon }) => (
             <li key={name}>
@@ -134,12 +135,13 @@ export function Shell({ calendarApi, api, listApi, tripsApi, homeApi, onStageCha
 function AddButton() {
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
+  const { ref: exitRef, closing, requestClose } = useExitTransition<HTMLDivElement>(() => setOpen(false), 250)
 
   useEffect(() => {
     if (!open) return
     const close = (event: MouseEvent | KeyboardEvent) => {
       if (event instanceof KeyboardEvent ? event.key === 'Escape' : !root.current?.contains(event.target as Node)) {
-        setOpen(false)
+        requestClose()
       }
     }
     document.addEventListener('mousedown', close)
@@ -148,7 +150,7 @@ function AddButton() {
       document.removeEventListener('mousedown', close)
       document.removeEventListener('keydown', close)
     }
-  }, [open])
+  }, [open, requestClose])
 
   const choose = (intent: AddIntent, path: string) => {
     setOpen(false)
@@ -162,15 +164,15 @@ function AddButton() {
         type="button"
         className="shell-add-button"
         aria-haspopup="menu"
-        aria-expanded={open}
+        aria-expanded={open && !closing}
         title="Adicionar"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => (open ? requestClose() : setOpen(true))}
       >
         <Plus size={22} aria-hidden="true" />
         <span className="visually-hidden">Adicionar</span>
       </button>
       {open && (
-        <div className="shell-add-menu" role="menu" aria-label="Adicionar">
+        <div ref={exitRef} className={`shell-add-menu lg ${closing ? 'is-closing' : ''}`} role="menu" aria-label="Adicionar">
           <button type="button" role="menuitem" onClick={() => choose('new-event', '/calendario')}>
             <CalendarPlus size={16} aria-hidden="true" />
             Novo evento
@@ -198,6 +200,8 @@ function NavLink({ path, label, current, icon: Icon }: { path: string; label: st
         navigate(path)
       }}
     >
+      {/* A bolinha do destino atual nasce no próprio botão, crescendo. */}
+      {current && <span className="shell-nav-bubble" aria-hidden="true" />}
       <Icon size={20} aria-hidden="true" />
       <span className="visually-hidden">{label}</span>
     </a>

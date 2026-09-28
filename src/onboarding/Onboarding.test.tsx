@@ -6,7 +6,7 @@
 // supabase/tests/data-onboarding.test.ts; aqui se prova qual tela aparece, o
 // que ela diz, e em que ordem ela chama o mundo.
 
-import { act, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -138,6 +138,7 @@ function mount(stage: ReturnType<typeof stages>, api: OnboardingApi) {
 
 beforeEach(() => {
   window.sessionStorage.clear()
+  window.localStorage.clear()
   window.history.replaceState(null, '', '/')
 })
 
@@ -436,7 +437,7 @@ describe('entrar por convite: perfil → aceite → Confirmar → Tudo pronto', 
     expect(calls).not.toContain('updateCouple')
 
     expect(await screen.findByRole('heading', { name: 'Tudo pronto, Rafa & Duda!' })).toBeInTheDocument()
-    expect(screen.getByText(/Lá fora são 1\.\d{3} km — aqui dentro, nenhum\./)).toBeInTheDocument()
+    expect(screen.getByText(/Vocês moram a 1\.\d{3} km um do outro\./)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Entrar' }))
     expect(await screen.findByTestId('domain')).toBeInTheDocument()
@@ -491,6 +492,20 @@ describe('A26 — Aguardando: sem convite, pendente, expirado', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: 'Continuar pro app' }))
     expect(await screen.findByTestId('domain')).toBeInTheDocument()
+  })
+
+  it('depois de "Continuar pro app", recarregar vai direto ao app', async () => {
+    const { api } = fakeApi({ loadOpenInvite: async () => ({ status: 'ok', rows: OPEN }) })
+    const first = mount(awaiting(), api)
+    first.emit(SESSION)
+    await userEvent.click(await screen.findByRole('button', { name: 'Continuar pro app' }))
+    await screen.findByTestId('domain')
+    cleanup()
+
+    const again = mount(awaiting(), api)
+    again.emit(SESSION)
+    expect(await screen.findByTestId('domain')).toBeInTheDocument()
+    expect(screen.queryByText(/Aguardando Duda entrar/)).toBeNull()
   })
 })
 

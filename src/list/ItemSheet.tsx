@@ -93,7 +93,7 @@ export function ItemSheet({ itemId, onClose, onEdit, onMarkDone, onDeleted }: It
           Este item não existe mais
         </p>
         <div>
-          <button type="button" className="ls-btn" onClick={onClose}>
+          <button type="button" className="ls-btn lg" onClick={onClose}>
             Fechar
           </button>
         </div>
@@ -206,7 +206,7 @@ function Sheet({
           <div className="ls-sheet-confirm" role="alertdialog" aria-label="Confirmar apagar">
             <p>{done ? `Apagar ${item.name}? A memória e as fotos vão junto.` : `Apagar ${item.name} da lista?`}</p>
             <div className="ls-sheet-confirm-actions">
-              <button type="button" className="ls-btn" disabled={deleting} onClick={() => setConfirmDelete(false)}>
+              <button type="button" className="ls-btn lg" disabled={deleting} onClick={() => setConfirmDelete(false)}>
                 Cancelar
               </button>
               <button type="button" className="ls-btn ls-md-danger" disabled={deleting} onClick={() => void remove()}>
@@ -217,7 +217,7 @@ function Sheet({
         ) : (
           <>
             {done ? (
-              <span className="ls-sheet-done">
+              <span className="ls-sheet-done lg">
                 <CircleCheck size={16} aria-hidden="true" />
                 Feito
               </span>
@@ -227,39 +227,39 @@ function Sheet({
                 Marcar como feito
               </button>
             )}
-            <button type="button" className="ls-btn" onClick={() => onEdit(item)}>
+            <button type="button" className="ls-btn lg" onClick={() => onEdit(item)}>
               <Pencil size={14} aria-hidden="true" />
               Editar
             </button>
-            <button type="button" className="ls-btn" disabled={scheduleBusy} onClick={() => void openSchedule()}>
+            <button type="button" className="ls-btn lg" disabled={scheduleBusy} onClick={() => void openSchedule()}>
               <CalendarPlus size={14} aria-hidden="true" />
               {scheduleBusy ? 'Abrindo…' : 'Agendar'}
             </button>
-            <button type="button" className="ls-btn" onClick={() => setConfirmDelete(true)}>
+            <button type="button" className="ls-btn lg" onClick={() => setConfirmDelete(true)}>
               <Trash2 size={14} aria-hidden="true" />
               Apagar
             </button>
           </>
         )}
         {deleteError && (
-          <p className="ls-notice ls-notice--error" role="alert">
+          <p className="ls-notice ls-notice--error lg" role="alert">
             {deleteError}
           </p>
         )}
         {scheduleError && (
-          <p className="ls-notice ls-notice--error" role="alert">
+          <p className="ls-notice ls-notice--error lg" role="alert">
             {scheduleError}
           </p>
         )}
         {scheduled && (
-          <p className="ls-notice" role="status">
+          <p className="ls-notice lg" role="status">
             {scheduled}
           </p>
         )}
       </div>
     }>
       <ItemPhoto category={item.category} url={photoUrl} className="ls-sheet-photo">
-        {done && item.doneOn && <span className="ls-sheet-done-on">Feito em {dayMonthYear(item.doneOn)}</span>}
+        {done && item.doneOn && <span className="ls-sheet-done-on lg">Feito em {dayMonthYear(item.doneOn)}</span>}
       </ItemPhoto>
 
       <div className="ls-sheet-top">
@@ -267,13 +267,13 @@ function Sheet({
         {done && <Hearts value={rating} onPick={(n) => void pickRating(n)} disabled={ratingBusy} label="Nota de vocês" size={14} />}
       </div>
       {ratingError && (
-        <p className="ls-notice ls-notice--error" role="alert">
+        <p className="ls-notice ls-notice--error lg" role="alert">
           {ratingError}
         </p>
       )}
 
       {place && (
-        <div className="ls-sheet-place">
+        <div className="ls-sheet-place lg">
           {place.address && <p className="ls-sheet-address">{place.address}</p>}
           <p className="ls-meta">
             {cityLine}
@@ -296,7 +296,7 @@ function Sheet({
         </div>
       )}
       {isMediaCategory(item.category) && (
-        <div className="ls-sheet-place">
+        <div className="ls-sheet-place lg">
           {item.platform && <p className="ls-sheet-address">{item.platform}</p>}
           {item.seasons !== null && (
             <p className="ls-meta">{item.seasons === 1 ? '1 temporada' : `${item.seasons} temporadas`}</p>
@@ -357,7 +357,7 @@ function Memory({ item, itemPhotos }: { item: ListItem; itemPhotos: ListPhoto[] 
     setUploading(true)
     setPhotoError(null)
     let error: string | null =
-      chosen.length > files.length ? `Cabem só mais ${room} — as outras ficaram de fora.` : null
+      chosen.length > files.length ? `Só cabiam mais ${room}, as outras ficaram de fora.` : null
     // Uma de cada vez (seção 7): upload → insert. Para na primeira falha.
     for (const [index, file] of files.entries()) {
       const result = await api.addPhoto(coupleId, item.id, file)
@@ -429,7 +429,7 @@ function Memory({ item, itemPhotos }: { item: ListItem; itemPhotos: ListPhoto[] 
         </span>
       </div>
       {photoError && (
-        <p className="ls-notice ls-notice--error" role="alert">
+        <p className="ls-notice ls-notice--error lg" role="alert">
           {photoError}
         </p>
       )}
@@ -453,7 +453,7 @@ function Memory({ item, itemPhotos }: { item: ListItem; itemPhotos: ListPhoto[] 
 /** `Memory Entry` (`YmDIZ`): avatar, nome e texto. */
 function MemoryEntry({ member, body, children }: { member: ListMember; body: string; children?: ReactNode }) {
   return (
-    <article className="ls-memory-entry" aria-label={`Memória de ${member.name}`}>
+    <article className="ls-memory-entry lg" aria-label={`Memória de ${member.name}`}>
       <Avatar member={member} size={24} />
       <div className="ls-memory-entry-body">
         <span className="ls-memory-name">{member.name}</span>
@@ -498,7 +498,7 @@ function MyMemory({ item, member, body }: { item: ListItem; member: ListMember; 
 
   if (editing) {
     return (
-      <div className="ls-memory-entry ls-memory-entry--edit">
+      <div className="ls-memory-entry ls-memory-entry--edit lg">
         <Avatar member={member} size={24} />
         <div className="ls-memory-entry-body">
           <label className="ls-memory-name" htmlFor={`memory-${item.id}`}>
@@ -517,7 +517,7 @@ function MyMemory({ item, member, body }: { item: ListItem; member: ListMember; 
             <span className="ls-meta ls-meta--small">
               {text.length}/{LIST_LIMITS.memory}
             </span>
-            <button type="button" className="ls-btn" disabled={saving} onClick={() => setEditing(false)}>
+            <button type="button" className="ls-btn lg" disabled={saving} onClick={() => setEditing(false)}>
               Cancelar
             </button>
             <button type="button" className="ls-btn ls-btn--primary" disabled={saving} onClick={() => void save()}>
@@ -525,7 +525,7 @@ function MyMemory({ item, member, body }: { item: ListItem; member: ListMember; 
             </button>
           </div>
           {error && (
-            <p className="ls-notice ls-notice--error" role="alert">
+            <p className="ls-notice ls-notice--error lg" role="alert">
               {error}
             </p>
           )}
@@ -536,7 +536,7 @@ function MyMemory({ item, member, body }: { item: ListItem; member: ListMember; 
 
   if (body === null) {
     return (
-      <button type="button" className="ls-btn ls-memory-write" onClick={start}>
+      <button type="button" className="ls-btn ls-memory-write lg" onClick={start}>
         <Pencil size={14} aria-hidden="true" />
         Escrever a minha
       </button>
@@ -613,7 +613,7 @@ function Gallery({ photos, start, onClose }: { photos: ListPhoto[]; start: numbe
         <span className="ls-meta">
           {index + 1} de {count}
         </span>
-        <button type="button" className="ls-icon-btn ls-icon-btn--glass" aria-label="Fechar fotos" onClick={onClose}>
+        <button type="button" className="ls-icon-btn ls-icon-btn--glass lg" aria-label="Fechar fotos" onClick={onClose}>
           <X size={16} aria-hidden="true" />
         </button>
       </div>
@@ -621,7 +621,7 @@ function Gallery({ photos, start, onClose }: { photos: ListPhoto[]; start: numbe
         {count > 1 && (
           <button
             type="button"
-            className="ls-icon-btn ls-icon-btn--glass ls-icon-btn--40"
+            className="ls-icon-btn ls-icon-btn--glass ls-icon-btn--40 lg"
             aria-label="Foto anterior"
             onClick={() => setIndex((i) => (i - 1 + count) % count)}
           >
@@ -632,7 +632,7 @@ function Gallery({ photos, start, onClose }: { photos: ListPhoto[]; start: numbe
         {count > 1 && (
           <button
             type="button"
-            className="ls-icon-btn ls-icon-btn--glass ls-icon-btn--40"
+            className="ls-icon-btn ls-icon-btn--glass ls-icon-btn--40 lg"
             aria-label="Próxima foto"
             onClick={() => setIndex((i) => (i + 1) % count)}
           >
@@ -645,7 +645,7 @@ function Gallery({ photos, start, onClose }: { photos: ListPhoto[]; start: numbe
           {confirm ? (
             <>
               <span>Remover esta foto?</span>
-              <button type="button" className="ls-btn" disabled={removing} onClick={() => setConfirm(false)}>
+              <button type="button" className="ls-btn lg" disabled={removing} onClick={() => setConfirm(false)}>
                 Cancelar
               </button>
               <button type="button" className="ls-btn ls-md-danger" disabled={removing} onClick={() => void remove()}>
@@ -653,7 +653,7 @@ function Gallery({ photos, start, onClose }: { photos: ListPhoto[]; start: numbe
               </button>
             </>
           ) : (
-            <button type="button" className="ls-btn" onClick={() => setConfirm(true)}>
+            <button type="button" className="ls-btn lg" onClick={() => setConfirm(true)}>
               <Trash2 size={14} aria-hidden="true" />
               Remover foto
             </button>
@@ -661,7 +661,7 @@ function Gallery({ photos, start, onClose }: { photos: ListPhoto[]; start: numbe
         </div>
       )}
       {error && (
-        <p className="ls-notice ls-notice--error" role="alert">
+        <p className="ls-notice ls-notice--error lg" role="alert">
           {error}
         </p>
       )}

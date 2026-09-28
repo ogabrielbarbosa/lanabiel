@@ -64,15 +64,17 @@ export function ListPanel({
   const empty = items.length === 0
 
   return (
-    <aside className="ls-panel" aria-label="Painel da lista">
-      <div className="ls-panel-head">
-        <p className="ls-panel-date">{weekdayDayMonthLabel(today)}</p>
-        <h2 className="ls-panel-title">O que vem por aí</h2>
+    <aside className="ls-panel lg" aria-label="Painel da lista">
+      <div className="ls-panel-scroll">
+        <div className="ls-panel-head">
+          <p className="ls-panel-date">{weekdayDayMonthLabel(today)}</p>
+          <h2 className="ls-panel-title">O que vem por aí</h2>
+        </div>
+        <ProgressCard hidden={hidden} showCategoryProgress={showCategoryProgress} onShowDone={onShowDone} />
+        {!empty && showDailySuggestion && <SuggestionCard hidden={hidden} onMarkDone={onMarkDone} />}
+        {!empty && <NearbyCard hidden={hidden} onOpen={onOpen} />}
+        <RecentCard hidden={hidden} onOpen={onOpen} onShowRecent={onShowRecent} />
       </div>
-      <ProgressCard hidden={hidden} showCategoryProgress={showCategoryProgress} onShowDone={onShowDone} />
-      {!empty && showDailySuggestion && <SuggestionCard hidden={hidden} onMarkDone={onMarkDone} />}
-      {!empty && <NearbyCard hidden={hidden} onOpen={onOpen} />}
-      <RecentCard hidden={hidden} onOpen={onOpen} onShowRecent={onShowRecent} />
     </aside>
   )
 }
@@ -87,7 +89,7 @@ function PanelCard({
   children: ReactNode
 }) {
   return (
-    <section className="ls-panel-card" aria-label={title}>
+    <section className="ls-panel-card lg" aria-label={title}>
       <div className="ls-panel-card-head">
         <h3>{title}</h3>
         {action && (
@@ -179,7 +181,7 @@ function SuggestionCard({ hidden, onMarkDone }: { hidden: readonly ListCategory[
   return (
     <PanelCard title="Sugestão do momento" action={pool.length > 1 ? { label: 'Outra', onClick: another } : undefined}>
       {current === null ? (
-        <p className="ls-hint">Nada pra sugerir por aqui — adicione algo à lista.</p>
+        <p className="ls-hint">Ainda não há o que sugerir. Adicione algo à lista.</p>
       ) : (
         <div className="ls-suggestion">
           <ItemPhoto
@@ -210,7 +212,7 @@ function SuggestionCard({ hidden, onMarkDone }: { hidden: readonly ListCategory[
               Bora fazer
             </button>
             {pool.length > 1 && (
-              <button type="button" className="ls-icon-btn ls-icon-btn--glass ls-icon-btn--40" aria-label="Sortear outra" onClick={another}>
+              <button type="button" className="ls-icon-btn ls-icon-btn--glass ls-icon-btn--40 lg" aria-label="Sortear outra" onClick={another}>
                 <Shuffle size={16} aria-hidden="true" />
               </button>
             )}
@@ -238,7 +240,7 @@ function NearbyCard({ hidden, onOpen }: { hidden: readonly ListCategory[]; onOpe
             'Vocês estão em cidades diferentes hoje'
           ) : (
             <>
-              Sem registro de onde vocês estão hoje —{' '}
+              Sem registro de onde vocês estão hoje.{' '}
               <a
                 href="/calendario"
                 className="ls-hint-link"
@@ -248,7 +250,7 @@ function NearbyCard({ hidden, onOpen }: { hidden: readonly ListCategory[]; onOpe
                   navigate('/calendario')
                 }}
               >
-                marque no Calendário
+                Marque no Calendário
               </a>
               .
             </>
@@ -277,7 +279,7 @@ function NearbyCard({ hidden, onOpen }: { hidden: readonly ListCategory[]; onOpe
         <ul className="ls-nearby" aria-label="Mais perto">
           {close.slice(0, 3).map(({ item, km }) => (
             <li key={item.id}>
-              <button type="button" className="ls-quick" onClick={() => onOpen(item.id)}>
+              <button type="button" className="ls-quick lg" onClick={() => onOpen(item.id)}>
                 <ItemPhoto
                   category={item.category}
                   url={item.photoPath ? (urls.get(item.photoPath) ?? null) : null}

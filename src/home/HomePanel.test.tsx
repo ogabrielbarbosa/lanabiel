@@ -407,7 +407,7 @@ describe('A13 — o painel do .pen', () => {
     expect(stat('cities').getByText('23')).toBeInTheDocument()
     expect(stat('cities').getByText('12 no Brasil, 11 lá fora')).toBeInTheDocument()
     expect(stat('km').getByText('18.420')).toBeInTheDocument()
-    expect(world.getByText('Quase meia volta ao mundo — 46% da circunferência da Terra')).toBeInTheDocument()
+    expect(world.getByText('Quase meia volta ao mundo (46% da circunferência da Terra)')).toBeInTheDocument()
     expect(panel.querySelector('.hp-km-track > span')).toHaveStyle({ width: '46%' })
   })
 })

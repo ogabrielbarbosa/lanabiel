@@ -4,6 +4,7 @@
 import { useEffect, useId, useRef } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { Heart, X } from 'lucide-react'
+import { useExitTransition } from '../app/motion'
 import { CATEGORY_LABELS } from '../domain/list'
 import type { ListCategory } from '../domain/list'
 import { CATEGORY_ICONS, catClass } from './categories'
@@ -90,10 +91,12 @@ export function ListDialog({
 }) {
   const titleId = useId()
   const ref = useRef<HTMLDivElement>(null)
-  const closeRef = useRef(onClose)
+  // Fechar pelo botão, Esc ou véu anima a saída antes de o dono desmontar.
+  const { ref: exitRef, closing, requestClose } = useExitTransition<HTMLDivElement>(onClose)
+  const closeRef = useRef(requestClose)
   useEffect(() => {
-    closeRef.current = onClose
-  }, [onClose])
+    closeRef.current = requestClose
+  }, [requestClose])
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null
@@ -109,18 +112,24 @@ export function ListDialog({
   }, [])
 
   return (
-    <div className={`ls-overlay ls-overlay--${variant}`} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div ref={ref} className={`ls-dialog ls-dialog--${variant}`} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
+    <div
+      ref={exitRef}
+      className={`ls-overlay ls-overlay--${variant} ${closing ? 'is-closing' : ''}`}
+      onMouseDown={(e) => e.target === e.currentTarget && requestClose()}
+    >
+      <div ref={ref} className={`ls-dialog ls-dialog--${variant} lg`} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
         <div className="ls-dialog-head">
           <div>
             <h2 id={titleId}>{title}</h2>
             {subtitle && <p className="ls-dialog-sub">{subtitle}</p>}
           </div>
-          <button type="button" className="ls-icon-btn" aria-label="Fechar" onClick={onClose}>
+          <button type="button" className="ls-icon-btn" aria-label="Fechar" onClick={requestClose}>
             <X size={16} aria-hidden="true" />
           </button>
         </div>
-        <div className="ls-dialog-body">{children}</div>
+        <div className="ls-dialog-scroll">
+          <div className="ls-dialog-body">{children}</div>
+        </div>
         {footer && <div className="ls-dialog-foot">{footer}</div>}
       </div>
     </div>

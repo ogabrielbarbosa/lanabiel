@@ -9,11 +9,11 @@
 //
 // R5 é a regra que manda nesta tela: "enviado" só aparece quando o provedor
 // aceitou (`lastSentAt` preenchido, ou `sent` agora). Até lá, o código está na
-// tela e a pessoa manda pelo WhatsApp.
+// tela e a pessoa copia e manda por onde quiser.
 
 import { useEffect, useState } from 'react'
 import { AuthShell } from '../auth/AuthShell'
-import { Copy, Mail, MessageCircle, Send, User } from '../auth/icons'
+import { Copy, Mail, Send, User } from '../auth/icons'
 import type { OpenInvite, SendInviteResult } from '../data/invites'
 import { formatInviteCode, isValidEmail, LIMITS } from '../domain/onboarding'
 import type { OnboardingApi } from './api'
@@ -110,7 +110,7 @@ export function WaitingScreen({ api, wizard, notice, onEnterApp, onSignOut }: Wa
 
   if (view.kind === 'loading') {
     return (
-      <AuthShell caption={{ title: 'Um instante.', subtitle: 'Buscando o convite.' }}>
+      <AuthShell caption={{ title: 'Buscando o convite', subtitle: '' }}>
         <p className="auth-hint onb-center">Carregando…</p>
       </AuthShell>
     )
@@ -118,11 +118,11 @@ export function WaitingScreen({ api, wizard, notice, onEnterApp, onSignOut }: Wa
 
   if (view.kind === 'failed') {
     return (
-      <AuthShell caption={{ title: 'Hmm.', subtitle: 'Algo não carregou.' }}>
+      <AuthShell caption={{ title: 'O convite não carregou', subtitle: 'Pode ser a conexão.' }}>
         <p className="auth-error" role="alert">
           Não deu pra carregar o convite: {view.cause}
         </p>
-        <button type="button" className="auth-btn" onClick={() => void reload()}>
+        <button type="button" className="lg auth-btn" onClick={() => void reload()}>
           Tentar de novo
         </button>
       </AuthShell>
@@ -147,11 +147,8 @@ export function WaitingScreen({ api, wizard, notice, onEnterApp, onSignOut }: Wa
   const { invite, now } = view
   const expired = new Date(invite.expiresAt).getTime() <= now
   const sent = invite.lastSentAt !== null && send.kind !== 'failed'
-  const who = invite.inviteeName ?? 'seu amor'
+  const who = invite.inviteeName ?? 'a outra pessoa'
   const pretty = formatInviteCode(invite.code)
-  const whatsapp = `https://wa.me/?text=${encodeURIComponent(
-    `Criei nosso espaço no lanabiel ❤️ Entra com o código ${pretty}`,
-  )}`
 
   async function copy() {
     try {
@@ -162,11 +159,7 @@ export function WaitingScreen({ api, wizard, notice, onEnterApp, onSignOut }: Wa
     }
   }
 
-  const caption = expired
-    ? { title: 'O convite expirou.', subtitle: 'Renove e mande de novo.' }
-    : wizard && sent
-      ? { title: 'Convite enviado.', subtitle: 'Pode ir entrando, seu amor chega depois.' }
-      : { title: `Aguardando ${who} entrar.`, subtitle: 'O código já vale.' }
+  const caption = { title: `Aguardando ${who} entrar`, subtitle: 'Enquanto isso, você já pode usar o app.' }
 
   return (
     <AuthShell caption={caption}>
@@ -185,13 +178,13 @@ export function WaitingScreen({ api, wizard, notice, onEnterApp, onSignOut }: Wa
           <>
             <h1>Convite enviado!</h1>
             <p>
-              O e-mail pra {invite.email} já tem um link com o código dentro. Se preferir, mande o código direto:
+              O e-mail pra {invite.email} leva um link com o código. Se quiser, copie o código e mande você mesmo.
             </p>
           </>
         ) : (
           <>
             <h1>O e-mail não saiu</h1>
-            <p>O código já vale — mande direto pra {who}, ou tente o e-mail de novo.</p>
+            <p>O código já funciona. Copie e mande pra {who}, ou tente o e-mail de novo.</p>
           </>
         )}
       </div>
@@ -202,7 +195,7 @@ export function WaitingScreen({ api, wizard, notice, onEnterApp, onSignOut }: Wa
         </p>
       )}
 
-      <div className="onb-card">
+      <div className="lg onb-card">
         <div className="onb-card-row">
           <span>Código de convite</span>
           <span>{expired ? 'expirado' : `vale até ${dayMonth(invite.expiresAt)}`}</span>
@@ -210,14 +203,10 @@ export function WaitingScreen({ api, wizard, notice, onEnterApp, onSignOut }: Wa
         <CodeBoxes code={invite.code} />
         {!expired && (
           <div className="onb-actions">
-            <button type="button" className="auth-btn onb-btn-small" onClick={() => void copy()}>
+            <button type="button" className="lg auth-btn onb-btn-small" onClick={() => void copy()}>
               <Copy />
               {copied ? 'Copiado' : 'Copiar código'}
             </button>
-            <a className="auth-btn onb-btn-small" href={whatsapp} target="_blank" rel="noreferrer">
-              <MessageCircle />
-              Enviar pelo WhatsApp
-            </a>
           </div>
         )}
       </div>
@@ -242,7 +231,7 @@ export function WaitingScreen({ api, wizard, notice, onEnterApp, onSignOut }: Wa
         ) : (
           <button
             type="button"
-            className="auth-btn"
+            className="lg auth-btn"
             disabled={send.kind === 'sending'}
             onClick={() => void (sent ? renewAndSend() : deliver(invite.id))}
           >
@@ -250,7 +239,7 @@ export function WaitingScreen({ api, wizard, notice, onEnterApp, onSignOut }: Wa
             {send.kind === 'sending' ? 'Enviando…' : sent ? 'Reenviar' : 'Tentar de novo'}
           </button>
         )}
-        <button type="button" className="auth-btn" onClick={() => setView({ kind: 'form', replacing: invite })}>
+        <button type="button" className="lg auth-btn" onClick={() => setView({ kind: 'form', replacing: invite })}>
           Trocar e-mail
         </button>
       </div>
@@ -302,13 +291,13 @@ function InviteForm({
         await onCreated(result.inviteId)
         break
       case 'own_email':
-        setError('Esse é o seu e-mail. Coloque o do seu amor.')
+        setError('Esse é o seu e-mail. Coloque o da outra pessoa.')
         break
       case 'invalid':
         setError(result.field === 'email' ? 'Esse e-mail não parece válido.' : 'O nome está comprido demais.')
         break
       case 'couple_full':
-        setError('O espaço já tem dois. Não precisa mais de convite.')
+        setError('O espaço já tem duas pessoas, não precisa mais de convite.')
         break
       case 'not_member':
       case 'unauthenticated':
@@ -322,7 +311,7 @@ function InviteForm({
   }
 
   return (
-    <AuthShell caption={{ title: 'Falta só seu amor.', subtitle: 'Mande o convite por e-mail.' }}>
+    <AuthShell caption={{ title: 'Último passo', subtitle: 'Mande o convite por e-mail.' }}>
       {progress && <StepProgress {...progress} />}
       {notice && <p className="onb-notice">{notice}</p>}
       <div className="auth-heading onb-heading">
@@ -330,7 +319,7 @@ function InviteForm({
         <p>
           {replacing
             ? `O código que foi pra ${replacing.email} deixa de valer, e um novo vai pro e-mail certo.`
-            : 'Mandamos um e-mail com um link. O código vai junto, pra ninguém precisar digitar.'}
+            : 'A outra pessoa recebe um e-mail com um link. O código vai junto, então ela não precisa digitar nada.'}
         </p>
       </div>
 
@@ -370,7 +359,7 @@ function InviteForm({
 
         <div className="onb-actions">
           {onCancel && (
-            <button type="button" className="auth-btn" onClick={onCancel}>
+            <button type="button" className="lg auth-btn" onClick={onCancel}>
               Voltar
             </button>
           )}

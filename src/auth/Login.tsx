@@ -59,21 +59,21 @@ export function Login({ providers, onSignIn, onProvider, onCreateAccount, invite
   }
 
   return (
-    <AuthShell caption={inviteContext ? { title: 'Oi!', subtitle: 'Entre pra aceitar o convite.' } : undefined}>
+    <AuthShell caption={inviteContext ? { title: 'Você tem um convite.', subtitle: 'Entre com a sua conta pra aceitar.' } : undefined}>
       {inviteContext ? (
         <div className="auth-heading">
           <h1>Entre pra aceitar o convite</h1>
           <p>
-            Use a conta com que você quer ficar no espaço de vocês. O código fica guardado — depois
-            de entrar, você vê o convite.
+            Use a conta que você quer usar no espaço. O código fica guardado e aparece assim que
+            você entrar.
           </p>
         </div>
       ) : (
         <div className="auth-heading">
-          <h1>Pra quem ama de longe.</h1>
+          <h1>Entrar</h1>
           <p>
-            O cantinho privado de vocês dois: lugares, viagens e os dias que faltam pro próximo
-            abraço.
+            Aqui ficam os lugares que vocês querem conhecer, as viagens e a contagem até o próximo
+            encontro.
           </p>
         </div>
       )}
@@ -85,7 +85,7 @@ export function Login({ providers, onSignIn, onProvider, onCreateAccount, invite
               <button
                 key={provider}
                 type="button"
-                className="auth-btn"
+                className="lg auth-btn"
                 onClick={() => onProvider(provider)}
               >
                 {PROVIDER_ICON[provider]}

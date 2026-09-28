@@ -162,6 +162,21 @@
   order: 2;
 }
 
+/* A marca fica acima dos destinos, no mesmo grupo de cima. */
+.shell-nav-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.shell-logo {
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent-2) 35%, transparent);
+}
+
 .shell-nav-group {
   display: flex;
   flex-direction: column;

@@ -20,6 +20,7 @@ import { HomeScreen } from '../home/HomeScreen'
 import type { ListApi } from '../list/api'
 import { ListScreen } from '../list/ListScreen'
 import type { SettingsApi } from '../settings/api'
+import { Logo } from './Logo'
 import { SettingsScreen } from '../settings/SettingsScreen'
 import type { TripsApi } from '../trips/api'
 import { TripsRoute } from '../trips/TripsRoute'
@@ -72,19 +73,22 @@ export function Shell({ calendarApi, api, listApi, tripsApi, homeApi, onStageCha
   return (
     <div className="shell">
       <nav className="shell-nav" aria-label="Navegação principal">
-        <ul className="shell-nav-group">
-          {NAV.map(({ name, label, path, icon: Icon }) => (
-            <li key={name}>
-              <NavLink
-                path={path}
-                label={label}
-                // O detalhe (`trip`) acende o mesmo destino da Grade.
-                current={route?.name === name || (name === 'trips' && route?.name === 'trip')}
-                icon={Icon}
-              />
-            </li>
-          ))}
-        </ul>
+        <div className="shell-nav-top">
+          <Logo />
+          <ul className="shell-nav-group">
+            {NAV.map(({ name, label, path, icon: Icon }) => (
+              <li key={name}>
+                <NavLink
+                  path={path}
+                  label={label}
+                  // O detalhe (`trip`) acende o mesmo destino da Grade.
+                  current={route?.name === name || (name === 'trips' && route?.name === 'trip')}
+                  icon={Icon}
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
         <ul className="shell-nav-group">
           <li>
             <NavLink

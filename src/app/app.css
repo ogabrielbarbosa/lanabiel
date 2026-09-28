@@ -521,13 +521,16 @@
       transparent 96%
     ),
     var(--lg-edge);
-  mask:
-    linear-gradient(#000 0 0) content-box exclude,
-    linear-gradient(#000 0 0);
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
+  /* Longhands, não o shorthand `mask: … exclude`: no build o lightningcss
+     reescreve o shorthand, perde o `exclude` e põe o `-webkit-mask-composite`
+     antes do `-webkit-mask` que o zera — o anel vira um véu sobre o vidro
+     inteiro (só em produção; o dev não minifica). */
+  -webkit-mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  -webkit-mask-clip: content-box, border-box;
   -webkit-mask-composite: xor;
+  mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  mask-clip: content-box, border-box;
+  mask-composite: exclude;
   pointer-events: none;
 }
 

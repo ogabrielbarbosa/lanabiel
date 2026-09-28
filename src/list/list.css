@@ -132,8 +132,8 @@
   padding: 0 8px 0 14px;
   border-radius: 999px;
   box-shadow: inset 0 1px 1px var(--glass-shine);
-  backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
   color: var(--text-secondary);
 }
 
@@ -604,8 +604,8 @@
   height: 28px;
   border-radius: 999px;
   --lg-fill: linear-gradient(var(--glass-strong), var(--glass-strong));
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   color: var(--emphasis);
 }
 
@@ -646,8 +646,8 @@
 }
 
 .ls-tag--glass {
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   color: var(--text-primary);
 }
 
@@ -701,8 +701,8 @@
   padding: 8px;
   border-radius: 24px;
   box-shadow: 0 14px 36px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
-  backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
+  backdrop-filter: blur(30px);
   transition:
     box-shadow var(--dur, 0.3s) ease,
     translate var(--dur, 0.3s) var(--ease-out, ease);
@@ -763,8 +763,8 @@
   padding: 4px 9px 4px 7px;
   border-radius: 999px;
   background: var(--glass-dark);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   color: var(--text-primary);
   font-size: 11px;
   font-weight: 600;
@@ -803,8 +803,8 @@
   padding: 0;
   border-radius: 999px;
   --lg-fill: linear-gradient(var(--glass-strong), var(--glass-strong));
-  backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   box-shadow: inset 0 1px 1px var(--glass-shine);
   color: var(--text-primary);
   cursor: pointer;
@@ -1122,8 +1122,8 @@
   border-radius: 36px;
   --lg-sweep: 0;
   box-shadow: 0 30px 80px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
-  backdrop-filter: blur(60px);
   -webkit-backdrop-filter: blur(60px);
+  backdrop-filter: blur(60px);
 }
 
 /* A rolagem mora num miolo: no próprio painel ela cortaria o contorno do `.lg`. */
@@ -1289,8 +1289,8 @@
   padding: 5px 10px;
   border-radius: 999px;
   background: var(--glass-dark);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   color: var(--text-primary);
   font-size: 11px;
   font-weight: 600;
@@ -1487,8 +1487,8 @@
   align-items: center;
   padding: 16px;
   background: color-mix(in srgb, var(--bg-deep) 60%, transparent);
-  backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   animation: fade-in var(--dur, 0.3s) ease backwards;
 }
 
@@ -1542,8 +1542,8 @@
   --lg-fill: linear-gradient(var(--glass-dark), var(--glass-dark));
   --lg-sweep: 0;
   box-shadow: 0 30px 80px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
-  backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
+  backdrop-filter: blur(40px);
   color: var(--text-primary);
   font-family: var(--font);
   outline: none;

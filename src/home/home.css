@@ -77,8 +77,8 @@
   max-height: 100%;
   border-radius: 36px;
   box-shadow: 0 30px 80px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
-  backdrop-filter: blur(60px);
   -webkit-backdrop-filter: blur(60px);
+  backdrop-filter: blur(60px);
 }
 
 .home-panel-state {
@@ -131,8 +131,8 @@
   border: 1px solid var(--glass-stroke-soft);
   font-size: 13px;
   color: var(--text-secondary);
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
 
 .home-skeleton {
@@ -357,8 +357,8 @@
   left: 0;
   right: 0;
   pointer-events: none;
-  backdrop-filter: blur(16px) saturate(1.1);
   -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  backdrop-filter: blur(16px) saturate(1.1);
 }
 
 .hm-veil--top {
@@ -429,8 +429,8 @@
 .hm-zoom,
 .hm-filters-status,
 .hm-chip {
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
 
 /* --- cabeçalho: Couple Status + Breadcrumb (Top Left) -------------------- */
@@ -580,8 +580,8 @@
   inset: -1px;
   z-index: -1;
   border-radius: inherit;
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
 
 .hm-crumbs-globe {
@@ -663,8 +663,8 @@
 
 .hm-crumbs-shape-glass {
   background: linear-gradient(#ffffff12, #ffffff12), var(--hm-dark);
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
 
 /* O seletor: 280 de largura, rente ao pé da barra (o segmento está no meio
@@ -868,8 +868,8 @@
   padding: 4px;
   border-radius: 999px;
   box-shadow: inset 0 1px 1px var(--hm-shine);
-  backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
+  backdrop-filter: blur(15px);
 }
 
 .hm-zoom button {
@@ -971,8 +971,8 @@
   outline-offset: -2px;
   box-shadow: 0 0 16px var(--cat);
   color: var(--cat);
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 /* Já fomos: disco cheio na cor da categoria, ícone escuro. */
@@ -998,8 +998,8 @@
   font-weight: 500;
   color: var(--hm-text);
   white-space: nowrap;
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 /* O grupo: o pin do mais recente e _"+n"_ embaixo à direita (Cluster SJC). */
@@ -1016,8 +1016,8 @@
   font-weight: 600;
   color: var(--hm-text);
   white-space: nowrap;
-  backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
 }
 
 /* No nível cidade, _"+8 em SJC"_ à direita, sobre o escuro (XwYKK). */
@@ -1152,8 +1152,8 @@
   font-size: 11px;
   font-weight: 600;
   color: #fff;
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 .hm-popover-body {
@@ -1306,8 +1306,8 @@
   font-size: 11px;
   font-weight: 500;
   color: var(--hm-text-2);
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
 
 .hm-nearby-all {
@@ -1345,8 +1345,8 @@
   --lg-fill: linear-gradient(#ffffff12, #ffffff12), linear-gradient(var(--hm-dark), var(--hm-dark));
   box-shadow: inset 0 1px 1px var(--hm-shine), 0 10px 28px var(--hm-shadow);
   text-align: left;
-  backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
+  backdrop-filter: blur(15px);
 }
 
 .hm-card.is-active {
@@ -1437,8 +1437,8 @@
   padding: 4px;
   border-radius: 999px;
   box-shadow: inset 0 1px 1px var(--hm-shine);
-  backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
+  backdrop-filter: blur(15px);
 }
 
 .hm-status-opt {
@@ -1486,8 +1486,8 @@
   font-weight: 500;
   color: var(--hm-text);
   white-space: nowrap;
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
 }
 
 .hm-chip:hover {

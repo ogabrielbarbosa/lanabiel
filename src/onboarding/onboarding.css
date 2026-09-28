@@ -244,8 +244,8 @@
   border-radius: 14px;
   border: 1px solid var(--glass-stroke-soft);
   background: #0e1430f2;
-  backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
+  backdrop-filter: blur(30px);
   max-height: 260px;
   overflow-y: auto;
 }

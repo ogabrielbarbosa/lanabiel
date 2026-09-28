@@ -158,8 +158,8 @@
   flex-direction: column;
   padding: 39px;
   border-radius: 36px;
-  backdrop-filter: blur(60px);
   -webkit-backdrop-filter: blur(60px);
+  backdrop-filter: blur(60px);
   box-shadow:
     inset 0 1px 1px #ffffff40,
     0 30px 80px var(--glass-shadow);
@@ -337,8 +337,8 @@
   gap: 8px;
   padding: 0 15px;
   border-radius: 999px;
-  backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
   box-shadow: inset 0 1px 1px #ffffff40;
   color: var(--text-primary);
   font: inherit;
@@ -361,8 +361,8 @@
   padding: 0 18px 0 14px;
   border: none;
   background: var(--accent);
-  backdrop-filter: none;
   -webkit-backdrop-filter: none;
+  backdrop-filter: none;
   box-shadow:
     0 8px 24px var(--accent-glow),
     inset 0 1px 1px #ffffff80;

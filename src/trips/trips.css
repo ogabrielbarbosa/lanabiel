@@ -244,8 +244,8 @@
   padding: 4px;
   border-radius: 999px;
   box-shadow: inset 0 1px 1px var(--glass-shine);
-  backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
 }
 
 .tr-segmented button {
@@ -327,8 +327,8 @@
   padding: 13px 15px;
   border-radius: 22px;
   box-shadow: inset 0 1px 1px var(--glass-shine);
-  backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
+  backdrop-filter: blur(30px);
 }
 
 .tr-stat-icon {
@@ -516,8 +516,8 @@
   padding: 15px;
   border-radius: 22px;
   box-shadow: inset 0 1px 1px #ffffff40;
-  backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
+  backdrop-filter: blur(40px);
   color: var(--p-text);
 }
 
@@ -738,8 +738,8 @@
 .tr-dcard,
 .tr-tl-card {
   box-shadow: inset 0 1px 1px var(--glass-shine), 0 14px 36px var(--glass-shadow);
-  backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
+  backdrop-filter: blur(30px);
 }
 
 .tr-pcard:hover,
@@ -877,8 +877,8 @@
   padding: 4px 9px;
   border-radius: 999px;
   background: #0a1030b8;
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   color: #fff;
   font-size: 11px;
   font-weight: 600;
@@ -1203,8 +1203,8 @@
   flex-direction: column;
   border-radius: 36px;
   box-shadow: 0 30px 80px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
-  backdrop-filter: blur(60px);
   -webkit-backdrop-filter: blur(60px);
+  backdrop-filter: blur(60px);
 }
 
 .tr-panel.lg {
@@ -1254,8 +1254,8 @@
   padding: 19px;
   border-radius: 24px;
   box-shadow: inset 0 1px 1px var(--glass-shine), 0 18px 48px var(--glass-shadow);
-  backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
+  backdrop-filter: blur(40px);
 }
 
 .tr-card-head {

@@ -71,8 +71,8 @@
   padding: 19px;
   border-radius: 24px;
   box-shadow: inset 0 1px 1px var(--glass-shine), 0 18px 48px var(--glass-shadow);
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
 
 .hp-card-head {
@@ -244,8 +244,8 @@
   background: var(--hp-photo-glass);
   outline: 1px solid var(--hp-photo-stroke);
   outline-offset: -0.5px;
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   color: var(--hp-on-photo);
   font-size: 12px;
   font-weight: 600;
@@ -864,8 +864,8 @@
   background: var(--hp-photo-glass);
   outline: 1px solid var(--hp-photo-stroke);
   outline-offset: -0.5px;
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   color: #f6e3a1;
 }
 
@@ -961,8 +961,8 @@
   background: var(--hp-photo-glass);
   outline: 1px solid var(--hp-photo-stroke);
   outline-offset: -0.5px;
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   font-size: 11px;
   font-weight: 500;
 }

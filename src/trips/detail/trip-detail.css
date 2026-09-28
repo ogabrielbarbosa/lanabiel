@@ -123,8 +123,8 @@
   padding: 0 16px;
   border-radius: 999px;
   box-shadow: inset 0 1px 1px var(--glass-shine);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   color: var(--text-primary);
   font: inherit;
   font-size: 14px;
@@ -156,8 +156,8 @@
   padding: 0;
   border-radius: 999px;
   box-shadow: inset 0 1px 1px var(--glass-shine);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   color: var(--text-primary);
   cursor: pointer;
 }
@@ -263,8 +263,8 @@
   padding: 8px 14px;
   border-radius: 999px;
   background: var(--td-photo-veil);
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   color: var(--td-photo-ink);
   font-size: 12px;
   font-weight: 600;
@@ -420,8 +420,8 @@
   padding: 16px 18px;
   border-radius: 22px;
   box-shadow: inset 0 1px 1px var(--glass-shine);
-  backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
+  backdrop-filter: blur(15px);
 }
 
 .td-stat-chip {
@@ -505,8 +505,8 @@
   padding: 24px;
   border-radius: 24px;
   box-shadow: inset 0 1px 1px var(--glass-shine), 0 18px 48px var(--glass-shadow);
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
 
 .td-card-head {
@@ -1023,8 +1023,8 @@ button.td-day-title:hover {
   padding: 4px 9px 4px 7px;
   border-radius: 999px;
   background: var(--td-photo-veil-strong);
-  backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   color: #ffffff;
   font-size: 11px;
   font-weight: 600;
@@ -1202,8 +1202,8 @@ button.td-day-title:hover {
   padding: 4px 9px;
   border-radius: 999px;
   background: var(--td-photo-veil);
-  backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   color: #f4f6fb;
   font-size: 11px;
   font-weight: 600;
@@ -1243,8 +1243,8 @@ button.td-day-title:hover {
 
 .td-map-pin--dest.is-planned {
   background: #ffffff1f;
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   box-shadow: 0 0 0 2px #f6e3a1, 0 0 18px #f6e3a1;
   color: #f6e3a1;
 }
@@ -1903,8 +1903,8 @@ button.td-day-title:hover {
   padding: 8px 14px 8px 8px;
   border-radius: 999px;
   background: var(--td-photo-veil);
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   line-height: normal;
 }
 

@@ -872,8 +872,8 @@
   padding: 6px;
   border-radius: 14px;
   box-shadow: 0 20px 40px var(--glass-shadow);
-  backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
+  backdrop-filter: blur(30px);
 }
 
 .st-popover.lg {
@@ -1305,8 +1305,8 @@
   color: var(--text-primary);
   font-family: var(--font);
   box-shadow: 0 30px 80px var(--glass-shadow);
-  backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
+  backdrop-filter: blur(40px);
 }
 
 .st-dialog.lg {
@@ -1377,8 +1377,8 @@
   padding: 24px 20px;
   border-radius: 36px;
   box-shadow: 0 30px 80px var(--glass-shadow), inset 0 1px 1px var(--glass-shine);
-  backdrop-filter: blur(60px);
   -webkit-backdrop-filter: blur(60px);
+  backdrop-filter: blur(60px);
 }
 
 .st-panel.lg {

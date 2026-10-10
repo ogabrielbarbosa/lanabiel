@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process'
+import { spawnSync } from 'node:child_process'
 import { createClient } from '@supabase/supabase-js'
 import type { SupabaseClient } from '@supabase/supabase-js'
 // Node 20 não tem `WebSocket` global, e o cliente de realtime do supabase-js
@@ -138,12 +138,19 @@ export function sql(query: string): string {
   // ordem ALFABÉTICA. Para manter a ordem das colunas, o próprio Postgres
   // serializa cada linha (`row_to_json` preserva a ordem) numa coluna de texto.
   const wrapped = `select coalesce(json_agg(row_to_json(q))::text, '[]') as rows from (${query}) q`
-  const out = execFileSync('npx', ['supabase', 'db', 'query', '--linked', '-o', 'json', wrapped], {
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'ignore'],
-  })
-  const { rows } = JSON.parse(out) as { rows: { rows: string }[] }
-  const records = JSON.parse(rows[0]!.rows) as Record<string, unknown>[]
+  const run = spawnSync('npx', ['supabase', 'db', 'query', '--linked', '-o', 'json', wrapped], { encoding: 'utf8' })
+  // Falha da Management API (limite, sessão da CLI, rede) chega sem `rows`, e o
+  // motivo só aparece no stderr — sem ele, o teste quebra com um `undefined` mudo.
+  let rows: { rows: string }[] | undefined
+  try {
+    rows = (JSON.parse(run.stdout) as { rows?: { rows: string }[] }).rows
+  } catch {
+    rows = undefined
+  }
+  if (run.status !== 0 || !rows?.[0]) {
+    throw new Error(`supabase db query falhou (saída ${run.status}):\n${run.stderr.trim()}\n${run.stdout.trim()}`)
+  }
+  const records = JSON.parse(rows[0].rows) as Record<string, unknown>[]
   const cell = (v: unknown) => (v === true ? 't' : v === false ? 'f' : v === null ? '' : String(v))
   return records.map((r) => Object.values(r).map(cell).join('|')).join('\n')
 }

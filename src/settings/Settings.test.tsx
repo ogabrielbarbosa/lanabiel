@@ -35,7 +35,7 @@ describe('A14 — leitura: esqueleto, erro, e nunca padrão no lugar de dado', (
       loadSettings: vi.fn<SettingsApi['loadSettings']>(() => new Promise((r) => (resolve = r))),
     })
     renderTab('perfil-do-casal', api)
-    expect(screen.getByText('Carregando…')).toBeInTheDocument()
+    expect(screen.getByText('Carregando as configurações…')).toBeInTheDocument()
     expect(screen.queryAllByRole('switch')).toHaveLength(0)
     // O painel já está no lugar, só com o esqueleto — o mesmo nó que recebe os dados.
     const panel = screen.getByRole('complementary', { name: 'O espaço de vocês' })
@@ -62,12 +62,11 @@ describe('A14 — leitura: esqueleto, erro, e nunca padrão no lugar de dado', (
 })
 
 describe('A12 — menu', () => {
-  it('as nove abas, a ativa marcada, e o rótulo do espaço privado', async () => {
+  it('as nove abas e a ativa marcada', () => {
     renderTab('cidades')
     const menu = screen.getByRole('navigation', { name: 'Seções das configurações' })
     expect(within(menu).getAllByRole('link')).toHaveLength(9)
     expect(within(menu).getByRole('link', { name: 'Cidades' })).toHaveAttribute('aria-current', 'page')
-    expect(await screen.findByText('Espaço privado · só Gabriel e Lana')).toBeInTheDocument()
   })
 })
 
@@ -629,5 +628,66 @@ describe('R26 — painel: contagem da Lista que falha', () => {
     expect(within(panel).getAllByText('—')).toHaveLength(1)
     expect(await screen.findAllByRole('switch')).toHaveLength(3)
     expect(screen.queryByText(/Não deu pra carregar as configurações/)).not.toBeInTheDocument()
+  })
+})
+
+// ADR 0028 — trocar a foto dos dois, na aba Perfil do casal.
+describe('Foto dos dois integrantes', () => {
+  const PREPARED = { status: 'ok' as const, blob: new Blob(['x'], { type: 'image/webp' }), extension: 'webp' as const }
+  const photo = () => new File(['x'], 'foto.jpg', { type: 'image/jpeg' })
+
+  it('a da outra pessoa sobe na pasta dela e é gravada pela RPC', async () => {
+    const api = fakeApi(settingsData(), {
+      prepareAvatar: vi.fn<SettingsApi['prepareAvatar']>(async () => PREPARED),
+      uploadAvatar: vi.fn<SettingsApi['uploadAvatar']>(async () => ({ status: 'ok', path: 'u-lana/nova.webp' })),
+    })
+    renderTab('perfil-do-casal', api)
+    await userEvent.upload(await screen.findByLabelText('Foto de Lana'), photo())
+
+    await waitFor(() => expect(api.setPartnerAvatar).toHaveBeenCalledWith('u-lana', 'u-lana/nova.webp'))
+    expect(api.uploadAvatar).toHaveBeenCalledWith(PREPARED, 'u-lana')
+    expect(api.updateProfile).not.toHaveBeenCalled()
+    // A URL assinada é pedida de novo, já com o caminho novo.
+    await waitFor(() => expect(api.avatarUrl).toHaveBeenCalledWith('u-lana/nova.webp'))
+  })
+
+  it('a própria, pela mesma aba, vai para a própria pasta e para o próprio perfil', async () => {
+    const api = fakeApi(settingsData(), {
+      prepareAvatar: vi.fn<SettingsApi['prepareAvatar']>(async () => PREPARED),
+    })
+    renderTab('perfil-do-casal', api)
+    await userEvent.upload(await screen.findByLabelText('Sua foto'), photo())
+
+    await waitFor(() => expect(api.updateProfile).toHaveBeenCalledWith({ avatarPath: 'u-gabriel/x.webp' }))
+    expect(api.uploadAvatar).toHaveBeenCalledWith(PREPARED, undefined)
+    expect(api.setPartnerAvatar).not.toHaveBeenCalled()
+  })
+
+  it('o perfil provisório também troca de foto', async () => {
+    const data = settingsData()
+    data.couple.members[1] = { ...data.couple.members[1], pending: true }
+    const api = fakeApi(data, { prepareAvatar: vi.fn<SettingsApi['prepareAvatar']>(async () => PREPARED) })
+    renderTab('perfil-do-casal', api)
+    await userEvent.upload(await screen.findByLabelText('Foto de Lana'), photo())
+    await waitFor(() => expect(api.setPartnerAvatar).toHaveBeenCalledWith('u-lana', 'u-gabriel/x.webp'))
+  })
+
+  it('a pessoa saiu do espaço no meio: diz isso no cartão dela e relê', async () => {
+    const api = fakeApi(settingsData(), {
+      prepareAvatar: vi.fn<SettingsApi['prepareAvatar']>(async () => PREPARED),
+      setPartnerAvatar: vi.fn<SettingsApi['setPartnerAvatar']>(async () => ({ status: 'not_partner' })),
+    })
+    renderTab('perfil-do-casal', api)
+    await userEvent.upload(await screen.findByLabelText('Foto de Lana'), photo())
+    expect(await screen.findByText('Lana não está mais neste espaço.')).toBeInTheDocument()
+    expect(api.loadSettings).toHaveBeenCalledTimes(2)
+  })
+
+  it('arquivo que não é imagem não sai do aparelho', async () => {
+    const api = fakeApi()
+    renderTab('perfil-do-casal', api)
+    await userEvent.upload(await screen.findByLabelText('Foto de Lana'), photo())
+    expect(await screen.findByText('Esse arquivo não é uma imagem.')).toBeInTheDocument()
+    expect(api.uploadAvatar).not.toHaveBeenCalled()
   })
 })

@@ -10,7 +10,7 @@
 //     `namesOf`, `withHomes`). Os callbacks (`reload`, `requestUrls`,
 //     `showNotice`…) são `vi.fn()` para o teste conferir.
 
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import type { ReactElement } from 'react'
 import { vi } from 'vitest'
 import { membersOf, namesOf, peopleOf, withHomes } from '../../calendar/context'
@@ -24,6 +24,14 @@ import { TripsRoute } from '../TripsRoute'
 import type { TripsView } from '../TripsRoute'
 import { ALL_TRIPS, TODAY, TRIP_CITIES, TRIP_LIST_ITEMS, signedUrlOf, tripEvent, tripsContextData } from './fixtures'
 import { seededTripsApi } from './fakeApi'
+
+/**
+ * Espera a Grade ler. O título NÃO serve de sinal: o cabeçalho aparece antes
+ * da leitura (ADR 0026). Os números das feitas só existem com o `ok`.
+ */
+export function gridLoaded() {
+  return screen.findByRole('list', { name: 'Números das viagens feitas' })
+}
 
 export function renderTripsRoute(api: TripsApi = seededTripsApi(), view: TripsView = { name: 'trips' }) {
   return { ...render(<TripsRoute api={api} view={view} />), api }

@@ -65,6 +65,7 @@ function setup(
     photos?: ListPhoto[]
     api?: Partial<ListApi>
     where?: ReturnType<typeof listValue>['where']
+    placement?: 'sheet' | 'panel'
   } = {},
 ) {
   const item = options.item ?? DONE
@@ -78,7 +79,7 @@ function setup(
     where: options.where ?? { kind: 'unknown' },
   })
   const props = { onClose: vi.fn(), onEdit: vi.fn(), onMarkDone: vi.fn(), onDeleted: vi.fn() }
-  const view = renderInList(<ItemSheet itemId={item.id} {...props} />, value)
+  const view = renderInList(<ItemSheet itemId={item.id} placement={options.placement} {...props} />, value)
   return { api, value, props, view, user: userEvent.setup(), item }
 }
 
@@ -362,21 +363,22 @@ describe('A16 — Apagar (R19, seção 7)', () => {
   })
 })
 
+/** O Calendário com os itens desta tela no vínculo, e `createEvent` que responde `ok`. */
+function calendarWith(item: ListItem, overrides: Partial<CalendarApi> = {}): CalendarApi {
+  return seededCalendarApi(
+    {},
+    {
+      loadCalendar: vi.fn<CalendarApi['loadCalendar']>(async () => ({
+        status: 'ok',
+        rows: { events: SEPTEMBER_EVENTS, listItems: [...LIST_REFS, { id: item.id, name: item.name, category: item.category }] },
+      })),
+      createEvent: vi.fn<CalendarApi['createEvent']>(async () => ({ status: 'ok', value: { id: 'e-new' } })),
+      ...overrides,
+    },
+  )
+}
+
 describe('A22 — Agendar (Fase 5, R23)', () => {
-  /** O Calendário com os itens desta tela no vínculo, e `createEvent` que responde `ok`. */
-  function calendarWith(item: ListItem, overrides: Partial<CalendarApi> = {}): CalendarApi {
-    return seededCalendarApi(
-      {},
-      {
-        loadCalendar: vi.fn<CalendarApi['loadCalendar']>(async () => ({
-          status: 'ok',
-          rows: { events: SEPTEMBER_EVENTS, listItems: [...LIST_REFS, { id: item.id, name: item.name, category: item.category }] },
-        })),
-        createEvent: vi.fn<CalendarApi['createEvent']>(async () => ({ status: 'ok', value: { id: 'e-new' } })),
-        ...overrides,
-      },
-    )
-  }
 
   it('a fazer e feito: Agendar abre o Novo evento do tipo Date, com o título e o vínculo do item', async () => {
     for (const item of [WANT, DONE]) {
@@ -456,5 +458,34 @@ describe('A18 — Ver no globo (Fase 7 R23)', () => {
     setup({ item: { ...WANT, place: null } })
     expect(screen.getByRole('dialog', { name: WANT.name })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Ver no globo' })).toBeNull()
+  })
+})
+
+describe('no lugar do painel (tela larga)', () => {
+  it('não é modal: o painel leva o nome do item, e Voltar devolve o painel', async () => {
+    const { user, props } = setup({ placement: 'panel' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+    const panel = screen.getByRole('complementary', { name: 'Casa Amarela Bistrô' })
+    expect(panel).toHaveTextContent('Feito em 18 jul 2026')
+    expect(within(panel).getByRole('button', { name: 'Editar' })).toBeInTheDocument()
+    await user.click(within(panel).getByRole('button', { name: 'Voltar' }))
+    expect(props.onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('Esc volta ao painel', async () => {
+    const { user, props } = setup({ placement: 'panel' })
+    await user.keyboard('{Escape}')
+    expect(props.onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('Agendar: o modal abre com o detalhe à vista, e o Esc fecha só o modal', async () => {
+    const { user, props } = setup({ item: WANT, placement: 'panel', api: { calendar: calendarWith(WANT) } })
+    await user.click(screen.getByRole('button', { name: 'Agendar' }))
+    await screen.findByRole('dialog', { name: 'Novo evento' })
+    expect(screen.getByRole('complementary', { name: 'Parque da Cidade' })).toBeInTheDocument()
+    await user.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Novo evento' })).toBeNull())
+    expect(props.onClose).not.toHaveBeenCalled()
+    expect(screen.getByRole('complementary', { name: 'Parque da Cidade' })).toBeInTheDocument()
   })
 })

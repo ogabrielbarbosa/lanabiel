@@ -1,15 +1,20 @@
 // Busca de lugares — Photon (Komoot, sobre o OpenStreetMap), direto do
-// navegador. O resultado é RESOLVIDO aqui e guardado no item: nada fora deste
-// arquivo sabe que o Photon existe, e trocar de provedor mexe só aqui.
+// navegador, e, no modo `place`, os estabelecimentos do Overture perto da
+// cidade-casa (`places-nearby`, ADR 0027). O resultado é RESOLVIDO aqui e
+// guardado no item: nada fora deste arquivo sabe dos provedores, e trocar de
+// provedor mexe só aqui.
 //
 // Spec: .agent/Tasks/fase-4-lista.md, R13, seção 5 ("Cliente"), 7, 8 e 9
-// ADR:  .agent/Decisions/0016-busca-de-lugares-pelo-photon-osm.md
+// ADR:  .agent/Decisions/0016-busca-de-lugares-pelo-photon-osm.md, 0027
 //
 // Sai do navegador SÓ o texto da busca e a coordenada de viés (cidade-casa,
 // pública): `credentials: 'omit'` e `referrerPolicy: 'no-referrer'` (seção 9).
 
 import type { GeoPlace } from '../domain/list'
+import { distanceKmExact } from '../domain/onboarding'
+import type { LatLng } from '../domain/onboarding'
 import type { City } from './cities'
+import type { NearbyPlace, NearbySearchResult } from './nearbyPlaces'
 import type { DataResult } from './result'
 
 export const PHOTON_URL = 'https://photon.komoot.io/api/'
@@ -58,8 +63,15 @@ export interface PlaceSearchOptions {
   signal?: AbortSignal
   /** Injetável para o teste; o padrão é o `fetch` global. */
   fetchFn?: typeof fetch
+  /** Quantos resultados pedir ao Photon. Padrão: `PLACE_LIMIT`. */
+  limit?: number
   /** O fallback do IBGE (`searchCities` de `cities.ts`, já com o `db`). Sem ele, falha é `error`. */
   searchCities?: (query: string) => Promise<DataResult<City[]>>
+  /**
+   * Os estabelecimentos do Overture perto do `bias` (`searchNearbyPlaces`, já
+   * com o `db`). Só no modo `place` e com `bias`; sem ele, só o Photon.
+   */
+  searchNearby?: (query: string, near: { lat: number; lng: number }, signal?: AbortSignal) => Promise<NearbySearchResult>
 }
 
 // ---------------------------------------------------------------------------
@@ -245,8 +257,8 @@ export function cityToCandidate(city: City): PlaceCandidate {
   return { ...place, label: city.name, detail: placeDetail(place, 'city') }
 }
 
-export function photonUrl(query: string, options: Pick<PlaceSearchOptions, 'mode' | 'bias'>): string {
-  const params = new URLSearchParams({ q: query, limit: String(PLACE_LIMIT), lang: 'default' })
+export function photonUrl(query: string, options: Pick<PlaceSearchOptions, 'mode' | 'bias' | 'limit'>): string {
+  const params = new URLSearchParams({ q: query, limit: String(options.limit ?? PLACE_LIMIT), lang: 'default' })
   if (options.mode !== 'place') params.set('layer', options.mode)
   if (options.bias) {
     params.set('lat', String(options.bias.lat))
@@ -263,12 +275,168 @@ function isAbort(error: unknown, signal?: AbortSignal): boolean {
 // A busca
 // ---------------------------------------------------------------------------
 
+/** Overture → candidato, no mesmo formato do Photon. Sem `osmRef`: a Lista não grava. */
+export function nearbyToCandidate(p: NearbyPlace): PlaceCandidate {
+  const place: GeoPlace = {
+    address: p.address,
+    city: p.city,
+    state: p.state,
+    country: countryNamePt(p.countryCode),
+    countryCode: p.countryCode,
+    lat: p.lat,
+    lng: p.lng,
+  }
+  return { ...place, label: p.name, detail: placeDetail(place, 'place') }
+}
+
+const comparable = (s: string) =>
+  s
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLocaleLowerCase('pt-BR')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+/** O mesmo lugar nas duas fontes: mesmo nome e a menos de ~150 m. */
+function sameSpot(a: PlaceCandidate, b: PlaceCandidate): boolean {
+  return comparable(a.label) === comparable(b.label) && Math.abs(a.lat - b.lat) < 0.0015 && Math.abs(a.lng - b.lng) < 0.0015
+}
+
+/**
+ * Os anéis de proximidade, do meio para fora: bairro, cidade, estado, país,
+ * continente e mundo. Bairro, cidade, estado e continente são distância em
+ * linha reta (km) a partir de onde a pessoa está, e por isso aproximações
+ * (SJC–São Paulo, ~80 km, cai no estado).
+ *
+ * O país não cabe em distância: o Brasil tem mais de 4.000 km de ponta a
+ * ponta, e Buenos Aires fica mais perto de SJC que o norte da Bahia. O anel do
+ * país é "mesmo país de onde a pessoa está"; sem saber o país, até 1.500 km.
+ */
+export const PROXIMITY_RINGS_KM = { neighborhood: 2, city: 15, state: 250, country: 1500, continent: 5000 } as const
+
+/** Um resultado a menos disto da origem diz em que país a pessoa está. */
+const ORIGIN_COUNTRY_KM = 50
+
+/** O índice do anel: 0 bairro, 1 cidade, 2 estado, 3 país, 4 continente, 5 mundo. */
+export function proximityRing(
+  origin: LatLng,
+  place: LatLng & { countryCode?: string },
+  originCountry: string | null = null,
+): number {
+  const km = distanceKmExact(origin, place)
+  if (km <= PROXIMITY_RINGS_KM.neighborhood) return 0
+  if (km <= PROXIMITY_RINGS_KM.city) return 1
+  if (km <= PROXIMITY_RINGS_KM.state) return 2
+  if (originCountry ? place.countryCode === originCountry : km <= PROXIMITY_RINGS_KM.country) return 3
+  if (km <= PROXIMITY_RINGS_KM.continent) return 4
+  return 5
+}
+
+/**
+ * O país de onde a pessoa está, tirado do próprio resultado: o do lugar mais
+ * perto, se estiver a menos de `ORIGIN_COUNTRY_KM`. A cidade de origem chega
+ * aqui só como coordenada (`City` não tem país), e a busca perto de casa quase
+ * sempre traz algo da própria cidade.
+ */
+function originCountryOf(rows: readonly (LatLng & { countryCode?: string })[], origin: LatLng): string | null {
+  let best: { km: number; code: string } | null = null
+  for (const row of rows) {
+    if (!row.countryCode) continue
+    const km = distanceKmExact(origin, row)
+    if (km <= ORIGIN_COUNTRY_KM && (!best || km < best.km)) best = { km, code: row.countryCode }
+  }
+  return best?.code ?? null
+}
+
+/**
+ * Do anel de dentro para o de fora. Dentro do mesmo anel a ordem que veio
+ * (relevância do provedor) fica: no meio da cidade, o nome que bate melhor
+ * ganha do que está 2 km mais perto. O `sort` é estável.
+ */
+export function rankByProximity<T extends LatLng & { countryCode?: string }>(rows: readonly T[], origin: LatLng): T[] {
+  const country = originCountryOf(rows, origin)
+  return rows
+    .map((row) => ({ row, ring: proximityRing(origin, row, country) }))
+    .sort((a, b) => a.ring - b.ring)
+    .map((entry) => entry.row)
+}
+
+/**
+ * Quantas vagas o Photon guarda quando o Overture enche a lista: endereço,
+ * rua, bairro e cidade vêm dele, e um nome de restaurante não pode esconder a
+ * rua de mesmo nome.
+ */
+const PHOTON_RESERVED = 2
+
+/**
+ * Overture e Photon numa lista só, sem repetir o mesmo lugar. Com `origin`, a
+ * ordem é por anel de proximidade; sem ele, o Overture primeiro. Nos dois
+ * casos o Photon fica com até `PHOTON_RESERVED` vagas (as melhores dele,
+ * tirando as piores do Overture) e a ordem final é a da lista ordenada.
+ */
+export function mergeNearby(
+  nearby: PlaceCandidate[],
+  photon: PlaceCandidate[],
+  limit: number,
+  origin?: LatLng,
+): PlaceCandidate[] {
+  const first = dedupe(nearby)
+  const extras = photon.filter((p) => !first.some((n) => sameSpot(n, p)))
+  const fromPhoton = new Set(extras)
+  const all = origin ? rankByProximity([...first, ...extras], origin) : [...first, ...extras]
+
+  const top = all.slice(0, limit)
+  const missing = Math.min(PHOTON_RESERVED, extras.length) - top.filter((r) => fromPhoton.has(r)).length
+  if (missing <= 0) return top
+  const pulled = all.slice(limit).filter((r) => fromPhoton.has(r)).slice(0, missing)
+  const dropped = new Set(top.filter((r) => !fromPhoton.has(r)).slice(-pulled.length))
+  const kept = new Set([...top.filter((r) => !dropped.has(r)), ...pulled])
+  return all.filter((r) => kept.has(r))
+}
+
+/** Com ordem por proximidade, o Photon traz mais para haver o que ordenar. */
+const PHOTON_RANKED_LIMIT = 10
+
+type PhotonOutcome = { status: 'ok'; rows: PlaceCandidate[] } | { status: 'aborted' } | { status: 'failed'; cause: string }
+
+/**
+ * No modo `place`, com `bias` e `searchNearby`, o Photon e o Overture saem
+ * juntos e o resultado é um só (`mergeNearby`). O Overture fora do ar, sem
+ * chave ou sem cota não aparece para quem busca: fica o Photon, como antes do
+ * ADR 0027. O fallback do IBGE só entra quando nenhum dos dois trouxe nada.
+ *
+ * Com `bias`, fora do modo `country`, o resultado sai do anel mais perto para
+ * o mais longe (`rankByProximity`): o lugar de mesmo nome na Bahia não passa
+ * na frente do que está na cidade de quem busca.
+ */
 export async function searchPlaces(query: string, options: PlaceSearchOptions): Promise<PlaceSearchResult> {
   const q = query.trim()
   if (q.length < PLACE_MIN_QUERY) return { status: 'ok', rows: [], fallback: false }
   const { signal } = options
   if (signal?.aborted) return { status: 'aborted' }
 
+  const limit = options.limit ?? PLACE_LIMIT
+  const origin = options.mode === 'country' ? undefined : options.bias
+  const near = options.mode === 'place' ? options.bias : undefined
+  const photonLimit = origin ? Math.max(limit, PHOTON_RANKED_LIMIT) : limit
+  const [photon, nearby] = await Promise.all([
+    searchPhoton(q, { ...options, limit: photonLimit }),
+    near && options.searchNearby
+      ? options.searchNearby(q, near, signal).catch(
+          (error: unknown): NearbySearchResult => ({ status: 'error', cause: error instanceof Error ? error.message : String(error) }),
+        )
+      : null,
+  ])
+  if (signal?.aborted || photon.status === 'aborted' || nearby?.status === 'aborted') return { status: 'aborted' }
+
+  const nearbyRows = nearby?.status === 'ok' ? nearby.places.map(nearbyToCandidate) : []
+  if (photon.status === 'ok') return { status: 'ok', rows: mergeNearby(nearbyRows, photon.rows, limit, origin), fallback: false }
+  if (nearbyRows.length > 0) return { status: 'ok', rows: mergeNearby(nearbyRows, [], limit, origin), fallback: false }
+  return fallbackToIbge(q, options, photon.cause)
+}
+
+async function searchPhoton(q: string, options: PlaceSearchOptions): Promise<PhotonOutcome> {
+  const { signal } = options
   const fetchFn = options.fetchFn ?? fetch
   let failure: string
   try {
@@ -286,16 +454,15 @@ export async function searchPlaces(query: string, options: PlaceSearchOptions): 
         (body.features as PhotonFeature[])
           .map((f) => featureToCandidate(f, options.mode))
           .filter((c): c is PlaceCandidate => c !== null),
-      ).slice(0, PLACE_LIMIT)
-      return { status: 'ok', rows, fallback: false }
+      ).slice(0, options.limit ?? PLACE_LIMIT)
+      return { status: 'ok', rows }
     }
     failure = `Photon respondeu ${response.status}`
   } catch (error) {
     if (isAbort(error, signal)) return { status: 'aborted' }
     failure = error instanceof Error ? error.message : String(error)
   }
-
-  return fallbackToIbge(q, options, failure)
+  return { status: 'failed', cause: failure }
 }
 
 /**

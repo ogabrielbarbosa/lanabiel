@@ -54,7 +54,6 @@ import {
   tripDays,
   tripRating,
   tripTotals,
-  tripsKicker,
   tripsLabel,
 } from '../domain/tripDerive'
 import type { GridFilter, TimelineEntry } from '../domain/tripDerive'
@@ -63,9 +62,10 @@ import { coverPath, usePhotoUrls, useTrips } from './context'
 import { Cover, HeartsLine, TripLink } from './parts'
 import { TripModal } from './TripModal'
 import { TripsPanel } from './TripsPanel'
+import { PageArea, PageHeader } from '../ui/Page'
 import './trips.css'
 
-type View = 'grid' | 'timeline'
+export type View = 'grid' | 'timeline'
 
 /** O modal aberto: só a _Nova viagem_ nesta tela (a edição é do detalhe). */
 type ModalState = { initialQuery?: string } | null
@@ -88,39 +88,13 @@ export function TripsScreen() {
 
   return (
     <div className="tr-screen">
-      <div className="tr-area">
-        <header className="tr-header">
-          <div className="tr-title">
-            <p className="tr-kicker">
-              <Plane size={13} aria-hidden="true" />
-              {tripsKicker(trips)}
-            </p>
-            <h1>Nossas viagens</h1>
-          </div>
-          <div className="tr-controls">
-            <div className="tr-segmented lg" role="group" aria-label="Visão">
-              <button type="button" aria-pressed={view === 'grid'} onClick={() => setView('grid')}>
-                <LayoutGrid size={14} aria-hidden="true" />
-                Grade
-              </button>
-              <button type="button" aria-pressed={view === 'timeline'} onClick={() => setView('timeline')}>
-                <GitCommitVertical size={14} aria-hidden="true" />
-                Linha do tempo
-              </button>
-            </div>
-            <button type="button" className="tr-btn tr-btn--primary" onClick={() => openNew()}>
-              <Plus size={17} aria-hidden="true" />
-              Nova viagem
-            </button>
-          </div>
-        </header>
+      <PageArea className="tr-area">
+        <TripsHeader view={view} onView={setView} onNew={() => openNew()} />
 
         <Stats />
 
         {view === 'grid' ? <GridView onNew={() => openNew()} today={today} /> : <TimelineView />}
-
-        <div className="tr-fade" aria-hidden="true" />
-      </div>
+      </PageArea>
 
       <aside className="tr-panel lg" aria-label="Pelo mundo, juntos">
         <TripsPanel onPlan={(query) => openNew(query)} />
@@ -128,6 +102,52 @@ export function TripsScreen() {
 
       {modal && <TripModal mode="new" initialQuery={modal.initialQuery} onClose={() => setModal(null)} />}
     </div>
+  )
+}
+
+/**
+ * O cabeçalho da Grade: título, Grade/Linha do tempo e _Nova viagem_. Não
+ * depende do banco — a rota o mostra desde o primeiro quadro (sem `onNew`,
+ * os botões estão no lugar e não agem).
+ */
+export function TripsHeader({
+  view = 'grid',
+  onView,
+  onNew,
+}: {
+  view?: View
+  onView?: (view: View) => void
+  onNew?: () => void
+}) {
+  const ready = onNew !== undefined
+  const pending = !ready || undefined
+  return (
+    <PageHeader
+      title="Nossas viagens"
+      actions={
+        <>
+          <div className="tr-segmented lg" role="group" aria-label="Visão">
+            <button type="button" aria-pressed={ready && view === 'grid'} aria-disabled={pending} onClick={() => onView?.('grid')}>
+              <LayoutGrid size={14} aria-hidden="true" />
+              Grade
+            </button>
+            <button
+              type="button"
+              aria-pressed={ready && view === 'timeline'}
+              aria-disabled={pending}
+              onClick={() => onView?.('timeline')}
+            >
+              <GitCommitVertical size={14} aria-hidden="true" />
+              Linha do tempo
+            </button>
+          </div>
+          <button type="button" className="tr-btn tr-btn--primary" aria-disabled={pending} onClick={() => onNew?.()}>
+            <Plus size={17} aria-hidden="true" />
+            Nova viagem
+          </button>
+        </>
+      }
+    />
   )
 }
 
@@ -263,7 +283,7 @@ function Hero({ trip }: { trip: Trip }) {
   const origin = originOf(trip, me.profileId, me.homeCity.name)
   return (
     <TripLink id={trip.id} className="tr-hero" label={`${on ? 'Viajando agora' : 'Próxima viagem'}: ${trip.title}`}>
-      <Cover path={coverPath(trip)} className="tr-hero-cover" />
+      <Cover path={coverPath(trip)} stock={trip.coverStock?.url} className="tr-hero-cover" />
       <span className="tr-hero-scrim" aria-hidden="true" />
       <div className="tr-hero-info">
         <span className="tr-hero-kicker">
@@ -355,7 +375,7 @@ function PlannedCard({ trip, today }: { trip: Trip; today: string }) {
   const until = daysUntil(trip, today)
   return (
     <TripLink id={trip.id} className="tr-pcard lg">
-      <Cover path={coverPath(trip)} className="tr-pcard-cover" />
+      <Cover path={coverPath(trip)} stock={trip.coverStock?.url} className="tr-pcard-cover" />
       <span className="tr-pcard-body">
         <span className="tr-pcard-kicker">{plannedKicker(trip)}</span>
         <span className="tr-pcard-title">{trip.title}</span>
@@ -378,7 +398,7 @@ function DoneCard({ trip }: { trip: Trip }) {
   const dest = cities.get(trip.cityId)
   return (
     <TripLink id={trip.id} className="tr-dcard lg">
-      <Cover path={coverPath(trip)} className="tr-dcard-cover">
+      <Cover path={coverPath(trip)} stock={trip.coverStock?.url} className="tr-dcard-cover">
         {dest && (
           <span className="tr-badge">
             <MapPin size={11} aria-hidden="true" />
@@ -460,7 +480,7 @@ function TimelineRow({ entry }: { entry: TimelineEntry }) {
       </span>
       <span className="tr-tl-dot" aria-hidden="true" />
       <TripLink id={trip.id} className="tr-tl-card lg">
-        <Cover path={coverPath(trip)} className="tr-tl-cover" />
+        <Cover path={coverPath(trip)} stock={trip.coverStock?.url} className="tr-tl-cover" />
         <span className="tr-tl-text">
           <span className="tr-tl-kicker">{kicker}</span>
           <span className="tr-tl-title">{trip.title}</span>

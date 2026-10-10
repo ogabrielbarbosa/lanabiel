@@ -16,6 +16,7 @@ import { dayMonth, shortDate } from '../../onboarding/format'
 import { Avatar, Button, Card, CitySearch, Dialog, FieldError, Swatches, TextField, Toggle } from '../parts'
 import { failureMessage } from '../context'
 import type { TabContext } from '../context'
+import { PhotoButton, PhotoError } from './memberPhoto'
 
 export function CoupleTab(ctx: TabContext) {
   const { data, api, writes, update, today, me } = ctx
@@ -127,14 +128,16 @@ export function CoupleTab(ctx: TabContext) {
                     : `Entrou em ${shortDate(m.joinedAt.slice(0, 10))}`}
               </p>
               <p className="st-hint">{cityLabel(m.homeCity)}</p>
+              <PhotoError ctx={ctx} member={m} />
             </div>
-            {m.pending && (
-              <div className="st-member-actions">
+            <div className="st-member-actions">
+              <PhotoButton ctx={ctx} member={m} />
+              {m.pending && (
                 <Button icon={Pencil} onClick={() => setPendingDialog(true)}>
                   Editar
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         ))}
         {alone && <PendingInvite {...ctx} />}
@@ -460,7 +463,7 @@ function PendingPartnerDialog({
           slot: current?.slot ?? freeSlot,
           displayName,
           fullName: displayName,
-          avatarPath: null,
+          avatarPath: current?.avatarPath ?? null,
           color,
           joinedAt: current?.joinedAt ?? new Date(api.now()).toISOString(),
           homeCity: city,

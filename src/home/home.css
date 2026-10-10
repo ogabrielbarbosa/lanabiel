@@ -135,37 +135,6 @@
   backdrop-filter: blur(20px);
 }
 
-.home-skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.home-skeleton span {
-  height: 140px;
-  border-radius: 22px;
-  background: var(--glass);
-  animation: home-pulse 1.4s ease-in-out infinite;
-}
-
-.home-skeleton span:first-child {
-  height: 56px;
-}
-
-@keyframes home-pulse {
-  50% {
-    opacity: 0.45;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .home-skeleton span {
-    animation: none;
-  }
-}
-
 /* Celular: a casca é desktop-first (seção 14); aqui só não quebra — o mapa
    em cima, o painel embaixo. */
 @media (max-width: 759px) {
@@ -240,7 +209,7 @@
 }
 
 .home-map button:focus-visible,
-.home-map input:focus-visible {
+:where(.home-map) input:focus-visible {
   outline: 2px solid var(--hm-accent);
   outline-offset: 2px;
 }
@@ -1523,10 +1492,23 @@
     right: 16px;
   }
 
+  /* Rola de lado, e o `overflow-x` corta também na vertical: o brilho do chip
+     ativo (`0 0 18px`) cabe no respiro, devolvido com margem negativa até a
+     borda da tela. */
   .hm-filters-cats {
     flex-wrap: nowrap;
-    max-width: 100%;
+    max-width: calc(100% + 32px);
+    margin: -18px -16px;
+    padding: 18px 16px;
     overflow-x: auto;
     scrollbar-width: none;
+  }
+
+  .hm-filters-cats::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hm-filters-cats > .hm-chip {
+    flex: none;
   }
 }

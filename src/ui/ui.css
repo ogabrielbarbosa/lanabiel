@@ -1,0 +1,210 @@
+/* O kit de tela (src/ui, ADR 0026): a área que rola, o cabeçalho, a faixa de
+   chips e o esqueleto, escritos UMA vez para todas as telas. Cada tela
+   continua com o seu arquivo de CSS para o que é dela; o que é ritmo de
+   página (respiro da borda, distância entre blocos, tamanho do título) mora
+   aqui e só aqui.
+
+   As regras de base vão em `:where()` (especificidade zero): a tela que
+   precisar de outra coisa (a máscara das Viagens, a grade do Calendário que
+   estica) escreve a sua e vence sem depender da ordem dos imports. */
+
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  --radius-sm: 12px;
+  --radius-md: 22px;
+  --radius-lg: 24px;
+  --radius-xl: 36px;
+  --radius-pill: 999px;
+
+  /* A página: 20 em cima, 40 à direita (o painel), 40 embaixo, 24 da barra. */
+  --page-pad: var(--space-5) var(--space-10) var(--space-10) var(--space-6);
+  /* Entre os blocos da área (cabeçalho, filtros, seções). */
+  --page-gap: var(--space-4);
+}
+
+/* --- a área (PageArea) ---------------------------------------------------- */
+
+:where(.page-area) {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--page-gap);
+  padding: var(--page-pad);
+  overflow-y: auto;
+}
+
+/* Nenhum bloco encolhe na coluna. Sem isto, a faixa que rola de lado
+   (`overflow-x: auto` zera a altura mínima automática) era espremida pela
+   grade abaixo e cortava os chips pela metade. */
+:where(.page-area) > * {
+  flex-shrink: 0;
+}
+
+@media (max-width: 1359px) {
+  :where(.page-area) {
+    padding-right: var(--space-6);
+  }
+}
+
+@media (max-width: 759px) {
+  :where(.page-area) {
+    padding: var(--space-3) 0 var(--space-6);
+    overflow: visible;
+  }
+}
+
+/* --- o cabeçalho (PageHeader) --------------------------------------------- */
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--space-4);
+  /* 16 do gap + 8 = 24 até o primeiro bloco, em toda tela. */
+  margin-bottom: var(--space-2);
+}
+
+.page-heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.page-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: -1.8px;
+  line-height: 1.05;
+}
+
+.page-title-row > .page-title {
+  margin-right: 10px;
+}
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* Enquanto a tela lê, os botões do cabeçalho estão no lugar e com a cara de
+   sempre — só não fazem nada ainda. Esmaecer diria "indisponível", e não é. */
+.page-header [aria-disabled='true'] {
+  cursor: progress;
+}
+
+@media (max-width: 759px) {
+  .page-title {
+    font-size: 32px;
+  }
+
+  .page-actions {
+    width: 100%;
+  }
+}
+
+/* --- a barra de filtros (PageToolbar) ------------------------------------- */
+
+.page-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* --- a faixa de chips (ChipRow) ------------------------------------------- */
+
+/* Rola de lado. O `overflow-x` corta também na vertical, então a faixa tem
+   respiro por dentro (o brilho do chip ativo e o contorno do vidro cabem) e
+   o devolve com margem negativa: o vizinho não se mexe. À direita ela entra
+   no respiro da página e some num degradê, em vez de um corte seco.
+   `--chip-row-halo` é o alcance do brilho do chip ativo (`0 0 18px`): com
+   menos, o brilho aparece como um retângulo cortado em volta do chip. */
+.chip-row {
+  --chip-row-bleed: var(--space-6);
+  --chip-row-halo: 18px;
+  --chip-row-lead: var(--chip-row-halo);
+  display: flex;
+  gap: var(--space-2);
+  margin: calc(-1 * var(--chip-row-halo)) calc(-1 * var(--chip-row-bleed)) calc(-1 * var(--chip-row-halo))
+    calc(-1 * var(--chip-row-lead));
+  padding: var(--chip-row-halo) var(--chip-row-bleed) var(--chip-row-halo) var(--chip-row-lead);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - var(--chip-row-bleed) - 8px), transparent);
+  mask-image: linear-gradient(90deg, #000 calc(100% - var(--chip-row-bleed) - 8px), transparent);
+}
+
+.chip-row::-webkit-scrollbar {
+  display: none;
+}
+
+.chip-row > * {
+  flex: none;
+}
+
+@media (max-width: 759px) {
+  /* À esquerda só há os 12 da casca até a borda da tela. */
+  .chip-row {
+    --chip-row-bleed: 0px;
+    --chip-row-lead: var(--space-3);
+  }
+}
+
+/* --- o esqueleto (Skeleton, Loading) -------------------------------------- */
+
+.skeleton {
+  display: block;
+  flex: none;
+  border-radius: var(--radius-md);
+  background: var(--glass);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton--text {
+  border-radius: var(--radius-pill);
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.loading-body {
+  display: contents;
+}
+
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}

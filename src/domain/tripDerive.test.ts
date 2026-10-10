@@ -54,7 +54,6 @@ import {
   tripRecords,
   tripStatus,
   tripTotals,
-  tripsKicker,
 } from './tripDerive'
 import type { PlanDay, PlanOpen } from './tripDerive'
 import { EMPTY_LODGING } from './trips'
@@ -96,7 +95,10 @@ function trip(partial: Partial<Trip> = {}): Trip {
     startsOn: '2026-07-12',
     endsOn: '2026-07-19',
     note: null,
+    travelers: 'both',
+    travelerId: null,
     coverPhotoId: null,
+    coverStock: null,
     lodging: EMPTY_LODGING,
     departures: [],
     days: [],
@@ -266,17 +268,14 @@ describe('tripTotals / tripKm / kicker (I5, I8, R3)', () => {
     expect(totals).toEqual({ trips: 1, countries: 0, cities: 1, km: 0, days: 2 })
   })
 
-  it('sem viagens: tudo zero, kicker "Nenhuma viagem ainda"', () => {
+  it('sem viagens: tudo zero, sem ano da primeira', () => {
     expect(tripTotals([], CITIES, SJC, TODAY)).toEqual({ trips: 0, countries: 0, cities: 0, km: 0, days: 0 })
     expect(firstTripYear([])).toBeNull()
-    expect(tripsKicker([])).toBe('Nenhuma viagem ainda')
   })
 
-  it('kicker conta todas (feitas e planejadas) e o ano da primeira', () => {
+  it('o ano da primeira conta todas (feitas e planejadas)', () => {
     const trips = [trip({ startsOn: '2027-01-08', endsOn: '2027-01-10' }), trip({ startsOn: '2024-03-01', endsOn: '2024-03-05' })]
     expect(firstTripYear(trips)).toBe(2024)
-    expect(tripsKicker(trips)).toBe('2 viagens juntos desde 2024')
-    expect(tripsKicker([trips[0]])).toBe('1 viagem juntos desde 2027')
   })
 })
 

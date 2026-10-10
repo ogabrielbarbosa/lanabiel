@@ -10,35 +10,7 @@
   height: 100%;
 }
 
-.st-area {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  padding: 24px 40px 40px 24px;
-  overflow-y: auto;
-}
-
-/* --- cabeçalho ----------------------------------------------------------- */
-
-.st-kicker {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 4px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-
-.st-header h1 {
-  margin: 0;
-  font-size: 44px;
-  font-weight: 600;
-  letter-spacing: -1.8px;
-  line-height: 1.1;
-}
+/* A área e o cabeçalho são os do kit (src/ui). */
 
 .st-body {
   display: flex;
@@ -209,7 +181,10 @@
   font-size: 13px;
 }
 
-.st-skeleton,
+.st-skeleton {
+  gap: 12px;
+}
+
 .st-load-error {
   display: flex;
   flex-direction: column;
@@ -677,6 +652,16 @@
 
 .st-member p {
   margin: 0;
+}
+
+/* O texto ocupa o meio; as ações vão para a direita e quebram abaixo se faltar lugar. */
+.st-member:not(.st-member--empty) {
+  flex-wrap: wrap;
+}
+
+.st-member:not(.st-member--empty) > div:first-of-type {
+  flex: 1;
+  min-width: 140px;
 }
 
 .st-member-name {
@@ -1507,15 +1492,6 @@
     height: auto;
   }
 
-  .st-area {
-    padding: 12px 0 24px;
-    overflow: visible;
-  }
-
-  .st-header h1 {
-    font-size: 32px;
-  }
-
   .st-body {
     flex-direction: column;
   }
@@ -1526,8 +1502,12 @@
     width: 100%;
   }
 
+  /* O `overflow-x` corta também na vertical: 4 de respiro, devolvidos com
+     margem negativa, para o contorno do item atual e o anel de foco. */
   .st-menu-list {
     flex-direction: row;
+    margin: -4px;
+    padding: 4px;
     overflow-x: auto;
     scrollbar-width: none;
   }

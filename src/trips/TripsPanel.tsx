@@ -314,7 +314,7 @@ function YearAgoCard() {
   const author = memory ? [people[1], people[2]].find((p) => p.profileId === memory.profileId) : undefined
   return (
     <Card title="Há um ano" action={<CardAction label="Ver viagem" onClick={() => navigate(tripPath(trip.id))} />}>
-      <Cover path={coverPath(trip)} className="tr-yearago-photo">
+      <Cover path={coverPath(trip)} stock={trip.coverStock?.url} className="tr-yearago-photo">
         <span className="tr-yearago-scrim" aria-hidden="true" />
         <span className="tr-yearago-kicker">
           {tripDateRange(trip, { year: true })} · {daysLabel(tripDays(trip))}

@@ -109,6 +109,17 @@ export function tripKm(home: LatLng, dest: LatLng): number {
   return 2 * distanceKm(home, dest)
 }
 
+/** ADR 0025: a viagem dos dois. Os números "juntos" só contam estas. */
+export function jointTrips<T extends Pick<Trip, 'travelers'>>(trips: readonly T[]): T[] {
+  return trips.filter((t) => t.travelers === 'both')
+}
+
+/** Quem vai: os dois, ou só `travelerId`. */
+export function tripTravelerIds(trip: Pick<Trip, 'travelers' | 'travelerId'>, members: MembersBySlot): string[] {
+  if (trip.travelers === 'solo' && trip.travelerId !== null) return [trip.travelerId]
+  return [members[1].profileId, members[2].profileId]
+}
+
 export interface TripTotals {
   trips: number
   countries: number
@@ -118,12 +129,12 @@ export interface TripTotals {
 }
 
 /**
- * I5, só as feitas. Destino que não veio na leitura de cidades conta em
+ * I5, só as feitas e só as dos dois (ADR 0025). Destino que não veio na leitura de cidades conta em
  * `cities` (é um `city_id` distinto) mas não em `countries` nem em `km` — sem a
  * cidade não há país nem coordenada, e inventar seria pior que omitir.
  */
 export function tripTotals(trips: readonly Trip[], cities: CityMap, home: LatLng, today: string): TripTotals {
-  const done = trips.filter((t) => tripStatus(t, today) === 'done')
+  const done = jointTrips(trips).filter((t) => tripStatus(t, today) === 'done')
   const countries = new Set<string>()
   let km = 0
   for (const t of done) {
@@ -145,13 +156,6 @@ export function tripTotals(trips: readonly Trip[], cities: CityMap, home: LatLng
 export function firstTripYear(trips: readonly Trip[]): number | null {
   if (trips.length === 0) return null
   return Number(sortTrips(trips)[0].startsOn.slice(0, 4))
-}
-
-/** R3: "14 viagens juntos desde 2024" (todas as viagens) · "Nenhuma viagem ainda". */
-export function tripsKicker(trips: readonly Trip[]): string {
-  const year = firstTripYear(trips)
-  if (year === null) return 'Nenhuma viagem ainda'
-  return `${plural(trips.length, 'viagem', 'viagens')} juntos desde ${year}`
 }
 
 // ---------------------------------------------------------------------------
@@ -548,13 +552,13 @@ export interface TripRecords {
 }
 
 /**
- * R12, só as feitas. Empate em qualquer recorde → a mais recente (a de ida
+ * R12, só as feitas e só as dos dois (ADR 0025). Empate em qualquer recorde → a mais recente (a de ida
  * mais tardia): `doneTrips` já vem nessa ordem e o `>` estrito mantém a
  * primeira. No destino repetido, "a mais recente" é a cidade da viagem mais
  * recente entre as empatadas.
  */
 export function tripRecords(trips: readonly Trip[], cities: CityMap, home: LatLng, today: string): TripRecords {
-  const done = doneTrips(trips, today)
+  const done = doneTrips(jointTrips(trips), today)
   let longest: TripRecords['longest'] = null
   let farthest: TripRecords['farthest'] = null
   const counts = new Map<string, number>()
@@ -840,7 +844,7 @@ export interface BudgetSummary {
   lines: { id: string; label: string; plannedCents: number; spentCents: number; fraction: number }[]
 }
 
-/** R20c. `travelers` = 2: a viagem em Viagens é sempre dos dois (R2). */
+/** R20c. `travelers` = quantos vão: 2, ou 1 na viagem solo (ADR 0025). */
 export function budgetSummary(trip: Pick<Trip, 'budget'>, travelers = 2): BudgetSummary {
   const sorted = [...trip.budget].sort((a, b) => a.position - b.position || a.id.localeCompare(b.id))
   const totalCents = sorted.reduce((s, l) => s + l.plannedCents, 0)

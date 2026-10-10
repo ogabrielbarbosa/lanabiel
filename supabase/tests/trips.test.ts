@@ -393,6 +393,48 @@ describe('A3 — create_trip: tudo numa transação', () => {
     expect(one<unknown[]>(await asGabriel.from('trip_departures').select('profile_id').eq('trip_id', id), 'saídas')).toEqual([])
   })
 
+  it('ADR 0025: solo pinta só quem vai e grava a capa do Unsplash com o crédito', async () => {
+    await resetSeparated()
+    const stock = { url: 'https://images.unsplash.com/photo-1', author: 'Ana', author_url: 'https://unsplash.com/@ana' }
+    const { data, error } = await createTrip(asLana, {
+      ...payload(),
+      title: 'Lana sozinha',
+      travelers: 'solo',
+      traveler_id: scene.lana.id,
+      lodging_name: null,
+      departures: [],
+      cover_stock: stock,
+    })
+    expect(error).toBeNull()
+    const id = (data as { id: string }).id
+    const event = one(await root.from('calendar_events').select('travelers, traveler_id').eq('id', id).single(), 'evento')
+    expect(event).toEqual({ travelers: 'solo', traveler_id: scene.lana.id })
+    const trip = one(
+      await asGabriel.from('trips').select('cover_stock_url, cover_stock_author, cover_stock_author_url').eq('event_id', id).single(),
+      'trips',
+    )
+    expect(trip).toEqual({ cover_stock_url: stock.url, cover_stock_author: stock.author, cover_stock_author_url: stock.author_url })
+    expect(await staysOfA()).toEqual([
+      ...SEPARATED.filter((st) => st.who === 'g'),
+      { who: 'l', city: 'marau', from: '2026-09-01', to: '2027-03-04' },
+      { who: 'l', city: 'paraty', from: '2027-03-05', to: '2027-03-09' },
+      { who: 'l', city: 'marau', from: '2027-03-10', to: null },
+    ])
+  })
+
+  it('ADR 0025: capa fora do domínio do Unsplash, ou sem crédito → 23514, e nada é gravado', async () => {
+    await resetSeparated()
+    for (const cover_stock of [
+      { url: 'https://evil.example/x.jpg', author: 'Ana', author_url: 'https://unsplash.com/@ana' },
+      { url: 'https://images.unsplash.com/p', author: '  ', author_url: 'https://unsplash.com/@ana' },
+    ]) {
+      const { error } = await createTrip(asGabriel, { ...payload(), title: 'Capa ruim', cover_stock })
+      expect(error?.code).toBe('23514')
+    }
+    expect(await eventsTitled('Capa ruim')).toBe(0)
+    expect(await staysOfA()).toEqual(SEPARATED)
+  })
+
   it('com a cidade de outro casal, NADA é gravado', async () => {
     await resetSeparated()
     const lisboaB = one<{ id: string }>(
@@ -476,7 +518,7 @@ describe('A3 — create_trip: tudo numa transação', () => {
   })
 })
 
-describe('A4 — o trigger: viagem dos dois ganha trips; visita e solo não (I2)', () => {
+describe('A4 — o trigger: toda viagem ganha trips, dos dois ou solo (ADR 0025); visita não (I2)', () => {
   async function tripRow(id: string): Promise<unknown[]> {
     return one<unknown[]>(await root.from('trips').select('event_id').eq('event_id', id), 'trips')
   }
@@ -506,15 +548,17 @@ describe('A4 — o trigger: viagem dos dois ganha trips; visita e solo não (I2)
     expect(await prepCount(id)).toBe(DEFAULT_PREP.length)
   })
 
-  it('visita e viagem solo → nenhuma linha', async () => {
+  it('visita → nenhuma linha; viagem solo → trips e os 5 de preparação', async () => {
     const visit = await create(event('solo', 'visita'))
     const solo = await create(event('solo'))
     expect(await tripRow(visit)).toEqual([])
-    expect(await tripRow(solo)).toEqual([])
+    expect(await tripRow(solo)).toHaveLength(1)
+    expect(await prepCount(solo)).toBe(DEFAULT_PREP.length)
   })
 
-  it('solo → dos dois cria; dos dois → solo mantém; de volta → sem duplicar nem perder a edição', async () => {
+  it('solo → dos dois → solo → de volta: a mesma linha, sem duplicar nem perder a edição', async () => {
     const id = await create(event('solo'))
+    expect(await tripRow(id)).toHaveLength(1)
     one(await asLana.from('calendar_events').update({ travelers: 'both', traveler_id: null }).eq('id', id).select('id'), 'para both')
     expect(await tripRow(id)).toHaveLength(1)
     expect(await prepCount(id)).toBe(DEFAULT_PREP.length)
@@ -532,10 +576,10 @@ describe('A4 — o trigger: viagem dos dois ganha trips; visita e solo não (I2)
     expect(labels).toEqual([{ label: 'Passagens compradas' }])
   })
 
-  it('backfill: nenhum evento viagem dos dois, de casal nenhum, fica sem trips', () => {
+  it('backfill: nenhum evento viagem, de casal nenhum, fica sem trips', () => {
     const missing = sql(`
       select count(*) as n from public.calendar_events e
-       where e.kind = 'viagem' and e.travelers = 'both'
+       where e.kind = 'viagem'
          and not exists (select 1 from public.trips t where t.event_id = e.id)`)
     expect(missing).toBe('0')
   })

@@ -288,12 +288,13 @@ describe('A13 — o painel do .pen', () => {
     expect(trip.getByText('embarque em 6 dias')).toBeInTheDocument()
   })
 
-  it('Nosso ritmo: Juntos · dia 12 de 20, 8 dias restantes, 14 set – 3 out (R17)', async () => {
+  it('Nosso ritmo: Juntos · dia 17 de 25, 8 dias restantes, 9 set – 3 out (R17)', async () => {
+    // Juntos desde 9/set, em outra cidade até 13/set: a sequência atravessa a troca.
     await renderPanel()
     const rhythm = within(section('Nosso ritmo'))
-    expect(rhythm.getByText('Juntos · dia 12 de 20')).toBeInTheDocument()
+    expect(rhythm.getByText('Juntos · dia 17 de 25')).toBeInTheDocument()
     expect(rhythm.getByText('8 dias restantes')).toBeInTheDocument()
-    expect(rhythm.getByText('14 set')).toBeInTheDocument()
+    expect(rhythm.getByText('9 set')).toBeInTheDocument()
     expect(rhythm.getByText('3 out')).toBeInTheDocument()
   })
 

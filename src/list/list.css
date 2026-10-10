@@ -61,66 +61,11 @@
   height: 100%;
 }
 
-.ls-area {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 20px 40px 40px 24px;
-  overflow-y: auto;
-}
-
 .ls p {
   margin: 0;
 }
 
-/* --- cabeçalho (Header, Fg8Su) ------------------------------------------- */
-
-.ls-header {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 16px;
-  margin-bottom: 8px;
-}
-
-.ls-title {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.ls-kicker {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-
-.ls-kicker svg {
-  flex: none;
-  color: var(--emphasis);
-}
-
-.ls-title h1 {
-  margin: 0;
-  font-size: 44px;
-  font-weight: 600;
-  letter-spacing: -1.8px;
-  line-height: 1.05;
-}
-
-.ls-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
+/* --- cabeçalho (Header, Fg8Su): o PageHeader do kit (src/ui); aqui a busca */
 
 .ls-search {
   display: flex;
@@ -149,6 +94,9 @@
   color: var(--text-primary);
   font: inherit;
   font-size: 13px;
+}
+
+.ls-search input:focus-visible {
   outline: none;
 }
 
@@ -273,8 +221,11 @@
   color: var(--text-primary);
 }
 
-.ls :is(button, select, input):focus-visible,
-.ls-dialog :is(button, select, input):focus-visible {
+/* Campo solto ganha o contorno; campo dentro de uma caixa (`.ls-search`,
+   `.ls-sort`, `.ls-add-input`) o desliga e a caixa acende. O `:where` deixa a
+   regra da caixa vencer sem depender da ordem. */
+:is(.ls, .ls-dialog) button:focus-visible,
+:where(.ls, .ls-dialog) :is(input, select, textarea):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -324,19 +275,6 @@
 
 /* --- chips de categoria (Chip Z7mBtN / Chip Active mJKgM) ---------------- */
 
-.ls-chips {
-  display: flex;
-  gap: 8px;
-  margin: 0 -8px 0 -4px;
-  padding: 4px 8px 6px 4px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.ls-chips::-webkit-scrollbar {
-  display: none;
-}
-
 .ls-chip {
   display: inline-flex;
   align-items: center;
@@ -381,13 +319,6 @@
 }
 
 /* --- filtros (Filters spKzo) --------------------------------------------- */
-
-.ls-filters {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 14px;
-}
 
 .ls-segmented {
   display: flex;
@@ -488,6 +419,14 @@
   cursor: pointer;
 }
 
+.ls-sort select:focus-visible {
+  outline: none;
+}
+
+.ls-sort:focus-within {
+  --lg-edge: linear-gradient(var(--accent), var(--accent));
+}
+
 .ls-sort select option {
   background: var(--bg-mid);
   color: var(--text-primary);
@@ -540,11 +479,14 @@
 .ls-featured {
   display: flex;
   gap: 14px;
-  margin: 0;
-  padding: 0 0 4px;
+  /* O `overflow-x` corta também na vertical: 4 de respiro em volta, devolvidos
+     com margem negativa, para o contorno do `.lg` e o anel de foco caberem. */
+  margin: -4px;
+  padding: 4px 4px 8px;
   list-style: none;
   overflow-x: auto;
   scroll-snap-type: x proximity;
+  scroll-padding-inline: 4px;
   scrollbar-width: none;
 }
 
@@ -573,7 +515,9 @@
   cursor: pointer;
 }
 
-.ls-feature-photo {
+/* `.ls-feature` na frente: o `.ls-photo` (mais abaixo, mesmo peso) põe
+   `position: relative` e a foto encolhia à altura do ícone. */
+.ls-feature .ls-feature-photo {
   position: absolute;
   inset: 0;
   border-radius: 19px;
@@ -727,8 +671,10 @@
   }
 }
 
+/* `is-open`: o item que está no painel da direita (tela larga). */
 .ls-card:hover,
-.ls-card:focus-within {
+.ls-card:focus-within,
+.ls-card.is-open {
   --lg-fill: linear-gradient(var(--glass-hover), var(--glass-hover));
   --lg-edge: linear-gradient(var(--accent), var(--accent));
   box-shadow: 0 18px 40px var(--accent-glow), inset 0 1px 1px var(--glass-shine);
@@ -1064,44 +1010,7 @@
   padding-top: 6px;
 }
 
-/* --- esqueleto e erro ---------------------------------------------------- */
-
-.ls-skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.ls-skeleton-chips {
-  display: flex;
-  gap: 8px;
-  overflow: hidden;
-}
-
-.ls-skeleton-chips span {
-  flex: none;
-  width: 104px;
-  height: 38px;
-  border-radius: 999px;
-  background: var(--glass);
-}
-
-.ls-skeleton-card {
-  height: 220px;
-  border-radius: 24px;
-  --lg-sweep: 0;
-  animation: ls-pulse 1.4s ease-in-out infinite;
-}
-
-.ls-skeleton-chips span {
-  animation: ls-pulse 1.4s ease-in-out infinite;
-}
-
-@keyframes ls-pulse {
-  50% {
-    opacity: 0.45;
-  }
-}
+/* --- erro (o esqueleto é o do kit, src/ui) ------------------------------- */
 
 .ls-load-error {
   display: flex;
@@ -1117,6 +1026,10 @@
 
 .ls-panel {
   flex: 0 0 var(--panel-width);
+  /* Sem isto, o mínimo automático do item flex (a largura do conteúdo) vencia
+     o `--panel-width` abaixo de 1360: o _O que vem por aí_ ficava em ~413 e o
+     detalhe, que entra no mesmo lugar, em 340 — a grade pulava ao abrir. */
+  min-width: 0;
   display: flex;
   flex-direction: column;
   border-radius: 36px;
@@ -1570,6 +1483,99 @@
   max-height: none;
 }
 
+/* Abaixo de 1100 o painel some e o detalhe é a gaveta: ela para antes da
+   barra. O sobreposto mora dentro de `.shell-main`, abaixo da barra na pilha;
+   encostado na borda da janela, ficava por baixo dela, com o rodapé cortado.
+   O recuo é o da casca: 16 + a barra (64) + o vão (12). */
+@media (min-width: 760px) {
+  .ls-overlay--sheet {
+    padding-right: calc(16px + 64px + 12px);
+  }
+}
+
+/* --- o detalhe no lugar do painel (tela larga, `ListSidePanel`) ---------- */
+
+.ls-side {
+  gap: 16px;
+  padding: 24px 0;
+  font-family: var(--font);
+  color: var(--text-primary);
+}
+
+.ls-side > * {
+  animation: rise-in var(--dur, 0.3s) var(--ease-out, ease) backwards;
+}
+
+.ls-side > :nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.ls-side > :nth-child(3) {
+  animation-delay: 110ms;
+}
+
+.ls-side-head,
+.ls-side-foot {
+  flex: none;
+  padding: 0 24px;
+}
+
+.ls-side-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ls-side-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: -6px;
+  padding: 4px 8px 4px 2px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.ls-side-back:hover {
+  color: var(--text-primary);
+  background: var(--glass-hover);
+}
+
+.ls-side-back:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.ls-side-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.8px;
+  line-height: 1.15;
+}
+
+/* A rolagem num miolo, como no painel: no `.lg` ela cortaria o contorno. */
+.ls-side-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 24px;
+  scrollbar-width: none;
+}
+
+.ls-side-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .ls-dialog-head {
   display: flex;
   justify-content: space-between;
@@ -1609,12 +1615,6 @@
 
 /* --- responsivo (como as Configurações) ---------------------------------- */
 
-@media (max-width: 1359px) {
-  .ls-area {
-    padding-right: 24px;
-  }
-}
-
 @media (max-width: 1099px) {
   .ls-panel {
     display: none;
@@ -1638,19 +1638,6 @@
 @media (max-width: 759px) {
   .ls {
     height: auto;
-  }
-
-  .ls-area {
-    padding: 12px 0 24px;
-    overflow: visible;
-  }
-
-  .ls-title h1 {
-    font-size: 32px;
-  }
-
-  .ls-controls {
-    width: 100%;
   }
 
   .ls-search {
@@ -1703,7 +1690,7 @@
 }
 
 .ls-dialog .ls-heart:focus-visible,
-.ls-dialog :is(textarea, a):focus-visible {
+.ls-dialog a:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -2592,6 +2579,10 @@
 
 .ls-add-highlight-new input:focus {
   outline: none;
+}
+
+.ls-add-highlight-new:focus-within {
+  --lg-edge: linear-gradient(var(--accent), var(--accent));
 }
 
 /* --- coluna da direita: foto, prévia do pin, ênfase ----------------------- */

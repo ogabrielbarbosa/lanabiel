@@ -269,7 +269,10 @@ function departures(gabriel: [string | null, string | null], lana: [string | nul
 function trip(t: Partial<Trip> & Pick<Trip, 'id' | 'title' | 'cityId' | 'startsOn' | 'endsOn'>): Trip {
   return {
     note: null,
+    travelers: 'both',
+    travelerId: null,
     coverPhotoId: null,
+    coverStock: null,
     lodging: { ...EMPTY_LODGING },
     departures: departures([null, null], [null, null]),
     days: [],

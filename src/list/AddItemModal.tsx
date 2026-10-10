@@ -3,7 +3,7 @@
 //
 // ── CONTRATO (T6) — preencha SEM mudar as props ─────────────────────────────
 // Quem abre: a `ListScreen`, dentro do `ListContext` (use `useList()` para
-// `api`, `coupleId`, `me`, `members`, `today`, `urls`).
+// `api`, `coupleId`, `me`, `members`, `today`, `urls`, `searchFrom`).
 //
 //   <AddItemModal mode="create" initialCategory?={cat} onClose onSaved />
 //     - "Adicionar" do cabeçalho → sem categoria (passo 1 aberto).
@@ -366,7 +366,7 @@ function photoRejection(reason: 'not_image' | 'too_large'): string {
 // ---------------------------------------------------------------------------
 
 export function AddItemModal(props: AddItemModalProps) {
-  const { api, coupleId, me, members, urls } = useList()
+  const { api, coupleId, me, urls, searchFrom } = useList()
   const editing = props.mode === 'edit'
   const item = props.mode === 'edit' ? props.item : null
 
@@ -421,11 +421,10 @@ export function AddItemModal(props: AddItemModalProps) {
     [],
   )
 
-  const home = members.get(me.profileId)?.homeCity ?? me.homeCity
   const baseMode = category ? searchModeOf(category) : null
   const mode: PlaceMode | null = baseMode === 'place' && cityOnly ? 'city' : baseMode
   const query = category === 'pais' ? name : placeQuery
-  const search = usePlaceSearch(api, mode, query, armed, { lat: home.lat, lng: home.lng })
+  const search = usePlaceSearch(api, mode, query, armed, searchFrom)
 
   // O foco vai ao campo que a validação apontou (a cada tentativa: `nonce`).
   useEffect(() => {

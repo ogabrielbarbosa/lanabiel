@@ -10,7 +10,7 @@ import type { TripsApi } from './api'
 import { TripModal } from './TripModal'
 import type { TripModalProps } from './TripModal'
 import { okWrite, seededTripsApi } from './test/fakeApi'
-import { CITY_LISBOA, GABRIEL, LANA, TRIP_LISBOA, TRIP_LISBOA_ID, photo } from './test/fixtures'
+import { CITY_LISBOA, LANA, TRIP_LISBOA, TRIP_LISBOA_ID, photo } from './test/fixtures'
 import { renderInTrips, tripsValue } from './test/renderInTrips'
 
 const FLORIPA = { id: 'c-floripa', name: 'Florianópolis', stateCode: 'SC', lat: -27.5954, lng: -48.548 }
@@ -58,14 +58,18 @@ async function fillFloripa() {
 }
 
 describe('A13 — Nova viagem: campos e prévia (R24)', () => {
-  it('título, subtítulo e as duas saídas com a casa de cada um', () => {
+  it('título, subtítulo, Quem viaja (os dois por padrão) e nada de hospedagem, saídas ou nota (ADR 0025)', () => {
     renderModal()
     const dialog = screen.getByRole('dialog', { name: 'Nova viagem' })
     expect(dialog).toHaveTextContent('Cria o período no calendário e puxa itens da lista do destino')
-    expect(within(dialog).getByText('São José dos Campos')).toBeInTheDocument()
-    expect(within(dialog).getByText('Marau')).toBeInTheDocument()
-    expect(screen.getByLabelText('Como Gabriel vai')).toHaveAttribute('placeholder', 'voo GRU → FLN · 1h05')
+    const who = within(dialog).getByRole('group', { name: 'Quem viaja' })
+    expect(within(who).getAllByRole('button').map((b) => b.textContent)).toEqual(['GGabriel', 'LLana', 'Os dois'])
+    expect(within(who).getByRole('button', { name: 'Os dois' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByLabelText('Hospedagem')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Nota')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Como Gabriel vai')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Nome da viagem')).not.toBeInTheDocument()
+    expect(within(dialog).getByRole('group', { name: 'Capa' })).toHaveTextContent('Escolha o destino para ver uma foto de lá.')
   })
 
   it('Ao salvar: "Viajando juntos", o destino, as datas, os dias e a tira com os dias marcados', async () => {
@@ -150,9 +154,6 @@ describe('A13 — salvar (R25)', () => {
     vi.useFakeTimers()
     const { api, value, onClose } = renderModal()
     await fillFloripa()
-    setValue('Como Lana vai', 'voo POA → FLN · 55min')
-    setValue('Hospedagem', 'Pousada na Lagoa')
-    setValue('Nota', '  Férias de verão, sem notebook ')
     const file = new File(['x'], 'capa.jpg', { type: 'image/jpeg' })
     fireEvent.change(screen.getByLabelText('Escolher a foto da capa'), { target: { files: [file] } })
     expect(screen.getByRole('img', { name: 'Capa escolhida: capa.jpg' })).toBeInTheDocument()
@@ -164,12 +165,12 @@ describe('A13 — salvar (R25)', () => {
       cityId: 'c-floripa',
       startsOn: '2027-01-08',
       endsOn: '2027-01-14',
-      note: 'Férias de verão, sem notebook',
-      lodgingName: 'Pousada na Lagoa',
-      departures: [
-        { profileId: GABRIEL, originCode: null, note: null },
-        { profileId: LANA, originCode: null, note: 'voo POA → FLN · 55min' },
-      ],
+      note: null,
+      travelers: 'both',
+      travelerId: null,
+      coverStock: null,
+      lodgingName: null,
+      departures: [],
     })
     expect(api.uploadCover).toHaveBeenCalledWith('couple-1', expect.objectContaining({ id: 'trip-new', startsOn: '2027-01-08' }), file)
     expect(vi.mocked(api.createTrip).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(api.uploadCover).mock.invocationCallOrder[0])
@@ -177,6 +178,57 @@ describe('A13 — salvar (R25)', () => {
     expect(value.showNotice).not.toHaveBeenCalled()
     expect(onClose).toHaveBeenCalled()
     expect(window.location.pathname).toBe('/viagens/trip-new')
+  })
+
+  it('viagem solo: Lana sozinha vai com travelers solo e o id dela', async () => {
+    vi.useFakeTimers()
+    const { api } = renderModal()
+    await fillFloripa()
+    fireEvent.click(within(screen.getByRole('group', { name: 'Quem viaja' })).getByRole('button', { name: 'Lana' }))
+    await act(async () => fireEvent.click(save()))
+    expect(api.createTrip).toHaveBeenCalledWith(expect.objectContaining({ travelers: 'solo', travelerId: LANA }))
+  })
+
+  it('a primeira foto do Unsplash vira a capa sozinha, com crédito; trocar escolhe outra e avisa o Unsplash', async () => {
+    vi.useFakeTimers()
+    const stockPhoto = (id: string, author: string) => ({
+      id,
+      url: `https://images.unsplash.com/${id}`,
+      thumb: `https://images.unsplash.com/${id}?w=400`,
+      author,
+      authorUrl: `https://unsplash.com/@${id}?utm_source=lanabiel&utm_medium=referral`,
+      downloadLocation: `https://api.unsplash.com/photos/${id}/download`,
+      alt: null,
+      color: null,
+    })
+    const api = seededTripsApi(
+      {},
+      {
+        searchCities: vi.fn<TripsApi['searchCities']>(async () => ({ status: 'ok', rows: [FLORIPA] })),
+        createTrip: vi.fn<TripsApi['createTrip']>(async () => okWrite({ id: 'trip-new' })),
+        searchStockPhotos: vi.fn<TripsApi['searchStockPhotos']>(async () => ({
+          status: 'ok',
+          photos: [stockPhoto('a', 'Ana'), stockPhoto('b', 'Bruno')],
+        })),
+      },
+    )
+    renderModal({ api })
+    await fillFloripa()
+    expect(api.searchStockPhotos).toHaveBeenCalledWith('Florianópolis')
+    const banner = screen.getByRole('group', { name: 'Capa' })
+    expect(banner).toHaveTextContent('Foto de Ana no Unsplash')
+    expect(within(banner).getByRole('link', { name: 'Ana' })).toHaveAttribute('href', 'https://unsplash.com/@a?utm_source=lanabiel&utm_medium=referral')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Usar a foto de Bruno como capa' }))
+    expect(banner).toHaveTextContent('Foto de Bruno no Unsplash')
+    await act(async () => fireEvent.click(save()))
+    expect(api.createTrip).toHaveBeenCalledWith(
+      expect.objectContaining({
+        coverStock: { url: 'https://images.unsplash.com/b', author: 'Bruno', authorUrl: 'https://unsplash.com/@b?utm_source=lanabiel&utm_medium=referral' },
+      }),
+    )
+    expect(api.trackStockDownload).toHaveBeenCalledWith(expect.objectContaining({ id: 'b' }))
+    expect(api.uploadCover).not.toHaveBeenCalled()
   })
 
   it('sem capa: não chama o upload', async () => {
@@ -240,11 +292,10 @@ describe('A13 — salvar (R25)', () => {
     )
     const { value, onClose } = renderModal({ api })
     await fillFloripa()
-    setValue('Hospedagem', 'Pousada na Lagoa')
     await act(async () => fireEvent.click(save()))
     expect(screen.getByRole('alert')).toHaveTextContent('Não deu pra salvar: projeto pausado')
     expect(screen.getByRole('dialog', { name: 'Nova viagem' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Hospedagem')).toHaveValue('Pousada na Lagoa')
+    expect(screen.getByLabelText('Ida')).toHaveValue('2027-01-08')
     expect(save()).toBeEnabled()
     expect(onClose).not.toHaveBeenCalled()
     expect(value.reload).not.toHaveBeenCalled()
@@ -288,13 +339,14 @@ describe('R26 — Editar viagem', () => {
     expect(screen.getByRole('dialog', { name: 'Editar viagem' })).toBeInTheDocument()
     expect(screen.getByLabelText('Nome da viagem')).toHaveValue('Lisboa, Portugal')
     expect(screen.getByRole('combobox', { name: 'Destino' })).toHaveValue('Lisboa · Portugal')
-    expect(screen.getByLabelText('Hospedagem')).toHaveValue('Casa do Largo')
-    expect(screen.getByLabelText('Como Gabriel vai')).toHaveValue('voo GRU → LIS · 10h')
+    expect(screen.getByLabelText('Nota')).toHaveValue('Primeira vez na Europa')
+    expect(screen.queryByLabelText('Hospedagem')).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Quem viaja' })).not.toBeInTheDocument()
     expect(screen.getByText('Mudar datas ou destino aqui não muda o período. Pra isso, ajuste no calendário.')).toBeInTheDocument()
     expect(screen.queryByText('Ao salvar')).not.toBeInTheDocument()
   })
 
-  it('salvar muda o evento; hospedagem e saídas só quando mudaram', async () => {
+  it('salvar muda o evento; trips só quando a capa mudou', async () => {
     const api = editApi()
     const { value, onClose } = renderModal({ mode: 'edit', trip: TRIP_LISBOA, api })
     setValue('Nome da viagem', 'Lisboa, enfim')
@@ -312,32 +364,33 @@ describe('R26 — Editar viagem', () => {
     expect(onClose).toHaveBeenCalled()
   })
 
-  it('hospedagem e saída mudadas: updateTrip com a hospedagem inteira e saveDepartures com o código mantido', async () => {
+  it('capa do Unsplash na edição: tira a capa própria; se falhar, fica aberto com a causa', async () => {
     const api = editApi()
+    api.searchStockPhotos = vi.fn<TripsApi['searchStockPhotos']>(async () => ({
+      status: 'ok',
+      photos: [
+        {
+          id: 'a',
+          url: 'https://images.unsplash.com/a',
+          thumb: 'https://images.unsplash.com/a?w=400',
+          author: 'Ana',
+          authorUrl: 'https://unsplash.com/@a',
+          downloadLocation: 'https://api.unsplash.com/photos/a/download',
+          alt: null,
+          color: null,
+        },
+      ],
+    }))
+    vi.mocked(api.updateTrip).mockResolvedValueOnce({ status: 'error', cause: 'rede' })
     renderModal({ mode: 'edit', trip: TRIP_LISBOA, api })
-    setValue('Hospedagem', 'Casa Nova')
-    setValue('Como Lana vai', 'voo POA → LIS')
+    fireEvent.click(await screen.findByRole('button', { name: 'Usar a foto de Ana como capa' }))
     await act(async () => fireEvent.click(save()))
-    expect(api.updateTrip).toHaveBeenCalledWith(TRIP_LISBOA_ID, { lodging: { ...TRIP_LISBOA.lodging, name: 'Casa Nova' } })
-    expect(api.saveDepartures).toHaveBeenCalledWith('couple-1', TRIP_LISBOA_ID, [
-      { profileId: GABRIEL, originCode: 'GRU', note: 'voo GRU → LIS · 10h' },
-      { profileId: LANA, originCode: 'POA', note: 'voo POA → LIS' },
-    ])
-  })
-
-  it('falha secundária mantém aberto; Salvar de novo não sobe a capa nova outra vez', async () => {
-    const api = editApi()
-    api.uploadCover = vi.fn<TripsApi['uploadCover']>(async () => okWrite(photo('p-new-cover')))
-    vi.mocked(api.saveDepartures).mockResolvedValueOnce({ status: 'error', cause: 'rede' })
-    renderModal({ mode: 'edit', trip: TRIP_LISBOA, api })
-    fireEvent.change(screen.getByLabelText('Escolher a foto da capa'), { target: { files: [new File(['x'], 'c.jpg', { type: 'image/jpeg' })] } })
-    setValue('Como Lana vai', 'voo POA → LIS')
-    await act(async () => fireEvent.click(save()))
-    expect(screen.getByRole('alert')).toHaveTextContent('A viagem foi salva, mas não deu pra salvar as saídas')
-    expect(api.uploadCover).toHaveBeenCalledTimes(1)
-
-    await act(async () => fireEvent.click(save()))
-    expect(api.uploadCover).toHaveBeenCalledTimes(1)
+    expect(api.updateTrip).toHaveBeenCalledWith(TRIP_LISBOA_ID, {
+      coverStock: { url: 'https://images.unsplash.com/a', author: 'Ana', authorUrl: 'https://unsplash.com/@a' },
+      coverPhotoId: null,
+    })
+    expect(screen.getByRole('alert')).toHaveTextContent('A viagem foi salva, mas não deu pra salvar a capa')
+    expect(api.trackStockDownload).not.toHaveBeenCalled()
   })
 
   it('Apagar viagem pede confirmação, apaga, relê e volta para /viagens', async () => {

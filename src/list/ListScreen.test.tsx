@@ -33,6 +33,10 @@ vi.mock('./ItemSheet', () => ({
   ItemSheet: (props: ItemSheetProps) => (
     <div role="dialog" aria-label="ItemSheet">
       <p>sheet:{props.itemId}</p>
+      <p>placement:{props.placement ?? 'sheet'}</p>
+      <button type="button" onClick={props.onClose}>
+        dublê: voltar
+      </button>
       <button type="button" onClick={() => props.onEdit(listItem({ id: props.itemId, name: 'x', category: 'filme' }))}>
         dublê: editar
       </button>
@@ -69,7 +73,6 @@ const cardNames = () =>
   within(grid())
     .getAllByRole('article')
     .map((a) => a.getAttribute('aria-label'))
-const kicker = () => document.querySelector('.ls-kicker')?.textContent
 
 async function loaded() {
   await screen.findByRole('group', { name: 'Categorias' })
@@ -83,6 +86,13 @@ describe('A12 — leitura: esqueleto, erro, e nunca o vazio antes do ok', () => 
     expect(document.querySelector('[aria-busy="true"]')).not.toBeNull()
     expect(screen.queryByText('A lista está vazia')).not.toBeInTheDocument()
     expect(screen.queryByRole('group', { name: 'Categorias' })).not.toBeInTheDocument()
+    // O cabeçalho é texto e botão: no lugar desde o primeiro quadro, sem agir ainda.
+    expect(screen.getByRole('heading', { name: 'Nossa lista', level: 1 })).toBeInTheDocument()
+    const add = screen.getByRole('button', { name: 'Adicionar' })
+    expect(add).toHaveAttribute('aria-disabled', 'true')
+    await userEvent.click(add)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('searchbox', { name: 'Buscar na lista' })).toHaveAttribute('readonly')
     // O painel já está no lugar (sem layout shift), mas só com o esqueleto.
     const panel = screen.getByRole('complementary', { name: 'Painel da lista' })
     expect(panel).toHaveAttribute('aria-busy', 'true')
@@ -129,14 +139,13 @@ describe('A12 — leitura: esqueleto, erro, e nunca o vazio antes do ok', () => 
     expect(within(panel).getByText('Nada adicionado ainda.')).toBeInTheDocument()
     expect(within(panel).queryByRole('region', { name: 'Sugestão do momento' })).not.toBeInTheDocument()
     expect(within(panel).queryByRole('region', { name: 'Perto de vocês' })).not.toBeInTheDocument()
-    expect(kicker()).toBe('0 coisas · 0 já feitas')
 
     await userEvent.click(screen.getByRole('button', { name: 'Adicionar o primeiro' }))
     expect(screen.getByRole('dialog', { name: 'AddItemModal' })).toHaveTextContent('create:-')
   })
 })
 
-describe('A13 — chips, filtros, cabeçalho, estado sem resultado', () => {
+describe('A13 — chips, filtros, estado sem resultado', () => {
   it('chips com o total de cada categoria, ignorando os outros filtros', async () => {
     renderList()
     await loaded()
@@ -155,13 +164,12 @@ describe('A13 — chips, filtros, cabeçalho, estado sem resultado', () => {
       'Filmes 2',
       'Séries 1',
     ])
-    expect(kicker()).toBe('13 coisas · 4 já feitas')
 
     await userEvent.click(within(screen.getByRole('group', { name: 'Status' })).getByRole('button', { name: 'Já fizemos' }))
     expect(within(chips).getByRole('button', { name: 'Parques 2' })).toBeInTheDocument()
   })
 
-  it('categoria oculta some de chips, grade, destaque, progresso e cabeçalho', async () => {
+  it('categoria oculta some de chips, grade, destaque e progresso', async () => {
     renderList(seededListApi({ settings: { hiddenCategories: ['filme', 'pais'] } }))
     await loaded()
     const chips = screen.getByRole('group', { name: 'Categorias' })
@@ -172,7 +180,6 @@ describe('A13 — chips, filtros, cabeçalho, estado sem resultado', () => {
     expect(cardNames()).not.toContain('Aftersun')
     expect(cardNames()).not.toContain('Japão')
     expect(within(screen.getByRole('list', { name: 'Em destaque' })).queryByText('Japão')).not.toBeInTheDocument()
-    expect(kicker()).toBe('10 coisas · 3 já feitas')
 
     const panel = screen.getByRole('complementary')
     expect(within(panel).getByText('de 10 feitas')).toBeInTheDocument()
@@ -206,14 +213,13 @@ describe('A13 — chips, filtros, cabeçalho, estado sem resultado', () => {
     expect(cardNames()).toHaveLength(9)
   })
 
-  it('o frame DXg1A: série + já feitas + Gabriel — cabeçalho, texto, chips, Limpar e Adicionar série', async () => {
+  it('o frame DXg1A: série + já feitas + Gabriel — texto, chips, Limpar e Adicionar série', async () => {
     renderList()
     await loaded()
     await userEvent.click(within(screen.getByRole('group', { name: 'Categorias' })).getByRole('button', { name: 'Séries 1' }))
     await userEvent.click(within(screen.getByRole('group', { name: 'Status' })).getByRole('button', { name: 'Já fizemos' }))
     await userEvent.click(within(screen.getByRole('group', { name: 'Quem' })).getByRole('button', { name: 'Gabriel' }))
 
-    expect(kicker()).toBe('13 coisas · 4 já feitas · filtrando: Séries, já feitas, só Gabriel')
     expect(screen.getByRole('heading', { name: 'Nenhuma série por aqui ainda' })).toBeInTheDocument()
     expect(
       screen.getByText('Gabriel ainda não marcou nenhuma série como vista. Que tal escolher a próxima pra maratonar juntos?'),
@@ -232,7 +238,6 @@ describe('A13 — chips, filtros, cabeçalho, estado sem resultado', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Limpar filtros' }))
     expect(cardNames()).toHaveLength(13)
-    expect(kicker()).toBe('13 coisas · 4 já feitas')
   })
 
   it('busca sem acento e sem maiúscula, compondo com os filtros; o destaque some', async () => {
@@ -247,7 +252,6 @@ describe('A13 — chips, filtros, cabeçalho, estado sem resultado', () => {
     await userEvent.clear(search)
     await userEvent.type(search, 'SAO PAULO')
     expect(cardNames()).toEqual(['Mocotó', 'Parque Ibirapuera'])
-    expect(kicker()).toBe('13 coisas · 4 já feitas · filtrando: “SAO PAULO”')
 
     await userEvent.click(within(screen.getByRole('group', { name: 'Status' })).getByRole('button', { name: 'Já fizemos' }))
     expect(cardNames()).toEqual(['Parque Ibirapuera'])
@@ -313,6 +317,54 @@ describe('R7 — o card', () => {
     expect(screen.getByRole('article', { name: 'Severance' }).querySelector('.ls-photo--empty')).not.toBeNull()
     expect(api.signedUrls).toHaveBeenCalledTimes(1)
     expect(api.signedUrls).toHaveBeenCalledWith(expect.arrayContaining(['couple-1/item/mocoto.webp']))
+  })
+})
+
+/** Finge a tela larga (>= 1100): o painel da direita está à vista. */
+function stubWide(matches: boolean) {
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: query === '(min-width: 1100px)' ? matches : false,
+    media: query,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  }))
+}
+
+describe('detalhe no lugar do painel (tela larga)', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('tocar um card troca o "O que vem por aí" pelo detalhe; outro card troca o item; voltar devolve o painel', async () => {
+    stubWide(true)
+    renderList()
+    await loaded()
+    expect(screen.getByRole('heading', { name: 'O que vem por aí' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Mocotó' }))
+    const sheet = screen.getByRole('dialog', { name: 'ItemSheet' })
+    expect(sheet).toHaveTextContent('sheet:i-mocoto')
+    expect(sheet).toHaveTextContent('placement:panel')
+    expect(screen.queryByRole('heading', { name: 'O que vem por aí' })).not.toBeInTheDocument()
+    expect(screen.getByRole('article', { name: 'Mocotó' })).toHaveClass('is-open')
+
+    // A grade segue à mão: o próximo card troca o que está aberto.
+    await userEvent.click(screen.getByRole('button', { name: 'Severance' }))
+    expect(screen.getAllByRole('dialog', { name: 'ItemSheet' })).toHaveLength(1)
+    expect(screen.getByRole('dialog', { name: 'ItemSheet' })).toHaveTextContent('sheet:i-severance')
+    expect(screen.getByRole('article', { name: 'Mocotó' })).not.toHaveClass('is-open')
+    expect(screen.getByRole('article', { name: 'Severance' })).toHaveClass('is-open')
+
+    await userEvent.click(screen.getByRole('button', { name: 'dublê: voltar' }))
+    expect(screen.queryByRole('dialog', { name: 'ItemSheet' })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'O que vem por aí' })).toBeInTheDocument()
+  })
+
+  it('sem o painel (< 1100), o detalhe é a gaveta e o painel fica', async () => {
+    stubWide(false)
+    renderList()
+    await loaded()
+    await userEvent.click(screen.getByRole('button', { name: 'Mocotó' }))
+    expect(screen.getByRole('dialog', { name: 'ItemSheet' })).toHaveTextContent('placement:sheet')
+    expect(screen.getByRole('heading', { name: 'O que vem por aí' })).toBeInTheDocument()
   })
 })
 

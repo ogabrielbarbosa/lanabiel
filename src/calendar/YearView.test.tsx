@@ -18,17 +18,15 @@ import { YearView } from './YearView'
 
 const row = (month: string) => screen.getByRole('button', { name: new RegExp(`^${month}:`) })
 const bars = (month: string) => [...row(month).querySelectorAll<HTMLElement>('.cal-year-bar')]
-const kicker = () => document.querySelector('.cal-kicker')?.textContent
 
 describe('A15 — a visão Ano', () => {
-  it('calendar_default_view = "year" abre no ano, com o kicker VIVIDO (countStates) e o percentual', async () => {
+  it('calendar_default_view = "year" abre no ano', async () => {
     render(<CalendarScreen api={seededCalendarApi({ settings: { calendarDefaultView: 'year' } })} />)
     expect(await screen.findByRole('region', { name: 'Ano' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('2026')
-    expect(kicker()).toBe('19 dias juntos · 7% do ano até agora')
   })
 
-  it('ano passado: "% do ano"; ano futuro: dias juntos PLANEJADOS (contagem desenhada)', async () => {
+  it('as setas andam de ano em ano na visão Ano', async () => {
     // As casas em aberto param no fim de 2026; em 2027 os dois vão a Paraty de 1 a 10/jan.
     const stays = [
       ...SEPTEMBER_STAYS.filter((s) => s.endsOn !== null),
@@ -42,12 +40,10 @@ describe('A15 — a visão Ano', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Anterior' }))
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('2025')
-    expect(kicker()).toBe('0 dias juntos · 0% do ano')
 
     await userEvent.click(screen.getByRole('button', { name: 'Próximo' }))
     await userEvent.click(screen.getByRole('button', { name: 'Próximo' }))
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('2027')
-    expect(kicker()).toBe('10 dias juntos planejados')
   })
 
   it('uma linha por mês; cada trecho é uma barra na cor do casal; unknown fica vazio', () => {

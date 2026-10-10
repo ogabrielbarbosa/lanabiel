@@ -5,10 +5,9 @@
 import { Bell, Briefcase, Cake, Heart, Luggage, Plane } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { CoupleSettings } from '../data/settings'
-import { countDrawn, monthWeeks } from '../domain/calendar'
-import type { Band, EventKind, MembersBySlot, Stay } from '../domain/calendar'
-import { countStates } from '../domain/coupleState'
-import { addDays, daysInclusive, isLeapYear, isoOf } from '../lib/date'
+import { monthWeeks } from '../domain/calendar'
+import type { Band, EventKind } from '../domain/calendar'
+import { addDays, isoOf } from '../lib/date'
 import type { YearMonth } from './context'
 
 const MONTHS = [
@@ -75,25 +74,4 @@ export function gridBounds(month: YearMonth, weekStartsOn: 'sun' | 'mon'): { fro
 /** "1 dia" · "4 dias". */
 export function daysWord(n: number): string {
   return n === 1 ? '1 dia' : `${n} dias`
-}
-
-/**
- * R10, o kicker da visão Ano. Ano corrente e ano passado contam o VIVIDO
- * (`countStates`, nunca passa de hoje); ano futuro conta o DESENHADO
- * (`countDrawn`), porque vivido lá é sempre zero (I5).
- */
-export function yearKicker(year: number, today: string, stays: readonly Stay[], members: MembersBySlot): string {
-  const from = isoOf(year, 1, 1)
-  const to = isoOf(year, 12, 31)
-  if (from > today) {
-    const c = countDrawn(from, to, stays, members)
-    return `${c.home1 + c.home2 + c.away} dias juntos planejados`
-  }
-  const lived = countStates(from, to, today, stays, [members[1], members[2]]).together
-  if (to < today) {
-    const total = isLeapYear(year) ? 366 : 365
-    return `${lived} dias juntos · ${Math.floor((100 * lived) / total)}% do ano`
-  }
-  const elapsed = daysInclusive(from, today)
-  return `${lived} dias juntos · ${Math.floor((100 * lived) / elapsed)}% do ano até agora`
 }

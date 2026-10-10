@@ -48,6 +48,7 @@ export function listValue(overrides: Partial<ListContextValue> & { api?: ListApi
     photos: [] as ListPhoto[],
     urls: new Map(),
     where: { kind: 'unknown' },
+    searchFrom: { lat: SJC.lat, lng: SJC.lng },
     today: '2026-09-26',
     reload: vi.fn(async () => {}),
     ...overrides,

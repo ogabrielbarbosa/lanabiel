@@ -54,7 +54,9 @@ describe('A2 (Fase 7) — / é a Home, /calendario é o Calendário', () => {
   it('/calendario abre o Calendário e marca o destino Calendário', async () => {
     window.history.replaceState(null, '', '/calendario')
     const { container } = renderShell()
-    expect(await screen.findByRole('heading', { name: 'Setembro 2026', level: 1 })).toBeInTheDocument()
+    // O cabeçalho aparece antes da leitura e é remontado com ela: espera a grade.
+    await screen.findByRole('group', { name: 'Dias do mês' })
+    expect(screen.getByRole('heading', { name: 'Setembro 2026', level: 1 })).toBeInTheDocument()
     expect(within(mainNav()).getByRole('link', { name: 'Calendário' })).toHaveAttribute('aria-current', 'page')
     expect(container.querySelector('.home-screen')).toBeNull()
   })

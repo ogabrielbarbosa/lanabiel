@@ -196,10 +196,15 @@ export function FullGallery({ trip, start, onClose }: { trip: Trip; start: numbe
     }
   }, [])
 
-  // A miniatura atual fica à vista.
+  // A miniatura atual fica à vista. Rola só a faixa: scrollIntoView rolaria
+  // também os ancestrais (até os de overflow hidden) quando a miniatura não
+  // pode ser centrada, e a tela inteira andava para o lado na última foto.
   useEffect(() => {
-    const el = ref.current?.querySelector<HTMLElement>('.td-thumb.is-current')
-    el?.scrollIntoView?.({ block: 'nearest', inline: 'center' })
+    const strip = ref.current?.querySelector<HTMLElement>('.td-thumbs')
+    const el = strip?.querySelector<HTMLElement>('.td-thumb.is-current')
+    if (!strip || !el) return
+    const left = el.getBoundingClientRect().left - strip.getBoundingClientRect().left + strip.scrollLeft
+    strip.scrollLeft = left - (strip.clientWidth - el.offsetWidth) / 2
   }, [at])
 
   const url = current ? urls.get(current.path) : undefined

@@ -1167,6 +1167,9 @@ export type Database = {
         Row: {
           couple_id: string
           cover_photo_id: string | null
+          cover_stock_author: string | null
+          cover_stock_author_url: string | null
+          cover_stock_url: string | null
           created_at: string
           event_id: string
           lodging_address: string | null
@@ -1182,6 +1185,9 @@ export type Database = {
         Insert: {
           couple_id: string
           cover_photo_id?: string | null
+          cover_stock_author?: string | null
+          cover_stock_author_url?: string | null
+          cover_stock_url?: string | null
           created_at?: string
           event_id: string
           lodging_address?: string | null
@@ -1197,6 +1203,9 @@ export type Database = {
         Update: {
           couple_id?: string
           cover_photo_id?: string | null
+          cover_stock_author?: string | null
+          cover_stock_author_url?: string | null
+          cover_stock_url?: string | null
           created_at?: string
           event_id?: string
           lodging_address?: string | null
@@ -1302,6 +1311,10 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      set_partner_avatar: {
+        Args: { p_path: string; p_profile_id: string }
+        Returns: Json
       }
     }
     Enums: {

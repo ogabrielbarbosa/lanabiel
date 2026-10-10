@@ -32,6 +32,9 @@ import './modals.css'
 
 const ALL_DOWN = 'A busca de cidades está fora do ar. Tente de novo daqui a pouco.'
 const WORLD_DOWN = 'A busca fora do Brasil não respondeu. Por enquanto, só cidades brasileiras.'
+// O Photon público não conhece os nomes em português ("Nova Iorque", "São
+// Francisco"): acha pelo nome local ou em inglês.
+const WORLD_EMPTY = 'Cidade de fora do Brasil? Busque pelo nome local ou em inglês, como San Francisco ou New York.'
 
 export interface CityPickerFullProps extends CityPickerProps {
   api: Pick<CalendarApi, 'searchCities' | 'searchWorldCities'>
@@ -114,6 +117,7 @@ function useCitySearch(api: CityPickerFullProps['api'], query: string, armed: bo
     loading,
     ibgeRows: ibgeNow?.rows ?? [],
     worldRows: worldNow?.rows ?? [],
+    worldEmpty: worldNow !== null && worldNow.rows !== null && worldNow.rows.length === 0,
     notice,
     allDown: notice === ALL_DOWN,
   }
@@ -260,6 +264,7 @@ export function CityPicker({
         </ul>
         {hasWorld && <p className="cal-city-credit">© OpenStreetMap</p>}
       </div>
+      {open && !search.loading && search.worldEmpty && <p className="cal-mf-hint">{WORLD_EMPTY}</p>}
       {open && search.active && !search.loading && options.length === 0 && !search.allDown && (
         <p className="cal-mf-hint">Nenhuma cidade para “{text.trim()}”.</p>
       )}

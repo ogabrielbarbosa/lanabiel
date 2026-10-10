@@ -179,7 +179,10 @@ export function previewTripsApi(store: PreviewStore = previewStore()): TripsApi 
         startsOn: draft.startsOn,
         endsOn: draft.endsOn,
         note: optional(draft.note),
+        travelers: draft.travelers,
+        travelerId: draft.travelerId,
         coverPhotoId: null,
+        coverStock: draft.coverStock,
         lodging: { ...EMPTY_LODGING, name: optional(draft.lodgingName) },
         departures: draft.departures.map((d) => ({ ...d, originCode: optional(d.originCode), note: optional(d.note) })),
         days: [],
@@ -206,6 +209,7 @@ export function previewTripsApi(store: PreviewStore = previewStore()): TripsApi 
         t.lodging = { ...patch.lodging }
       }
       if (patch.coverPhotoId !== undefined) t.coverPhotoId = patch.coverPhotoId
+      if (patch.coverStock !== undefined) t.coverStock = patch.coverStock
       return done(null)
     },
     deleteTrip: (trip) => {
@@ -326,6 +330,9 @@ export function previewTripsApi(store: PreviewStore = previewStore()): TripsApi 
       }
       return later({ status: 'ok', added, failed: [] })
     },
+    // O harness não tem sessão: a edge function recusaria. Fica só o _Enviar_.
+    searchStockPhotos: () => later({ status: 'unconfigured' }),
+    trackStockDownload: () => later(undefined),
     uploadCover: (_coupleId, trip, file) => {
       const t = find(trip.id)
       if (!t) return later({ status: 'not_found' })

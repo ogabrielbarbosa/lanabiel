@@ -59,7 +59,7 @@ export function Rhythm() {
 }
 
 function Period({ period }: { period: CurrentPeriod }) {
-  if (period.kind === 'unknown' || period.run === null) {
+  if (period.kind === 'unknown' || period.from === null) {
     return (
       <div className="hp-period hp-period--unknown">
         <div className="hp-period-status">
@@ -78,7 +78,7 @@ function Period({ period }: { period: CurrentPeriod }) {
     )
   }
 
-  const { run, dayK, total, kind } = period
+  const { from, to, dayK, total, kind } = period
   const label = STATE_LABEL[kind]
   const Icon = kind === 'traveling' ? Plane : kind === 'apart' ? HeartOff : HeartHandshake
   const dayText = total === null ? `dia ${dayK}` : `dia ${dayK} de ${total}`
@@ -115,8 +115,8 @@ function Period({ period }: { period: CurrentPeriod }) {
         <span style={{ width: `${fill}%` }} />
       </div>
       <div className="hp-progress-labels">
-        <span>{shortDayMonth(run.from)}</span>
-        <span>{run.to === null ? 'em aberto' : shortDayMonth(run.to)}</span>
+        <span>{shortDayMonth(from)}</span>
+        <span>{to === null ? 'em aberto' : shortDayMonth(to)}</span>
       </div>
     </div>
   )

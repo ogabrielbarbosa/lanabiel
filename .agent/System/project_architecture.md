@@ -44,6 +44,10 @@ src/
 │   ├── style.ts            # a receita visual (Standard Satellite / estilo próprio)
 │   ├── useMap.ts           # uma instância por montagem; `useMapTick` para quem desenha por cima
 │   └── fakeEngine.ts · MapFailed.tsx
+├── ui/                     # kit de tela (ADR 0026), usado por toda tela
+│   ├── Page.tsx            # PageArea (coluna que rola) · PageHeader (aparece antes da leitura) · PageToolbar
+│   ├── ChipRow.tsx · Skeleton.tsx   # faixa de chips que rola · Skeleton (forma) + Loading (região aria-busy)
+│   └── ui.css              # tokens --space-* / --radius-* / --page-*; base em :where() para a tela sobrepor
 ├── app/                    # Fase 3: a casca
 │   ├── Shell.tsx           # barra lateral (só destinos que existem) + rota + _Adicionar_
 │   ├── addIntent.ts        # o pedido do _Adicionar_: evento ou item, consumido pela tela dona
@@ -98,7 +102,8 @@ src/
 │   ├── profile.ts · couple.ts · invites.ts · cities.ts · avatar.ts   # Fase 2
 │   ├── stays.ts            # leitura e escrita de estadias, fronteira snake→camel
 │   ├── list.ts · listRow.ts # Fase 4: leitura/escritas/cascatas da Lista; mapeador snake↔camel
-│   ├── places.ts           # busca de lugar no Photon/OSM, fallback IBGE (ADR 0016); `osmRef`
+│   ├── places.ts           # busca de lugar no Photon/OSM + Overture perto de casa (ADR 0027), fallback IBGE (ADR 0016); `osmRef`
+│   ├── nearbyPlaces.ts     # chama a edge function `places-nearby` (Overture, ADR 0027)
 │   ├── calendar.ts · calendarRow.ts # Fase 5: leitura, pintura, eventos, 💋; mapeador snake↔camel
 │   ├── worldCities.ts      # cidade do mundo: busca no Photon (sem BR) e `ensureWorldCity` (ADR 0017)
 │   ├── listSummary.ts      # contagens e export da Lista para as Configurações
@@ -118,6 +123,7 @@ src/
 supabase/
 ├── config.toml             # declaração do projeto ONLINE (auth, functions); não há stack local
 ├── functions/send-invite/  # edge function do convite: handler.ts (regra) · email.ts · index.ts (Deno)
+├── functions/places-nearby/ # estabelecimentos do Overture perto de um ponto; guarda OPEN_PLACES_API_KEY (ADR 0027)
 ├── migrations/             # o schema, append-only (a das cidades é GERADA por scripts/gen-cities-seed.mjs)
 ├── baseline/README.md      # onde está o schema anterior e o que se aproveitou dele
 └── tests/                  # integração com dois casais reais — DORMENTE (ADR 0010)
@@ -204,7 +210,9 @@ Os segredos do Resend ainda não estão no online (fim do roadmap): hoje a funç
 Cidades são os municípios do IBGE, por migration; o cliente não insere cidade
 ([ADR 0007](../Decisions/0007-cidades-brasileiras-por-seed-do-ibge.md)). Fotos
 em bucket privado `avatars/<uid>/…`, legíveis pelo casal
-([ADR 0009](../Decisions/0009-fotos-em-bucket-privado-por-casal.md)).
+([ADR 0009](../Decisions/0009-fotos-em-bucket-privado-por-casal.md)). Cada um
+pode trocar a foto da outra pessoa: sobe na pasta dela e `set_partner_avatar`
+grava o caminho ([ADR 0028](../Decisions/0028-foto-da-outra-pessoa.md)).
 
 ## Banco: só o online
 
@@ -253,7 +261,13 @@ lê no `\d`, e por isso está aqui:
 
 O lugar é guardado **resolvido** (texto + coordenada) a partir do Photon/OSM,
 chamado direto do navegador, com fallback no IBGE
-([ADR 0016](../Decisions/0016-busca-de-lugares-pelo-photon-osm.md)). A Lista
+([ADR 0016](../Decisions/0016-busca-de-lugares-pelo-photon-osm.md)). A busca
+parte da cidade de hoje de quem busca (`searchOrigin`; sem estadia, a casa) e
+ordena por anéis de proximidade: bairro, cidade, estado, país, continente,
+mundo (`rankByProximity`). No modo `place`, os estabelecimentos do Overture num
+raio de ~80 km entram junto, pela edge function `places-nearby`; sem chave ou
+fora do ar, fica só o Photon
+([ADR 0027](../Decisions/0027-estabelecimentos-pelo-overture-perto-de-casa.md)). A Lista
 **não** escreve em `cities`. A regra do formato mora em dois lugares com prova
 de paridade: `validateItem` (`src/domain/list.ts`) e o `CHECK`
 `list_items_format`; `listValidationCases.ts` roda contra os dois.

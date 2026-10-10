@@ -408,6 +408,12 @@ deno_version = 2
 [functions.send-invite]
 verify_jwt = true
 
+[functions.unsplash-search]
+verify_jwt = true
+
+[functions.places-nearby]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 55327

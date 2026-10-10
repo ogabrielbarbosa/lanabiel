@@ -165,6 +165,9 @@ const DRAFT: NewTripDraft = {
   startsOn: '2027-01-08',
   endsOn: '2027-01-14',
   note: null,
+  travelers: 'both',
+  travelerId: null,
+  coverStock: null,
   lodgingName: null,
   departures: [
     { profileId: 'u-gabriel', originCode: null, note: null },
@@ -198,12 +201,12 @@ describe('loadTrips', () => {
     expect(log).toEqual([])
   })
 
-  it('nove leituras, sem filtro de casal; eventos só `viagem` dos dois (identidade, não autorização)', async () => {
+  it('nove leituras, sem filtro de casal; eventos `viagem`, dos dois ou solo (identidade, não autorização)', async () => {
     const { db, log } = fakeDb({ responses: { 'calendar_events.select': { data: [eventRow], error: null } } })
     const result = await loadTrips(db)
     expect(result.status).toBe('ok')
     expect(log).toHaveLength(9)
-    expect(log).toContain('calendar_events.select[0-999] kind=viagem travelers=both')
+    expect(log).toContain('calendar_events.select[0-999] kind=viagem')
     expect(log.join(' ')).not.toContain('couple_id')
     if (result.status !== 'ok') return
     // Sem linha em `trips` (o trigger não rodou): a viagem aparece com os detalhes vazios.
@@ -272,6 +275,9 @@ describe('createTrip (R25)', () => {
         ends_on: '2027-01-14',
         // Só-espaço é "sem nota", não nota em branco.
         note: null,
+        travelers: 'both',
+        traveler_id: null,
+        cover_stock: null,
         lodging_name: 'Pousada na Lagoa',
         departures: [
           { profile_id: 'u-gabriel', origin_code: null, note: null },

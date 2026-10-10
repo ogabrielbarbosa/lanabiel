@@ -631,12 +631,22 @@
   color: var(--text-secondary);
 }
 
+/* Rola de lado e o `overflow-x` corta também na vertical: a faixa ocupa o
+   padding do cartão (19) e o vão dos vizinhos (14) para o brilho da aba ativa
+   (`0 0 18px`) caber, e some num degradê à direita (como o `.chip-row`). */
 .hp-tabs {
   display: flex;
   gap: 8px;
-  padding: 2px 0 6px;
+  margin: -14px -19px;
+  padding: 18px 19px;
   overflow-x: auto;
   scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 27px), transparent);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 27px), transparent);
+}
+
+.hp-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .hp-tab {

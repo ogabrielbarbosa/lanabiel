@@ -28,13 +28,13 @@ import {
   TRIP_PARATY_ID,
   trip,
 } from './test/fixtures'
-import { renderTripsRoute } from './test/renderInTrips'
+import { gridLoaded, renderTripsRoute } from './test/renderInTrips'
 
 afterEach(() => window.history.replaceState(null, '', '/'))
 
 async function renderGrid(options: Parameters<typeof seededTripsApi>[0] = {}, overrides: Partial<TripsApi> = {}) {
   const result = renderTripsRoute(seededTripsApi(options, overrides))
-  await screen.findByRole('heading', { name: 'Nossas viagens', level: 1 })
+  await gridLoaded()
   return result
 }
 
@@ -44,9 +44,8 @@ const stat = (label: string) =>
     .closest('li') as HTMLElement
 
 describe('A10 — cabeçalho e números (R3, R4)', () => {
-  it('kicker com todas as viagens e o ano da primeira; os cinco números só das feitas', async () => {
+  it('os cinco números só das feitas', async () => {
     await renderGrid()
-    expect(screen.getByText('5 viagens juntos desde 2025')).toBeInTheDocument()
     expect(stat('viagens feitas')).toHaveTextContent('2')
     expect(stat('país')).toHaveTextContent('1')
     expect(stat('cidades')).toHaveTextContent('2')
@@ -55,9 +54,8 @@ describe('A10 — cabeçalho e números (R3, R4)', () => {
     expect(stat('viajando juntos')).toHaveTextContent('16dias')
   })
 
-  it('sem viagens: "Nenhuma viagem ainda", números zerados e o convite da próxima', async () => {
+  it('sem viagens: números zerados e o convite da próxima', async () => {
     await renderGrid({ trips: [] })
-    expect(screen.getByText('Nenhuma viagem ainda')).toBeInTheDocument()
     expect(stat('viagens feitas')).toHaveTextContent('0')
     expect(screen.getByRole('heading', { name: 'Para onde vai a próxima?' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Já fizemos' })).not.toBeInTheDocument()

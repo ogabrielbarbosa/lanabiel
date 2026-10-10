@@ -173,11 +173,12 @@ describe('A14 — a grade do mês', () => {
   })
 })
 
-describe('A14 — o kicker do mês usa a contagem desenhada', () => {
-  it('setembro: 22 dias juntos · 8 separados (planejado incluso, como no frame)', async () => {
+describe('o título do mês', () => {
+  it('setembro abre em "Setembro 2026", sem linha acima do título', async () => {
     render(<CalendarScreen api={seededCalendarApi()} />)
-    expect(await screen.findByText('22 dias juntos · 8 separados')).toBeInTheDocument()
+    await screen.findByRole('group', { name: 'Dias do mês' })
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Setembro 2026')
+    expect(document.querySelector('.page-heading p')).toBeNull()
   })
 })
 

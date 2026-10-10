@@ -116,7 +116,10 @@ export const UNKNOWN_TRIP_ID = 'a0000000-0000-4000-8000-0000000000ff'
 export function trip(overrides: Partial<Trip> & Pick<Trip, 'id' | 'title' | 'cityId' | 'startsOn' | 'endsOn'>): Trip {
   return {
     note: null,
+    travelers: 'both',
+    travelerId: null,
     coverPhotoId: null,
+    coverStock: null,
     lodging: { ...EMPTY_LODGING },
     departures: [],
     days: [],
@@ -215,7 +218,10 @@ export const TRIP_ILHABELA: Trip = trip({
   startsOn: '2026-07-12',
   endsOn: '2026-07-19',
   note: 'Férias de inverno',
+  travelers: 'both',
+  travelerId: null,
   coverPhotoId: 'p-ilh-01',
+  coverStock: null,
   lodging: {
     name: 'Pousada Mar de Dentro',
     address: 'Av. Princesa Isabel, 1200 · Perequê',

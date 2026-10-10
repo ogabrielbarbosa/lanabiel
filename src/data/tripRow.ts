@@ -24,6 +24,7 @@ import type {
   PrepDraft,
   PrepItem,
   PrepKind,
+  StockCover,
   Trip,
   TripDayTitle,
   TripDeparture,
@@ -116,6 +117,9 @@ export interface CreateTripPayload {
   starts_on: string
   ends_on: string
   note: string | null
+  travelers: 'both' | 'solo'
+  traveler_id: string | null
+  cover_stock: { url: string; author: string; author_url: string } | null
   lodging_name: string | null
   departures: { profile_id: string; origin_code: string | null; note: string | null }[]
 }
@@ -127,6 +131,9 @@ export function newTripToPayload(draft: NewTripDraft): CreateTripPayload {
     starts_on: draft.startsOn,
     ends_on: draft.endsOn,
     note: draft.note,
+    travelers: draft.travelers,
+    traveler_id: draft.travelers === 'solo' ? draft.travelerId : null,
+    cover_stock: draft.coverStock && { url: draft.coverStock.url, author: draft.coverStock.author, author_url: draft.coverStock.authorUrl },
     lodging_name: draft.lodgingName,
     departures: draft.departures.map((d) => ({ profile_id: d.profileId, origin_code: d.originCode, note: d.note })),
   }
@@ -279,15 +286,21 @@ function groupBy<R extends { trip_id: string }>(rows: readonly R[]): Map<string,
   return out
 }
 
+/** Os três juntos (`trip_cover_stock_whole`); qualquer um nulo = sem capa de banco. */
+export function rowToStockCover(row: TripRow): StockCover | null {
+  const { cover_stock_url: url, cover_stock_author: author, cover_stock_author_url: authorUrl } = row
+  return url && author && authorUrl ? { url, author, authorUrl } : null
+}
+
 const byPosition = (a: { position: number; id: string }, b: { position: number; id: string }) =>
   a.position - b.position || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
 
 /**
- * Evento `viagem` dos dois + a linha de `trips` + as filhas → `Trip`. Só as
- * viagens (I1, R2): evento que não é `viagem` dos dois, ou sem destino, não
- * entra. Evento sem linha de `trips` (o trigger ainda não rodou, spec seção
+ * Evento `viagem` + a linha de `trips` + as filhas → `Trip`. Só as viagens
+ * (I1, R2; dos dois ou solo, ADR 0025): evento que não é `viagem`, ou sem
+ * destino, não entra. Evento sem linha de `trips` (o trigger ainda não rodou, spec seção
  * 12) entra com os detalhes vazios em vez de sumir. Filha de viagem que não
- * está em `events` (a viagem virou solo) é ignorada.
+ * está em `events` (o evento deixou de ser viagem) é ignorada.
  *
  * Preparação e orçamento saem por `position`; roteiro, dias, memórias e fotos
  * na ordem da leitura (as derivações de `tripDerive.ts` ordenam o que exibem).
@@ -317,7 +330,10 @@ export function assembleTrips(
       startsOn: e.startsOn,
       endsOn: e.endsOn,
       note: e.note,
+      travelers: e.travelers ?? 'both',
+      travelerId: e.travelerId,
       coverPhotoId: row?.cover_photo_id ?? null,
+      coverStock: row ? rowToStockCover(row) : null,
       lodging: row ? rowToLodging(row) : { ...EMPTY_LODGING },
       departures: (departures.get(e.id) ?? []).map(rowToDeparture),
       days: (days.get(e.id) ?? []).map(rowToDayTitle),
@@ -332,10 +348,10 @@ export function assembleTrips(
 }
 
 /**
- * R2: viagem é `viagem` dos dois, com destino e volta. `create_event` já
+ * R2: viagem é `viagem` (dos dois ou solo, ADR 0025), com destino e volta. `create_event` já
  * exige cidade e volta em viagem (`calendar_events_format`); o guarda aqui é
  * para o tipo estreitar `cityId`/`endsOn` sem `!`.
  */
 export function isTripEvent(e: CalendarEvent): e is CalendarEvent & { cityId: string; endsOn: string } {
-  return e.kind === 'viagem' && e.travelers === 'both' && e.cityId !== null && e.endsOn !== null
+  return e.kind === 'viagem' && e.cityId !== null && e.endsOn !== null
 }

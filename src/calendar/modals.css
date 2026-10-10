@@ -86,7 +86,8 @@
   outline: none;
 }
 
-.cal-modal :is(button, input):focus-visible {
+.cal-modal button:focus-visible,
+:where(.cal-modal) :is(input, select, textarea):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -296,7 +297,8 @@
   color-scheme: inherit;
 }
 
-.cal-mf-input input:focus-visible {
+/* O foco é da caixa (`:focus-within` abaixo), não do campo dentro dela. */
+.cal-mf-input :is(input, select, textarea):focus-visible {
   outline: none;
 }
 

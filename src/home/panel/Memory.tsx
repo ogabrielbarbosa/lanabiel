@@ -23,6 +23,8 @@ const MEMORY_CHARS = 240
 
 interface MemoryView {
   photo: string | null
+  /** A capa do Unsplash da viagem, quando não há foto (ADR 0025). */
+  stock?: string | null
   title: string
   date: string
   chip: string | null
@@ -38,6 +40,7 @@ function viewOf(latest: LatestMemory, ctx: Pick<HomeContextValue, 'cities' | 'li
     const city = ctx.cities.get(trip.cityId)
     return {
       photo: coverPath(trip),
+      stock: trip.coverStock?.url ?? null,
       title: city ? destinationLabel(city) : '?',
       date: longRangeLabel(trip.startsOn, trip.endsOn),
       chip: `${daysLabel(tripDays(trip))} juntos`,
@@ -75,7 +78,7 @@ export function Memory() {
   return (
     <PanelCard title="Última memória" action={<CardAction label="Álbum" onClick={view.open} />}>
       <button type="button" className="hp-memory" aria-label={`Abrir a memória de ${view.title}`} onClick={view.open}>
-        <PanelPhoto path={view.photo} className="hp-memory-photo">
+        <PanelPhoto path={view.photo} stock={view.stock} className="hp-memory-photo">
           <span className="hp-memory-scrim">
             <span className="hp-memory-place">
               <span className="hp-memory-title">

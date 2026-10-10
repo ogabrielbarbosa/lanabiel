@@ -26,6 +26,7 @@ import {
   replaceCover,
   saveCity,
   savePendingPartner,
+  setPartnerAvatar,
   updateCouple,
   updateCoupleSettings,
   updateProfile,
@@ -50,7 +51,9 @@ export interface SettingsApi {
   saveCity: (coupleId: string, cityId: string) => ReturnType<typeof saveCity>
   removeSavedCity: (cityId: string) => ReturnType<typeof removeSavedCity>
   prepareAvatar: typeof prepareAvatar
-  uploadAvatar: (image: { blob: Blob; extension: 'webp' | 'jpg' }) => ReturnType<typeof uploadAvatar>
+  /** Sem `ownerId`, na própria pasta; com, na pasta da outra pessoa (ADR 0028). */
+  uploadAvatar: (image: { blob: Blob; extension: 'webp' | 'jpg' }, ownerId?: string) => ReturnType<typeof uploadAvatar>
+  setPartnerAvatar: (profileId: string, path: string) => ReturnType<typeof setPartnerAvatar>
   avatarUrl: (path: string | null) => Promise<string | null>
   prepareCover: typeof prepareCover
   replaceCover: (
@@ -107,7 +110,8 @@ export function settingsApi(db: Db): SettingsApi {
     saveCity: (coupleId, cityId) => saveCity(db, coupleId, cityId),
     removeSavedCity: (cityId) => removeSavedCity(db, cityId),
     prepareAvatar,
-    uploadAvatar: (image) => uploadAvatar(db, image),
+    uploadAvatar: (image, ownerId) => uploadAvatar(db, image, ownerId),
+    setPartnerAvatar: (profileId, path) => setPartnerAvatar(db, profileId, path),
     avatarUrl: (path) => avatarUrl(db, path),
     prepareCover,
     replaceCover: (couple, image) => replaceCover(db, couple, image),

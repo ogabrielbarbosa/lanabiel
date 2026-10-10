@@ -49,6 +49,9 @@ const tripRow = (overrides: Partial<TripRow> = {}): TripRow => ({
   event_id: 'ev-1',
   couple_id: 'couple-1',
   cover_photo_id: null,
+  cover_stock_url: null,
+  cover_stock_author: null,
+  cover_stock_author_url: null,
   lodging_name: null,
   lodging_address: null,
   lodging_check_in: null,
@@ -105,6 +108,9 @@ describe('create_trip', () => {
         startsOn: '2027-01-08',
         endsOn: '2027-01-14',
         note: 'Férias de verão',
+        travelers: 'both',
+        travelerId: null,
+        coverStock: null,
         lodgingName: 'Pousada na Lagoa',
         departures: [{ profileId: 'u-lana', originCode: null, note: 'voo POA → FLN · 55min' }],
       }),
@@ -114,8 +120,33 @@ describe('create_trip', () => {
       starts_on: '2027-01-08',
       ends_on: '2027-01-14',
       note: 'Férias de verão',
+      travelers: 'both',
+      traveler_id: null,
+      cover_stock: null,
       lodging_name: 'Pousada na Lagoa',
       departures: [{ profile_id: 'u-lana', origin_code: null, note: 'voo POA → FLN · 55min' }],
+    })
+  })
+
+  it('ADR 0025: solo leva quem viaja; a capa do Unsplash vai com o crédito, em snake_case', () => {
+    expect(
+      newTripToPayload({
+        title: 'Lisboa, Portugal',
+        cityId: 'c-lisboa',
+        startsOn: '2027-01-08',
+        endsOn: '2027-01-14',
+        note: null,
+        travelers: 'solo',
+        travelerId: 'u-lana',
+        coverStock: { url: 'https://images.unsplash.com/p', author: 'Ana', authorUrl: 'https://unsplash.com/@ana' },
+        lodgingName: null,
+        departures: [],
+      }),
+    ).toMatchObject({
+      travelers: 'solo',
+      traveler_id: 'u-lana',
+      cover_stock: { url: 'https://images.unsplash.com/p', author: 'Ana', author_url: 'https://unsplash.com/@ana' },
+      departures: [],
     })
   })
 })
@@ -197,16 +228,29 @@ describe('filhas', () => {
 })
 
 describe('assembleTrips', () => {
-  it('só viagem dos dois é viagem (R2)', () => {
+  it('viagem dos dois e viagem solo são viagens; visita não (R2, ADR 0025)', () => {
     expect(isTripEvent(event())).toBe(true)
-    expect(isTripEvent(event({ travelers: 'solo', travelerId: 'u-lana' }))).toBe(false)
+    expect(isTripEvent(event({ travelers: 'solo', travelerId: 'u-lana' }))).toBe(true)
     expect(isTripEvent(event({ kind: 'visita' }))).toBe(false)
     const trips = assembleTrips(
-      [event(), event({ id: 'ev-solo', travelers: 'solo' }), event({ id: 'ev-visita', kind: 'visita' })],
+      [event(), event({ id: 'ev-solo', travelers: 'solo', travelerId: 'u-lana' }), event({ id: 'ev-visita', kind: 'visita' })],
       [tripRow()],
       noChildren,
     )
-    expect(trips.map((t) => t.id)).toEqual(['ev-1'])
+    expect(trips.map((t) => [t.id, t.travelers, t.travelerId])).toEqual([
+      ['ev-1', 'both', null],
+      ['ev-solo', 'solo', 'u-lana'],
+    ])
+  })
+
+  it('capa do Unsplash só com os três campos (trip_cover_stock_whole)', () => {
+    const full = { cover_stock_url: 'https://images.unsplash.com/p', cover_stock_author: 'Ana', cover_stock_author_url: 'https://unsplash.com/@ana' }
+    expect(assembleTrips([event()], [tripRow(full)], noChildren)[0]!.coverStock).toEqual({
+      url: 'https://images.unsplash.com/p',
+      author: 'Ana',
+      authorUrl: 'https://unsplash.com/@ana',
+    })
+    expect(assembleTrips([event()], [tripRow({ ...full, cover_stock_author: null })], noChildren)[0]!.coverStock).toBeNull()
   })
 
   it('o evento dá datas, destino, título e nota; `trips` dá capa e hospedagem (I1)', () => {

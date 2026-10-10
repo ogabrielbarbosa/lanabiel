@@ -358,7 +358,9 @@ describe('A18 — dentro da tela', () => {
   it('Novo evento abre o modal; salvar relê e fecha', async () => {
     const api = seededCalendarApi({}, { createEvent: createOk() })
     render(<CalendarScreen api={api} />)
-    await userEvent.click(await screen.findByRole('button', { name: 'Novo evento' }))
+    // O botão está no cabeçalho desde o primeiro quadro; só age depois da leitura.
+    await screen.findByRole('group', { name: 'Dias do mês' })
+    await userEvent.click(screen.getByRole('button', { name: 'Novo evento' }))
     const modal = screen.getByRole('dialog', { name: 'Novo evento' })
     await userEvent.click(within(modal).getByRole('button', { name: 'Lembrete' }))
     await userEvent.type(within(modal).getByLabelText('Título'), 'Malas')

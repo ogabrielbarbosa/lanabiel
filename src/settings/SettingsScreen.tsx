@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { ChevronRight, Lock } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import type { SettingsData } from '../data/settings'
 import type { ListCounts } from '../data/listSummary'
 import type { DataResult } from '../data/result'
@@ -33,6 +33,8 @@ import { NotificationsTab } from './tabs/NotificationsTab'
 import { AppearanceTab } from './tabs/AppearanceTab'
 import { DataTab } from './tabs/DataTab'
 import { DangerTab } from './tabs/DangerTab'
+import { PageArea, PageHeader } from '../ui/Page'
+import { Loading, Skeleton } from '../ui/Skeleton'
 import './settings.css'
 
 export interface SettingsScreenProps {
@@ -121,9 +123,11 @@ export function SettingsScreen({ tab, api, appearance, onStageChanged }: Setting
   let body: ReactNode
   if (!data && (loading || result === null)) {
     body = (
-      <div className="st-skeleton" aria-busy="true">
-        <span className="st-hint">Carregando…</span>
-      </div>
+      <Loading label="Carregando as configurações…" className="st-skeleton">
+        <Skeleton height={148} />
+        <Skeleton height={112} />
+        <Skeleton height={112} />
+      </Loading>
     )
   } else if (result && result.value.status !== 'ok' && result.version === version) {
     const cause = result.value.status === 'error' ? result.value.cause : 'sua sessão expirou'
@@ -164,18 +168,10 @@ export function SettingsScreen({ tab, api, appearance, onStageChanged }: Setting
     }
   }
 
-  const names = data?.couple.members.map((m) => m.displayName) ?? []
-
   return (
     <div className="st">
-      <div className="st-area">
-        <header className="st-header">
-          <p className="st-kicker">
-            <Lock size={13} aria-hidden="true" />
-            {names.length === 2 ? `Espaço privado · só ${names[0]} e ${names[1]}` : 'Espaço privado'}
-          </p>
-          <h1>Configurações</h1>
-        </header>
+      <PageArea className="st-area">
+        <PageHeader title="Configurações" />
         <div className="st-body">
           <nav className="lg st-menu" aria-label="Seções das configurações">
             <div className="st-menu-list">
@@ -211,7 +207,7 @@ export function SettingsScreen({ tab, api, appearance, onStageChanged }: Setting
             {body}
           </section>
         </div>
-      </div>
+      </PageArea>
       <aside className="lg st-panel" aria-label="O espaço de vocês" aria-busy={(!data && loading) || undefined}>
         {data ? (
           <RightPanel data={data} today={today} urls={urls} listCounts={listCounts} tripCount={tripCount} />

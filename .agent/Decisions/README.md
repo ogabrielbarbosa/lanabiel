@@ -58,6 +58,10 @@ Use `/adr <título>`. Template: [`0000-template.md`](./0000-template.md).
 | [0022](./0022-engine-do-mapa-mapbox.md) | Engine do mapa: Mapbox GL JS v3, com satélite, terreno 3D e atmosfera (supersede o 0021 e o item do backlog) | cliente, dependência externa (Fase 7) | 2026-09-27 |
 | [0023](./0023-home-na-raiz-calendario-em-calendario.md) | A Home ocupa `/`; o Calendário passa a `/calendario` | cliente, navegação (Fase 7) | 2026-09-27 |
 | [0024](./0024-perfil-provisorio-herdado-no-aceite.md) | Perfil provisório da outra pessoa, herdado no aceite do convite | schema (`profiles`), convite | 2026-09-27 |
+| [0025](./0025-viagem-solo-e-capa-do-unsplash.md) | Viagem solo nas Viagens e capa do Unsplash (supersede parte do 0019) | schema (`trips`), dependência externa | 2026-10-06 |
+| [0026](./0026-kit-de-tela-cabecalho-fora-da-leitura.md) | Kit de tela em `src/ui` (área, cabeçalho, chips, esqueleto, tokens de espaço); o cabeçalho aparece antes da leitura (revisa o A17 da Fase 6 no título) | cliente, todas as telas | 2026-10-06 |
+| [0027](./0027-estabelecimentos-pelo-overture-perto-de-casa.md) | Estabelecimentos pelo Overture (Open Places API) e ordem por proximidade a partir de onde a pessoa está, junto do Photon (revisa em parte o 0016) | dependência externa, busca da Lista | 2026-10-09 |
+| [0028](./0028-foto-da-outra-pessoa.md) | Cada um troca a foto da outra pessoa do casal: sobe na pasta dela, `set_partner_avatar` grava (estende o 0009) | Storage, autorização, Configurações | 2026-10-10 |
 
 ## Backlog — discutido, sem código
 

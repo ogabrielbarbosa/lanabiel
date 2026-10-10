@@ -3,8 +3,8 @@
 // Não existe troca de e-mail (decisão de produto, spec seção 13): o e-mail é
 // só leitura e o botão do frame não é renderizado.
 
-import { useRef, useState } from 'react'
-import { Camera, KeyRound, LogOut, Mail, MapPin, Type } from 'lucide-react'
+import { useState } from 'react'
+import { KeyRound, LogOut, Mail, MapPin, Type } from 'lucide-react'
 import { cityLabel } from '../../data/cities'
 import { MIN_PASSWORD } from '../../auth/signIn'
 import { LIMITS } from '../../domain/onboarding'
@@ -17,10 +17,10 @@ import { Avatar, Button, Card, Dialog, FieldError, Swatches, TextField } from '.
 import { failureMessage } from '../context'
 import type { TabContext } from '../context'
 import { ChangeHomeCity } from './CitiesTab'
+import { PhotoButton, PhotoError } from './memberPhoto'
 
 export function ProfileTab(ctx: TabContext) {
   const { data, api, writes, update, me, partner } = ctx
-  const input = useRef<HTMLInputElement>(null)
   const [dialog, setDialog] = useState<'city' | 'password' | null>(null)
 
   const setMe = (patch: Partial<typeof me>) =>
@@ -31,24 +31,6 @@ export function ProfileTab(ctx: TabContext) {
         members: d.couple.members.map((m) => (m.profileId === me.profileId ? { ...m, ...patch } : m)),
       },
     }))
-
-  async function uploadPhoto(file: File) {
-    await writes.run('avatar', async () => {
-      const prepared = await api.prepareAvatar(file)
-      if (prepared.status === 'not_image') return 'Esse arquivo não é uma imagem.'
-      if (prepared.status === 'too_large') return 'A foto é grande demais (até 10 MB).'
-      const uploaded = await api.uploadAvatar(prepared)
-      if (uploaded.status !== 'ok') return failureMessage(uploaded)
-      const saved = await api.updateProfile({ avatarPath: uploaded.path })
-      if (saved.status === 'invalid') return saved.cause
-      // `color_taken` não vem de trocar a foto; o tipo só não sabe disso.
-      if (saved.status === 'color_taken') return 'Não deu pra salvar a foto.'
-      if (saved.status !== 'ok') return failureMessage(saved)
-      setMe({ avatarPath: uploaded.path })
-      ctx.refreshUrls()
-      return null
-    })
-  }
 
   const saveName = (next: string) =>
     writes.run('displayName', async () => {
@@ -91,23 +73,9 @@ export function ProfileTab(ctx: TabContext) {
             {me.fullName} · {isCreator(me, data.couple) ? 'criou o espaço' : 'entrou no espaço'} em{' '}
             {shortDate(me.joinedAt.slice(0, 10))}
           </p>
-          <FieldError message={writes.error('avatar')} />
+          <PhotoError ctx={ctx} member={me} />
         </div>
-        <input
-          ref={input}
-          type="file"
-          accept="image/*"
-          hidden
-          aria-label="Sua foto"
-          onChange={(event) => {
-            const file = event.target.files?.[0]
-            event.target.value = ''
-            if (file) void uploadPhoto(file)
-          }}
-        />
-        <Button icon={Camera} onClick={() => input.current?.click()} disabled={writes.pending('avatar')}>
-          {writes.pending('avatar') ? 'Enviando…' : 'Trocar foto'}
-        </Button>
+        <PhotoButton ctx={ctx} member={me} />
       </Card>
 
       <div className="st-fields">

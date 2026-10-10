@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Member, Stay } from './coupleState'
 import {
+  searchOrigin,
   formatDistance,
   CATEGORY_LABELS,
   EMPTY_FILTERS,
@@ -291,6 +292,40 @@ describe('relativeAge', () => {
     ['2026-09-30', 'hoje'],
   ])('%s → %s', (from, expected) => {
     expect(relativeAge(from, '2026-09-26')).toBe(expected)
+  })
+})
+
+describe('searchOrigin (ADR 0027)', () => {
+  const HOME = { lat: -23.18, lng: -45.88 }
+  const cities = new Map([
+    ['marau', { lat: -28.45, lng: -52.2 }],
+    ['lisboa', { lat: 38.72, lng: -9.14 }],
+  ])
+  const stay = (profileId: string, cityId: string, startsOn: string, endsOn: string | null): Stay => ({
+    id: `${profileId}-${cityId}`,
+    profileId,
+    cityId,
+    startsOn,
+    endsOn,
+  })
+
+  it('a cidade da estadia de hoje de quem busca, com as duas pontas inclusivas', () => {
+    const stays = [stay('g', 'marau', '2026-10-01', '2026-10-09')]
+    expect(searchOrigin(stays, 'g', cities, '2026-10-09', HOME)).toEqual({ lat: -28.45, lng: -52.2 })
+    expect(searchOrigin(stays, 'g', cities, '2026-10-01', HOME)).toEqual({ lat: -28.45, lng: -52.2 })
+  })
+
+  it('estadia em aberto vale até hoje e depois', () => {
+    expect(searchOrigin([stay('g', 'lisboa', '2026-10-01', null)], 'g', cities, '2026-12-25', HOME)).toEqual({
+      lat: 38.72,
+      lng: -9.14,
+    })
+  })
+
+  it('sem estadia no dia, estadia da outra pessoa ou cidade não lida → a cidade-casa', () => {
+    expect(searchOrigin([stay('g', 'marau', '2026-10-01', '2026-10-08')], 'g', cities, '2026-10-09', HOME)).toEqual(HOME)
+    expect(searchOrigin([stay('l', 'marau', '2026-10-01', null)], 'g', cities, '2026-10-09', HOME)).toEqual(HOME)
+    expect(searchOrigin([stay('g', 'tokyo', '2026-10-01', null)], 'g', cities, '2026-10-09', HOME)).toEqual(HOME)
   })
 })
 

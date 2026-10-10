@@ -89,7 +89,7 @@ function budgetIcon(label: string): LucideIcon {
 }
 
 export function BudgetCard({ trip, onEdit }: { trip: Trip; onEdit: () => void }) {
-  const b = budgetSummary(trip)
+  const b = budgetSummary(trip, trip.travelers === 'solo' ? 1 : 2)
   return (
     <Card title="Orçamento estimado" labelledBy={`td-budget-${trip.id}`} className="td-budget" action={{ label: 'Editar', onClick: onEdit, ariaLabel: 'Editar orçamento' }}>
       {b.lines.length === 0 ? (

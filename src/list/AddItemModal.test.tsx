@@ -80,6 +80,7 @@ function contextValue(api: ListApi, overrides: Partial<ListContextValue> = {}): 
     photos: [],
     urls: new Map(),
     where: { kind: 'unknown' },
+    searchFrom: { lat: SJC.lat, lng: SJC.lng },
     today: '2026-09-26',
     reload: vi.fn(async () => {}),
     ...overrides,
@@ -93,12 +94,13 @@ function renderModal(
   props: ({ mode: 'create'; initialCategory?: ListCategory } | { mode: 'edit'; item: ListItem }) & Extra = {
     mode: 'create',
   },
+  context: Partial<ListContextValue> = {},
 ) {
   const onClose = props.onClose ?? vi.fn()
   const onSaved = props.onSaved ?? vi.fn()
   const modalProps = { ...props, onClose, onSaved } as AddItemModalProps
   render(
-    <ListContext.Provider value={contextValue(api)}>
+    <ListContext.Provider value={contextValue(api, context)}>
       <AddItemModal {...modalProps} />
     </ListContext.Provider>,
   )
@@ -263,6 +265,18 @@ describe('A14 — busca de lugar (R13)', () => {
     fireEvent.click(screen.getByRole('option', { name: /Japão/ }))
     expect(nome).toHaveValue('Japão')
     expect(document.querySelector('.ls-add-map-label')).toHaveTextContent('Japão')
+  })
+
+  it('a busca parte de `searchFrom` (onde a pessoa está hoje), não da cidade-casa', async () => {
+    const searchPlaces = vi.fn<ListApi['searchPlaces']>(async () => ok([]))
+    renderModal(
+      fakeListApi({ searchPlaces }),
+      { mode: 'create', initialCategory: 'restaurante' },
+      { searchFrom: { lat: MARAU.lat, lng: MARAU.lng } },
+    )
+    type(screen.getByRole('combobox', { name: 'Local' }), 'Bambina')
+    await wait(350)
+    expect(searchPlaces.mock.calls[0][1].bias).toEqual({ lat: MARAU.lat, lng: MARAU.lng })
   })
 
   it('Restaurante busca com mode "place" + viés; cada resultado tem nome e detalhe, e o crédito do OSM', async () => {

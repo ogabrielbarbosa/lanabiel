@@ -1,6 +1,7 @@
 // O **Detalhe da viagem** (`Peoa7` feita, `f3yqz` futura; em andamento pelas
-// regras da spec): a barra do topo, o herói com a capa, os quatro números e
-// as duas colunas de blocos, que mudam com o estado da viagem (R18).
+// regras da spec): o herói com a capa no topo da coluna (a barra do topo por
+// cima, o nome e uma linha de datas, dias e lugares embaixo) e as duas colunas
+// de blocos, que mudam com o estado da viagem (R18).
 //
 // Spec: .agent/Tasks/fase-6-viagens.md — R14–R23, R10b, R27, R32, seção 7
 // ADR:  0019 (a viagem é o evento), 0021 (o mapa), 0018 (editar não repinta)
@@ -15,11 +16,8 @@
 import { useRef, useState } from 'react'
 import {
   ArrowLeft,
-  Building2,
   CalendarDays,
-  CalendarHeart,
   CalendarRange,
-  CircleCheck,
   Clock3,
   Expand,
   ImagePlus,
@@ -30,7 +28,6 @@ import {
   Pencil,
   Plane,
   PlaneTakeoff,
-  Route,
   X,
 } from 'lucide-react'
 import { requestCalendarFocus } from '../../app/calendarFocus'
@@ -38,10 +35,8 @@ import { navigate } from '../../app/router'
 import { CouplePair } from '../../calendar/parts'
 import {
   daysLabel,
-  daysSpanLabel,
   departuresLine,
   doneHere,
-  formatNumber,
   heroTrip,
   itemsLabel,
   itineraryCounts,
@@ -50,13 +45,10 @@ import {
   originOf,
   photosLabel,
   prepSummary,
-  routeLabel,
   statusLabel,
   suggestionsFor,
-  tripCities,
   tripDateRange,
   tripDays,
-  tripKm,
   tripRating,
   tripStatus,
 } from '../../domain/tripDerive'
@@ -69,7 +61,8 @@ import { FullGallery, GalleryCard } from './Gallery'
 import { Itinerary } from './Itinerary'
 import { DayTitleModal, ItineraryModal } from './ItineraryModal'
 import type { ItineraryModalMode } from './ItineraryModal'
-import { citiesLabel, placesLabel, toneStyle } from './format'
+import { placesLabel } from './format'
+import { StockCredit } from '../parts'
 import { AppLink, HeartsText, SeasonIcon } from './parts'
 import { BudgetCard, LodgingCard, PrepCard } from './Planning'
 import { usePhotoUpload } from './usePhotoUpload'
@@ -99,22 +92,23 @@ function Detail({ trip, onEditTrip }: { trip: Trip; onEditTrip?: () => void }) {
   const { state: upload, upload: send, dismiss } = usePhotoUpload(trip)
 
   const status = tripStatus(trip, today)
+  const isHero = heroTrip(trips, today)?.id === trip.id
   const done = status !== 'planned' // feita ou em andamento: os blocos da feita (R18)
   const dest = cities.get(trip.cityId)
   const destName = dest?.name ?? trip.title
-  const isHero = heroTrip(trips, today)?.id === trip.id
   const origin = originOf(trip, me.profileId, home.name)
   const nearby = nearbyListItems(dest, listItems)
   const suggestions = suggestionsFor(trip, dest, listItems)
   const hereDone = doneHere(trip, listItems)
   const prep = prepSummary(trip)
   const counts = itineraryCounts(trip)
-  const citiesList = tripCities(trip, dest, listItems)
   const rating = tripRating(trip.memories, members, names)
-  const km = dest ? Math.round(tripKm(home, dest)) : null
   const cover = coverPath(trip)
   const urls = usePhotoUrls([cover])
-  const coverUrl = cover ? (urls.get(cover) ?? null) : null
+  // A foto de vocês vence a do Unsplash; o crédito só aparece com a do Unsplash.
+  const ownCoverUrl = cover ? (urls.get(cover) ?? null) : null
+  const stock = ownCoverUrl ? null : trip.coverStock
+  const coverUrl = ownCoverUrl ?? stock?.url ?? null
 
   const close = () => setModal(null)
   const addItem = (day?: string, listItemId?: string | null) =>
@@ -131,16 +125,19 @@ function Detail({ trip, onEditTrip }: { trip: Trip; onEditTrip?: () => void }) {
   }
 
   // A linha das saídas sem repetir "Gabriel e Lana" que já está ao lado (R15).
+  // Na viagem solo (ADR 0025), só quem vai.
   const pairName = `${names[1]} e ${names[2]}`
+  const traveler = trip.travelers === 'solo' ? [people[1], people[2]].find((p) => p.profileId === trip.travelerId) : undefined
   const departures = departuresLine(trip, members, names, cities).replace(`${pairName} · `, '')
 
-  const KickerIcon = status === 'done' ? CircleCheck : status === 'ongoing' ? Plane : PlaneTakeoff
+  // Os lugares da linha do herói: os do roteiro na feita, os da Lista no destino na futura.
+  const placesCount = done ? counts.items : nearby.length
+  const placesText = done
+    ? `${placesLabel(counts.items)} ${counts.items === 1 ? 'visitado' : 'visitados'}`
+    : `${itemsLabel(nearby.length)} da lista`
 
   return (
     <div className="td">
-      <span className="td-glow td-glow--aqua" aria-hidden="true" />
-      <span className="td-glow td-glow--sky" aria-hidden="true" />
-
       <input
         ref={fileRef}
         type="file"
@@ -156,31 +153,120 @@ function Detail({ trip, onEditTrip }: { trip: Trip; onEditTrip?: () => void }) {
         }}
       />
 
-      <nav className="td-top" aria-label="Viagem">
-        <AppLink to="/viagens" className="lg td-pill-btn">
-          <ArrowLeft size={16} aria-hidden="true" />
-          Nossas viagens
-        </AppLink>
-        <div className="td-top-actions">
-          <button type="button" className="lg td-pill-btn" onClick={toCalendar}>
-            <CalendarRange size={16} aria-hidden="true" />
-            Ver no calendário
-          </button>
-          <button type="button" className="lg td-pill-btn" onClick={() => addItem()}>
-            <ListPlus size={16} aria-hidden="true" />
-            Adicionar ao roteiro
-          </button>
-          <button type="button" className="lg td-pill-btn" onClick={pickPhotos} disabled={upload.phase === 'sending'}>
-            <ImagePlus size={16} aria-hidden="true" />
-            Adicionar fotos
-          </button>
-          {onEditTrip && (
-            <button type="button" className="lg td-round" aria-label="Editar viagem" onClick={onEditTrip}>
-              <Pencil size={16} aria-hidden="true" />
+      {/* Herói (R15): a capa no topo da coluna, a barra por cima, o nome embaixo. */}
+      <header className={`td-hero ${coverUrl ? '' : 'td-hero--nocover'}`}>
+        {coverUrl && <img className="td-hero-img" src={coverUrl} alt="" />}
+        <span className="td-hero-scrim" aria-hidden="true" />
+
+        <nav className="td-top" aria-label="Viagem">
+          <AppLink to="/viagens" className="lg td-pill-btn td-pill-btn--photo">
+            <ArrowLeft size={16} aria-hidden="true" />
+            Nossas viagens
+          </AppLink>
+          <div className="td-top-actions">
+            <button type="button" className="lg td-pill-btn td-pill-btn--photo" onClick={toCalendar}>
+              <CalendarRange size={16} aria-hidden="true" />
+              Ver no calendário
             </button>
-          )}
+            <button type="button" className="lg td-pill-btn td-pill-btn--photo" onClick={() => addItem()}>
+              <ListPlus size={16} aria-hidden="true" />
+              Adicionar ao roteiro
+            </button>
+            <button
+              type="button"
+              className="lg td-pill-btn td-pill-btn--photo"
+              onClick={pickPhotos}
+              disabled={upload.phase === 'sending'}
+            >
+              <ImagePlus size={16} aria-hidden="true" />
+              Adicionar fotos
+            </button>
+            {onEditTrip && (
+              <button type="button" className="lg td-round td-round--dark" aria-label="Editar viagem" onClick={onEditTrip}>
+                <Pencil size={16} aria-hidden="true" />
+              </button>
+            )}
+          </div>
+        </nav>
+
+        <div className="td-hero-foot">
+          <div className="td-hero-info">
+            {/* Só a futura e a em andamento: na feita, o "Já fomos" repetia o título. */}
+            {status !== 'done' && (
+              <p className={`td-kicker td-kicker--${status}`}>
+                {status === 'ongoing' ? <Plane size={13} aria-hidden="true" /> : <PlaneTakeoff size={13} aria-hidden="true" />}
+                {statusLabel(trip, today, { isHero, countryCode: dest?.countryCode })}
+              </p>
+            )}
+            <h1 className="td-hero-title">{trip.title}</h1>
+            <ul className="td-hero-meta" aria-label="Números da viagem">
+              <li>
+                <CalendarDays size={15} aria-hidden="true" />
+                {tripDateRange(trip, { year: true })}
+              </li>
+              <li>
+                <Clock3 size={15} aria-hidden="true" />
+                {daysLabel(tripDays(trip))}
+              </li>
+              {placesCount > 0 && (
+                <li>
+                  <MapPin size={15} aria-hidden="true" />
+                  {placesText}
+                </li>
+              )}
+              {trip.note && (
+                <li>
+                  <SeasonIcon startsOn={trip.startsOn} lat={dest?.lat} size={15} />
+                  {trip.note}
+                </li>
+              )}
+            </ul>
+          </div>
+
+          <div className="td-hero-side">
+            <p className="td-hero-couple">
+              {traveler ? (
+                <>
+                  <CouplePair people={[traveler]} together={false} />
+                  <strong>Só {traveler.name}</strong>
+                </>
+              ) : (
+                <>
+                  <CouplePair people={[people[1], people[2]]} together />
+                  <strong>{pairName}</strong>
+                </>
+              )}
+            </p>
+            {status === 'done' ? (
+              <p className="td-hero-rating">
+                <HeartsText n={rating?.hearts ?? 0} className="td-hearts--hero" />
+                <span className="td-hero-sub">{rating ? 'nota da viagem' : 'sem nota ainda'}</span>
+              </p>
+            ) : (
+              !traveler && <p className="td-hero-sub">{departures}</p>
+            )}
+            <div className="td-hero-corner">
+              {done ? (
+                <span className="td-hero-chip">
+                  <Images size={14} aria-hidden="true" />
+                  {photosLabel(trip.photos.length)}
+                </span>
+              ) : (
+                <span className="td-hero-chip">
+                  <ListChecks size={14} aria-hidden="true" />
+                  {prep.done} de {prep.total} prontos
+                </span>
+              )}
+              {trip.photos.length > 0 && (
+                <button type="button" className="lg td-round td-round--dark" aria-label="Galeria em tela cheia" onClick={() => openGallery(0)}>
+                  <Expand size={15} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-      </nav>
+        {stock && <StockCredit stock={stock} className="td-hero-credit" />}
+      </header>
 
       {notice && (
         <p className="td-notice lg" role="status">
@@ -200,114 +286,6 @@ function Detail({ trip, onEditTrip }: { trip: Trip; onEditTrip?: () => void }) {
           )}
         </p>
       )}
-
-      {/* Herói (R15) */}
-      <header className={`td-hero ${coverUrl ? '' : 'td-hero--nocover'}`}>
-        {coverUrl && <img className="td-hero-img" src={coverUrl} alt="" />}
-        <span className="td-hero-scrim" aria-hidden="true" />
-        <div className="td-hero-corner">
-          {done ? (
-            <span className="td-hero-chip">
-              <Images size={14} aria-hidden="true" />
-              {photosLabel(trip.photos.length)}
-            </span>
-          ) : (
-            <span className="td-hero-chip">
-              <ListChecks size={14} aria-hidden="true" />
-              {prep.done} de {prep.total} prontos
-            </span>
-          )}
-          {trip.photos.length > 0 && (
-            <button type="button" className="lg td-round td-round--dark" aria-label="Galeria em tela cheia" onClick={() => openGallery(0)}>
-              <Expand size={15} aria-hidden="true" />
-            </button>
-          )}
-        </div>
-        <div className="td-hero-info">
-          <p className={`td-kicker td-kicker--${status === 'planned' ? 'planned' : status}`}>
-            <KickerIcon size={13} aria-hidden="true" />
-            {statusLabel(trip, today, { isHero, countryCode: dest?.countryCode })}
-          </p>
-          <h1 className="td-hero-title">{trip.title}</h1>
-          <p className="td-hero-meta">
-            <span>
-              <CalendarDays size={15} aria-hidden="true" />
-              {tripDateRange(trip, { year: true })}
-            </span>
-            <span>
-              <Clock3 size={15} aria-hidden="true" />
-              {daysLabel(tripDays(trip))}
-            </span>
-            {trip.note && (
-              <span>
-                <SeasonIcon startsOn={trip.startsOn} lat={dest?.lat} size={15} />
-                {trip.note}
-              </span>
-            )}
-          </p>
-          <p className="td-hero-couple">
-            <CouplePair people={[people[1], people[2]]} together />
-            <strong>{pairName}</strong>
-            {status === 'done' ? (
-              <>
-                <HeartsText n={rating?.hearts ?? 0} className="td-hearts--hero" />
-                <span className="td-hero-sub">{rating ? 'nota da viagem' : 'sem nota ainda'}</span>
-              </>
-            ) : (
-              <span className="td-hero-sub">{departures}</span>
-            )}
-          </p>
-        </div>
-      </header>
-
-      {/* Os quatro números (R16) */}
-      <ul className="td-stats" aria-label="Números da viagem">
-        <li className="lg" style={toneStyle('peach')}>
-          <span className="td-stat-chip lg" aria-hidden="true">
-            <Building2 size={18} />
-          </span>
-          <span className="td-stat-text">
-            <strong>{citiesList.join(' · ')}</strong>
-            <span>{citiesLabel(citiesList.length)}</span>
-          </span>
-        </li>
-        <li className="lg" style={toneStyle('aqua')}>
-          <span className="td-stat-chip lg" aria-hidden="true">
-            <Route size={18} />
-          </span>
-          <span className="td-stat-text">
-            <strong>{km !== null ? `${formatNumber(km)} km` : '— km'}</strong>
-            <span>{done ? `percorridos · ${routeLabel(origin, destName, true)}` : routeLabel(origin, destName)}</span>
-          </span>
-        </li>
-        <li className="lg" style={toneStyle('heart')}>
-          <span className="td-stat-chip lg" aria-hidden="true">
-            <CalendarHeart size={18} />
-          </span>
-          <span className="td-stat-text">
-            <strong>{daysLabel(tripDays(trip))}</strong>
-            <span>juntos · {daysSpanLabel(trip.startsOn, trip.endsOn)}</span>
-          </span>
-        </li>
-        <li className="lg" style={toneStyle('sky')}>
-          <span className="td-stat-chip lg" aria-hidden="true">
-            <MapPin size={18} />
-          </span>
-          <span className="td-stat-text">
-            {done ? (
-              <>
-                <strong>{placesLabel(counts.items)}</strong>
-                <span>visitados · {counts.fromList} da nossa lista</span>
-              </>
-            ) : (
-              <>
-                <strong>{itemsLabel(nearby.length)}</strong>
-                <span>da lista em {destName}</span>
-              </>
-            )}
-          </span>
-        </li>
-      </ul>
 
       {/* As duas colunas (R17, R18) */}
       <div className="td-columns">

@@ -9,6 +9,8 @@
 // pessoa só), o painel fica vazio — nada está carregando, e um esqueleto
 // pulsando para sempre diria o contrário.
 
+import { Skeleton } from '../ui/Skeleton'
+
 export interface PanelSkeletonProps {
   /** A altura (px) de cada cartão, na ordem do painel real. */
   cards: readonly number[]
@@ -21,11 +23,11 @@ export function PanelSkeleton({ cards, busy = true }: PanelSkeletonProps) {
   return (
     <div className="panel-skeleton" aria-hidden="true">
       <div className="panel-skeleton-head">
-        <span />
-        <span />
+        <Skeleton width="42%" height={14} text />
+        <Skeleton width="72%" height={28} text />
       </div>
       {cards.map((height, i) => (
-        <span key={i} className="panel-skeleton-card" style={{ height }} />
+        <Skeleton key={i} height={height} />
       ))}
     </div>
   )

@@ -512,15 +512,16 @@ describe('A9 — o casal do item não muda; apagar leva memórias e fotos', () =
 })
 
 describe('A10 — nenhum security definer novo; mark_item_done é invoker', () => {
-  it('public continua com as doze da Fase 3', () => {
+  it('public continua só com as da lista nominal', () => {
     // A lista nominal está em onboarding.test.ts (A20). Aqui, que a Lista não
-    // mudou a conta e nenhuma das dela entrou.
+    // mudou a conta e nenhuma das dela entrou. Doze na Fase 3; depois entraram
+    // save_pending_partner (ADR 0024) e set_partner_avatar (ADR 0028).
     const rows = sql(`
       select p.proname as name
       from pg_proc p join pg_namespace n on n.oid = p.pronamespace
       where n.nspname = 'public' and p.prosecdef
       order by p.proname`).split('\n')
-    expect(rows).toHaveLength(12)
+    expect(rows).toHaveLength(14)
     expect(rows).not.toContain('mark_item_done')
   })
 

@@ -49,6 +49,22 @@ describe('A12 — searchWorldCities', () => {
     expect(new URL(String(fetchFn.mock.calls[0][0])).searchParams.get('layer')).toBe('city')
   })
 
+  it('o Brasil não espreme o mundo: pede 25 ao Photon, e a cidade de fora depois de seis brasileiras aparece', async () => {
+    const city = (name: string, countrycode: string, osm_id: number) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [-122.4, 37.7] },
+      properties: { name, countrycode, osm_type: 'R', osm_id, type: 'city' },
+    })
+    const features = [
+      ...[1, 2, 3, 4, 5, 6].map((n) => city(`São Francisco ${n}`, 'BR', n)),
+      city('San Francisco', 'US', 111968),
+    ]
+    const fetchFn = respond({ type: 'FeatureCollection', features })
+    const result = await searchWorldCities('São Francisco', { fetchFn })
+    expect(new URL(String(fetchFn.mock.calls[0][0])).searchParams.get('limit')).toBe('25')
+    expect(result.status === 'ok' && result.rows.map((r) => r.osmRef)).toEqual(['R111968'])
+  })
+
   it('resultado estrangeiro sem `osm_type` é descartado: sem a chave, a linha não pode ser gravada', async () => {
     const features = gramadoCity.features.map((f) =>
       f.properties.name === 'Granada' ? { ...f, properties: { ...f.properties, osm_type: undefined } } : f,

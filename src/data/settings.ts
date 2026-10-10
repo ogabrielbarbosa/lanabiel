@@ -554,3 +554,26 @@ export async function savePendingPartner(db: Db, input: PendingPartnerInput): Pr
   }
   return { status: 'error', cause: `save_pending_partner: status inesperado ${String(raw.status)}` }
 }
+
+// ---------------------------------------------------------------------------
+// A foto da outra pessoa (ADR 0028)
+// ---------------------------------------------------------------------------
+export type PartnerAvatarResult =
+  | { status: 'ok' }
+  | { status: 'not_member' }
+  /** O perfil não é da outra pessoa do casal (saiu, ou é o próprio). */
+  | { status: 'not_partner' }
+  /** O caminho não está na pasta dela, ou o arquivo não subiu. */
+  | { status: 'invalid' }
+  | Failure
+
+/** Grava `avatar_path` no perfil da outra pessoa, depois de a foto subir na pasta dela. */
+export async function setPartnerAvatar(db: Db, profileId: string, path: string): Promise<PartnerAvatarResult> {
+  const result = await callRpc(db, 'set_partner_avatar', { p_profile_id: profileId, p_path: path })
+  if (result.status !== 'ok') return result
+  const status = result.data.status
+  if (status === 'ok' || status === 'not_member' || status === 'not_partner' || status === 'invalid') {
+    return { status }
+  }
+  return { status: 'error', cause: `set_partner_avatar: status inesperado ${String(status)}` }
+}

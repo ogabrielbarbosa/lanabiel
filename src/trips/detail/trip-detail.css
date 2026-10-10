@@ -20,7 +20,6 @@
   --td-pink: #f4a3b4;
   --td-lilac: #c3b3f2;
   --td-heart: #ff7a9a;
-  --td-glow-sky: #1c3a74;
 }
 
 :root[data-theme='light'] {
@@ -33,7 +32,6 @@
   --td-pink: #d9546f;
   --td-lilac: #7e62d6;
   --td-heart: #e0476b;
-  --td-glow-sky: #cfdcf5;
 }
 
 :root {
@@ -63,44 +61,24 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 24px;
-  /* O Content do frame fica a x=40, y=28 (a casca já dá 16) e termina 24 antes da barra. */
-  padding: 12px 4px 48px 24px;
+  /* O respiro das outras telas (ui.css): a capa e os cartões na mesma coluna. */
+  padding: var(--page-pad);
   color: var(--text-primary);
   font-family: var(--font);
   /* O .pen usa altura de linha "normal" em todo texto que não diz outra. */
   line-height: normal;
 }
 
-.td-glow {
-  position: absolute;
-  z-index: 0;
-  width: 900px;
-  height: 700px;
-  border-radius: 50%;
-  filter: blur(80px);
-  pointer-events: none;
-}
+/* Os brilhos são os da casca (app.css), como na Lista e na Grade. Os dois do
+   frame (aqua e azul) moravam DENTRO da área que rola: o fundo mudava de cor
+   no meio da rolagem, e o de baixo (1184 + 700px) esticava a página com um
+   vão vazio depois do último cartão. */
 
-.td-glow--aqua {
-  top: 284px;
-  left: -216px;
-  background: var(--glow-aqua);
-  opacity: 0.45;
-}
-
-.td-glow--sky {
-  top: 1184px;
-  left: 684px;
-  background: var(--td-glow-sky);
-  opacity: 0.4;
-}
-
-.td-top,
 .td-hero,
-.td-stats,
 .td-columns,
 .td-notice {
   position: relative;
@@ -171,7 +149,13 @@
   opacity: 0.45;
 }
 
+/* A barra fica por cima da foto, no topo do herói. */
 .td-top {
+  position: absolute;
+  top: 20px;
+  left: 24px;
+  right: 24px;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -184,6 +168,21 @@
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+/* O botão de vidro sobre foto: escuro e branco nos dois temas. */
+.td-pill-btn--photo {
+  color: var(--td-photo-ink);
+  box-shadow: inset 0 1px 1px #ffffff40;
+}
+
+.td-pill-btn--photo.lg {
+  --lg-fill: linear-gradient(var(--td-photo-veil), var(--td-photo-veil));
+  --lg-edge: linear-gradient(#ffffff38, #ffffff38);
+}
+
+.td-pill-btn--photo:hover:not(:disabled) {
+  --lg-fill: linear-gradient(#0a1030e6, #0a1030e6);
 }
 
 .td-notice {
@@ -222,15 +221,17 @@
   cursor: pointer;
 }
 
-/* --- herói (Hero, 1300×440) ------------------------------------------------ */
+/* --- herói ------------------------------------------------------------------
+   A capa é o primeiro bloco da coluna, alinhada aos cartões de baixo e sem
+   sombra própria: o fundo da página é o da casca, como nas outras telas.
+   300 de altura; o nome e a linha de números embaixo, sobre o véu escuro. */
 
 .td-hero {
-  height: 440px;
+  flex: none;
+  height: 300px;
   overflow: hidden;
-  border: 1px solid var(--glass-stroke-soft);
-  border-radius: 36px;
+  border-radius: 24px;
   background: linear-gradient(135deg, #15525a 0%, #1c3a74 55%, #6a3560 100%);
-  box-shadow: 0 30px 80px var(--glass-shadow);
 }
 
 .td-hero-img {
@@ -244,62 +245,38 @@
 .td-hero-scrim {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, #060a1c80 0%, #060a1c40 25%, #060a1cf5 85%);
+  background: linear-gradient(180deg, #060a1c8c 0%, #060a1c1a 30%, #060a1c33 50%, #060a1ceb 100%);
 }
 
-.td-hero-corner {
+/* O crédito do Unsplash (ADR 0025), no pé, à direita, abaixo dos chips. */
+.td-hero-credit {
   position: absolute;
-  top: 24px;
-  right: 24px;
+  right: 28px;
+  bottom: 8px;
+  z-index: 1;
+}
+
+.td-hero-foot {
+  position: absolute;
+  left: 32px;
+  right: 28px;
+  bottom: 28px;
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.td-hero-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: 999px;
-  background: var(--td-photo-veil);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  color: var(--td-photo-ink);
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.td-round--dark {
-  width: 36px;
-  height: 36px;
-  box-shadow: inset 0 1px 1px #ffffff40;
-  color: var(--td-photo-ink);
-}
-
-.td-round--dark.lg {
-  --lg-fill: linear-gradient(var(--td-photo-veil), var(--td-photo-veil));
-  --lg-edge: linear-gradient(#ffffff38, #ffffff38);
-}
-
-.td-round--dark:hover:not(:disabled) {
-  --lg-fill: linear-gradient(#0a1030e6, #0a1030e6);
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
 }
 
 .td-hero-info {
-  position: absolute;
-  top: 220px;
-  left: 40px;
-  right: 40px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
+  min-width: 0;
 }
 
 .td-kicker {
-  --kicker: #7fd8c4;
+  --kicker: #f6e3a1;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -314,153 +291,8 @@
   white-space: nowrap;
 }
 
-.td-kicker--planned {
-  --kicker: #f6e3a1;
-}
-
 .td-kicker--ongoing {
-  --kicker: #f4a3b4;
-}
-
-.td-hero-title {
-  margin: 0;
-  max-width: 100%;
-  overflow: hidden;
-  color: var(--td-photo-ink);
-  font-size: 64px;
-  font-weight: 600;
-  line-height: 64px;
-  letter-spacing: -2.6px;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.td-hero-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 18px;
-  margin: 0;
-  color: var(--td-photo-ink-2);
-  font-size: 15px;
-  font-weight: 500;
-}
-
-.td-hero-meta span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.td-hero-meta svg {
-  color: var(--td-photo-ink-3);
-}
-
-.td-hero-couple {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0;
-  padding-top: 4px;
-  color: var(--td-photo-ink);
-  font-size: 13px;
-}
-
-.td-hero-couple strong {
-  font-weight: 600;
-}
-
-.td-hero-sub {
-  color: var(--td-photo-ink-3);
-  font-size: 12px;
-}
-
-.td-hearts {
-  display: inline-flex;
-  color: var(--td-heart);
-}
-
-.td-hearts > span {
-  opacity: 0.28;
-}
-
-.td-hearts > span.is-on {
-  opacity: 1;
-}
-
-.td-hearts--hero {
-  color: #ff7a9a;
-  font-size: 14px;
-  letter-spacing: 1.5px;
-}
-
-.td-hearts--big {
-  font-size: 26px;
-  letter-spacing: 3px;
-  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--td-heart) 50%, transparent));
-}
-
-/* --- os quatro números (Info Row) ---------------------------------------- */
-
-.td-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.td-stats li {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  min-width: 0;
-  height: 73px;
-  padding: 16px 18px;
-  border-radius: 22px;
-  box-shadow: inset 0 1px 1px var(--glass-shine);
-  -webkit-backdrop-filter: blur(15px);
-  backdrop-filter: blur(15px);
-}
-
-.td-stat-chip {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
-  color: var(--tone);
-}
-
-.td-stat-chip.lg {
-  --lg-fill: linear-gradient(var(--glass-soft), var(--glass-soft));
-}
-
-.td-stat-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.td-stat-text strong,
-.td-stat-text span {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.td-stat-text strong {
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: -0.5px;
-}
-
-.td-stat-text span {
-  color: var(--text-secondary);
-  font-size: 12px;
+  --kicker: #7fd8c4;
 }
 
 /* --- colunas e cartões ----------------------------------------------------- */
@@ -474,7 +306,7 @@
 .td-col {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 32px;
   min-width: 0;
 }
 
@@ -498,15 +330,15 @@
   min-width: 0;
 }
 
+/* O bloco é uma seção da página, como na Grade e na Lista: o título sobre o
+   fundo da casca e o conteúdo logo abaixo. Sem moldura de vidro em volta —
+   ela punha um fundo dentro do fundo e um respiro dentro do respiro; o vidro
+   fica nos itens (fotos, mapa, memórias, vazios). */
 .td-card {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 24px;
-  border-radius: 24px;
-  box-shadow: inset 0 1px 1px var(--glass-shine), 0 18px 48px var(--glass-shadow);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
+  gap: 12px;
+  min-width: 0;
 }
 
 .td-card-head {
@@ -518,9 +350,10 @@
 
 .td-card-head h2 {
   margin: 0;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.4px;
+  line-height: 23px;
   white-space: nowrap;
 }
 
@@ -1959,20 +1792,40 @@ button.td-day-title:hover {
   font-size: 11px;
 }
 
+/* Rola de lado, e o `overflow-x` corta também na vertical: o anel e o brilho
+   da miniatura atual (2 + 16) precisam de 18 de respiro em volta, devolvidos
+   com margem negativa. Centra pelas pontas (`margin: auto` na primeira e na
+   última), não por `justify-content`: centrado, o começo de uma faixa maior
+   que a tela ficava à esquerda do zero da rolagem, fora de alcance. */
 .td-thumbs {
   position: relative;
   z-index: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
-  max-width: 100%;
-  height: 64px;
-  margin: 26px 0 0;
-  padding: 0;
+  max-width: calc(100% + 36px);
+  height: 100px;
+  margin: 8px -18px -18px;
+  padding: 18px;
   overflow-x: auto;
   list-style: none;
   scrollbar-width: none;
+}
+
+.td-thumbs::-webkit-scrollbar {
+  display: none;
+}
+
+.td-thumbs > :first-child {
+  margin-left: auto;
+}
+
+.td-thumbs > :last-child {
+  margin-right: auto;
+}
+
+.td-thumbs > li {
+  flex: none;
 }
 
 .td-thumb {
@@ -2033,6 +1886,13 @@ button.td-day-title:hover {
 
 /* --- telas menores ---------------------------------------------------------- */
 
+/* Como a `.page-area` (ui.css): sem o painel, a direita encolhe junto. */
+@media (max-width: 1359px) {
+  .td {
+    padding-right: var(--space-6);
+  }
+}
+
 @media (max-width: 1180px) {
   .td-columns {
     flex-direction: column;
@@ -2043,36 +1903,69 @@ button.td-day-title:hover {
     width: auto;
   }
 
-  .td-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 760px) {
   .td {
-    padding: 8px 0 32px;
+    padding: var(--space-3) 0 var(--space-6);
     overflow: visible;
   }
 
+  /* No celular a barra não cabe por cima da foto: vai no topo do herói, em fluxo. */
   .td-hero {
-    height: 380px;
-    border-radius: 28px;
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 300px;
   }
 
-  .td-hero-info {
-    top: auto;
-    bottom: 24px;
-    left: 20px;
-    right: 20px;
+  .td-top {
+    position: relative;
+    inset: auto;
+    flex-wrap: nowrap;
+    padding: 16px 16px 0;
+  }
+
+  /* As ações numa fila só, que rola de lado, em vez de quatro linhas sobre a foto. */
+  .td-top-actions {
+    flex-wrap: nowrap;
+    min-width: 0;
+    overflow-x: auto;
+  }
+
+  /* A linha quebra no celular: o fio sobraria no começo da linha de baixo. */
+  .td-hero-meta {
+    column-gap: 16px;
+  }
+
+  .td-hero-meta li + li {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .td-hero-foot {
+    position: relative;
+    inset: auto;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    margin-top: auto;
+    padding: 64px 20px 28px;
+  }
+
+  .td-hero-side {
+    align-items: flex-start;
+    max-width: none;
+    text-align: left;
   }
 
   .td-hero-title {
-    font-size: 40px;
-    line-height: 44px;
-    letter-spacing: -1.4px;
+    font-size: 36px;
+    line-height: 40px;
+    letter-spacing: -1.2px;
   }
 
-  .td-stats,
   .td-lgrid {
     grid-template-columns: minmax(0, 1fr);
   }

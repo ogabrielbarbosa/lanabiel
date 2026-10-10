@@ -55,6 +55,8 @@ import type {
   TripsData,
   UploadPhotosResult,
 } from '../data/trips'
+import { searchStockPhotos, trackStockDownload } from '../data/stockCovers'
+import type { StockPhoto, StockSearchResult } from '../data/stockCovers'
 import { ensureWorldCity, searchWorldCities } from '../data/worldCities'
 import type { CalCity, CalendarEvent } from '../domain/calendar'
 import type { ListItem } from '../domain/list'
@@ -166,6 +168,9 @@ export interface TripsApi {
     files: readonly File[],
     onProgress?: (done: number, total: number) => void,
   ) => Promise<UploadPhotosResult>
+  /** ADR 0025: fotos do destino no Unsplash, para a capa da Nova viagem. */
+  searchStockPhotos: (query: string) => Promise<StockSearchResult>
+  trackStockDownload: (photo: StockPhoto) => Promise<void>
   /** Uma foto nova que já vira a capa (Nova viagem, R25). */
   uploadCover: (coupleId: string, trip: TripRef, file: File) => Promise<CoverResult>
   setCaption: (photoId: string, caption: string | null) => Promise<TripWrite<TripPhoto>>
@@ -223,6 +228,8 @@ export function tripsApi(db: Db): TripsApi {
     saveMemory: (coupleId, tripId, draft) => saveTripMemory(db, key(coupleId, tripId), draft),
     deleteMemory: (tripId) => deleteTripMemory(db, tripId),
     uploadPhotos: (coupleId, trip, files, onProgress) => uploadTripPhotos(db, target(coupleId, trip), files, { onProgress }),
+    searchStockPhotos: (query) => searchStockPhotos(db, query),
+    trackStockDownload: (photo) => trackStockDownload(db, photo),
     uploadCover: (coupleId, trip, file) => uploadTripCover(db, target(coupleId, trip), file),
     setCaption: (photoId, caption) => setPhotoCaption(db, photoId, caption),
     setFavorite: (photoId, favorite) => setPhotoFavorite(db, photoId, favorite),

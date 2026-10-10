@@ -13,7 +13,7 @@
 // um dia para o outro não fica presa ao dia em que montou.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
+import type { ReactNode, RefObject } from 'react'
 import {
   ArrowDownUp,
   ArrowUpRight,
@@ -50,15 +50,20 @@ import {
   relativeAge,
   secondaryLine,
   sortItems,
+  searchOrigin,
   whereWeAre,
 } from '../domain/list'
 import type { ListCategory, ListFilters, ListItem, ListSort } from '../domain/list'
 import { localDateOf, shortDayMonth } from '../lib/date'
+import { ChipRow } from '../ui/ChipRow'
+import { PageArea, PageHeader, PageToolbar } from '../ui/Page'
+import { Loading, Skeleton } from '../ui/Skeleton'
 import type { ListApi } from './api'
 import { AddItemModal } from './AddItemModal'
 import { CATEGORY_ICONS, catClass } from './categories'
 import { ListContext, failureMessage, memberName } from './context'
 import type { ListContextValue, ListMember } from './context'
+import { useMediaQuery } from '../app/useMediaQuery'
 import { ItemSheet } from './ItemSheet'
 import { ListPanel } from './ListPanel'
 import { MarkDoneModal } from './MarkDoneModal'
@@ -217,12 +222,8 @@ export function ListScreen({ api }: ListScreenProps) {
       {snap ? (
         <Loaded snap={snap} api={api} today={snap.today} urls={urls} avatars={avatars} stale={stale} reload={reload} />
       ) : (
-        <div className="ls-area">
-          <header className="ls-header">
-            <div className="ls-title">
-              <h1>Nossa lista</h1>
-            </div>
-          </header>
+        <PageArea className="ls-area">
+          <ListHeader />
           {loadError !== null ? (
             <div className="ls-load-error lg" role="alert">
               <p>Não deu pra carregar a lista: {loadError}</p>
@@ -231,9 +232,9 @@ export function ListScreen({ api }: ListScreenProps) {
               </button>
             </div>
           ) : (
-            <Skeleton />
+            <ListSkeleton />
           )}
-        </div>
+        </PageArea>
       )}
       {!snap && <EmptyPanel busy={loadError === null} />}
     </div>
@@ -254,21 +255,79 @@ function EmptyPanel({ busy = false }: { busy?: boolean }) {
   )
 }
 
-function Skeleton() {
+/** A largura de cada chip do esqueleto: a faixa real, no tamanho de "Todos 1", "Restaurantes 0"… */
+const SKELETON_CHIPS = [84, 104, 108, 140, 104, 116, 132, 96]
+
+/** O corpo da Lista enquanto lê: chips, filtros e a grade, nas formas reais. */
+function ListSkeleton() {
   return (
-    <div className="ls-skeleton" aria-busy="true">
-      <span className="visually-hidden">Carregando a lista…</span>
-      <div className="ls-skeleton-chips" aria-hidden="true">
-        {Array.from({ length: 6 }, (_, i) => (
-          <span key={i} />
+    <Loading label="Carregando a lista…" className="ls-loading">
+      <ChipRow label="" decorative>
+        {SKELETON_CHIPS.map((width, i) => (
+          <Skeleton key={i} width={width} height={38} text />
         ))}
-      </div>
+      </ChipRow>
+      <PageToolbar>
+        <Skeleton width={232} height={32} text />
+        <Skeleton width={112} height={32} text />
+      </PageToolbar>
       <div className="ls-grid" aria-hidden="true">
         {Array.from({ length: 8 }, (_, i) => (
-          <div key={i} className="ls-skeleton-card lg" />
+          <Skeleton key={i} height={220} radius="var(--radius-lg)" />
         ))}
       </div>
-    </div>
+    </Loading>
+  )
+}
+
+/**
+ * O cabeçalho da Lista: título, busca e _Adicionar_. Não depende do banco —
+ * aparece desde o primeiro quadro. Enquanto a leitura não chega, a busca não
+ * aceita texto e o botão não abre nada (mas estão lá, com a cara de sempre).
+ */
+function ListHeader({
+  query = '',
+  onQuery,
+  onAdd,
+  searchRef,
+}: {
+  query?: string
+  onQuery?: (query: string) => void
+  onAdd?: () => void
+  searchRef?: RefObject<HTMLInputElement | null>
+}) {
+  const ready = onAdd !== undefined
+  return (
+    <PageHeader
+      title="Nossa lista"
+      actions={
+        <>
+          <label className="ls-search lg">
+            <Search size={16} aria-hidden="true" />
+            <span className="visually-hidden">Buscar na lista</span>
+            <input
+              ref={searchRef}
+              type="search"
+              placeholder="Buscar lugar, filme, comida…"
+              value={query}
+              readOnly={!ready}
+              aria-disabled={!ready || undefined}
+              onChange={(e) => onQuery?.(e.target.value)}
+            />
+            <kbd aria-hidden="true">{isMac() ? '⌘K' : 'Ctrl K'}</kbd>
+          </label>
+          <button
+            type="button"
+            className="ls-btn ls-btn--primary"
+            aria-disabled={!ready || undefined}
+            onClick={() => onAdd?.()}
+          >
+            <Plus size={17} aria-hidden="true" />
+            Adicionar
+          </button>
+        </>
+      }
+    />
   )
 }
 
@@ -300,6 +359,7 @@ function Loaded({
   // painel). Lido ao montar — o `Loaded` só monta com os dados, então o id já
   // pode ser conferido — e apagado no efeito abaixo. Id que não está na Lista
   // (a outra pessoa apagou) abre a tela sem ficha.
+  const wide = useMediaQuery('(min-width: 1100px)')
   const [overlay, setOverlay] = useState<Overlay>(() => {
     const id = peekListFocus()
     return id !== null && list.items.some((i) => i.id === id) ? { kind: 'sheet', itemId: id } : null
@@ -349,9 +409,14 @@ function Loaded({
     [ctx, snap.cities, today],
   )
 
+  const searchFrom = useMemo(
+    () => (me ? searchOrigin(ctx.stays, me.profileId, snap.cities, today, me.homeCity) : null),
+    [ctx.stays, me, snap.cities, today],
+  )
+
   const value = useMemo<ListContextValue | null>(
     () =>
-      me
+      me && searchFrom
         ? {
             api,
             coupleId: ctx.couple.id,
@@ -362,22 +427,24 @@ function Loaded({
             photos: list.photos,
             urls,
             where,
+            searchFrom,
             today,
             reload,
           }
         : null,
-    [api, ctx.couple.id, me, members, list, urls, where, today, reload],
+    [api, ctx.couple.id, me, members, list, urls, where, searchFrom, today, reload],
   )
 
   if (!value) {
     // Saiu do casal em outro aparelho: nada aqui é mais dele.
     return (
       <>
-        <div className="ls-area">
+        <PageArea className="ls-area">
+          <ListHeader />
           <div className="ls-load-error lg" role="alert">
             <p>Este espaço mudou. Recarregue a página.</p>
           </div>
-        </div>
+        </PageArea>
         <EmptyPanel />
       </>
     )
@@ -396,9 +463,6 @@ function Loaded({
   const namesById = Object.fromEntries(memberList.map((m) => [m.profileId, m.name]))
 
   const activeFilters = describeFilters(filters, namesById)
-  const header =
-    `${plural(totals.total, 'coisa', 'coisas')} · ${totals.done} já feitas` +
-    (activeFilters.length > 0 ? ` · filtrando: ${activeFilters.map((f) => f.summary).join(', ')}` : '')
 
   function patchFilters(patch: Partial<ListFilters>) {
     setFilters((f) => {
@@ -431,6 +495,9 @@ function Loaded({
   }
 
   const open = (itemId: string) => setOverlay({ kind: 'sheet', itemId })
+  // Com o painel à vista (o mesmo corte de list.css), o detalhe entra no lugar
+  // dele e a grade segue clicável; sem o painel, é a gaveta sobreposta.
+  const sheetInPanel = overlay?.kind === 'sheet' && wide
   const markDone = (item: ListItem) => setOverlay({ kind: 'done', item })
 
   let body: ReactNode
@@ -527,6 +594,7 @@ function Loaded({
                   memberList={memberList}
                   today={today}
                   pendingFeatured={pending.has(`featured:${item.id}`)}
+                  open={sheetInPanel && overlay.itemId === item.id}
                   onOpen={() => open(item.id)}
                   onMarkDone={() => markDone(item)}
                   onToggleFeatured={() => void toggleFeatured(item)}
@@ -541,34 +609,13 @@ function Loaded({
 
   return (
     <ListContext.Provider value={value}>
-      <div className="ls-area">
-        <header className="ls-header">
-          <div className="ls-title">
-            <p className="ls-kicker">
-              <Sparkles size={13} aria-hidden="true" />
-              <span>{header}</span>
-            </p>
-            <h1>Nossa lista</h1>
-          </div>
-          <div className="ls-controls">
-            <label className="ls-search lg">
-              <Search size={16} aria-hidden="true" />
-              <span className="visually-hidden">Buscar na lista</span>
-              <input
-                ref={searchRef}
-                type="search"
-                placeholder="Buscar lugar, filme, comida…"
-                value={filters.query}
-                onChange={(e) => patchFilters({ query: e.target.value })}
-              />
-              <kbd aria-hidden="true">{isMac() ? '⌘K' : 'Ctrl K'}</kbd>
-            </label>
-            <button type="button" className="ls-btn ls-btn--primary" onClick={() => setOverlay({ kind: 'add' })}>
-              <Plus size={17} aria-hidden="true" />
-              Adicionar
-            </button>
-          </div>
-        </header>
+      <PageArea className="ls-area">
+        <ListHeader
+          query={filters.query}
+          onQuery={(query) => patchFilters({ query })}
+          onAdd={() => setOverlay({ kind: 'add' })}
+          searchRef={searchRef}
+        />
 
         {stale && (
           <p className="ls-notice lg" role="status">
@@ -583,7 +630,7 @@ function Loaded({
 
         {visibleCount > 0 && (
           <>
-            <div className="ls-chips" role="group" aria-label="Categorias">
+            <ChipRow label="Categorias">
               <CategoryChip
                 label="Todos"
                 count={totals.total}
@@ -605,9 +652,9 @@ function Loaded({
                   />
                 )
               })}
-            </div>
+            </ChipRow>
 
-            <div className="ls-filters">
+            <PageToolbar className="ls-filters">
               <div className="ls-segmented lg" role="group" aria-label="Status">
                 {(
                   [
@@ -672,25 +719,37 @@ function Loaded({
                 </select>
                 <ChevronDown size={13} aria-hidden="true" className="ls-sort-chevron" />
               </label>
-            </div>
+            </PageToolbar>
           </>
         )}
 
         {body}
-      </div>
+      </PageArea>
 
-      <ListPanel
-        showCategoryProgress={settings.showCategoryProgress}
-        showDailySuggestion={settings.showDailySuggestion}
-        hidden={hidden}
-        onShowDone={() => setFilters({ ...EMPTY_FILTERS, status: 'done' })}
-        onShowRecent={() => {
-          setFilters(EMPTY_FILTERS)
-          setSort('recent')
-        }}
-        onOpen={open}
-        onMarkDone={markDone}
-      />
+      {sheetInPanel ? (
+        <ItemSheet
+          key={overlay.itemId}
+          placement="panel"
+          itemId={overlay.itemId}
+          onClose={() => setOverlay(null)}
+          onEdit={(item) => setOverlay({ kind: 'edit', item })}
+          onMarkDone={(item) => setOverlay({ kind: 'done', item })}
+          onDeleted={() => void afterWrite()}
+        />
+      ) : (
+        <ListPanel
+          showCategoryProgress={settings.showCategoryProgress}
+          showDailySuggestion={settings.showDailySuggestion}
+          hidden={hidden}
+          onShowDone={() => setFilters({ ...EMPTY_FILTERS, status: 'done' })}
+          onShowRecent={() => {
+            setFilters(EMPTY_FILTERS)
+            setSort('recent')
+          }}
+          onOpen={open}
+          onMarkDone={markDone}
+        />
+      )}
 
       {overlay?.kind === 'add' && (
         <AddItemModal
@@ -703,7 +762,7 @@ function Loaded({
       {overlay?.kind === 'edit' && (
         <AddItemModal mode="edit" item={overlay.item} onClose={() => setOverlay(null)} onSaved={() => void afterWrite()} />
       )}
-      {overlay?.kind === 'sheet' && (
+      {overlay?.kind === 'sheet' && !wide && (
         <ItemSheet
           itemId={overlay.itemId}
           onClose={() => setOverlay(null)}
@@ -721,37 +780,32 @@ function Loaded({
 
 interface ActiveFilter {
   key: string
-  /** No cabeçalho: "Séries", "já feitas", "só Gabriel". */
-  summary: string
   /** No chip do estado vazio: "Séries", "Já fizemos", "Gabriel". */
   chip: string
   clear: Partial<ListFilters>
 }
 
 /**
- * Os filtros ativos, na ordem do frame `DXg1A`. "Quem" diz "só {nome}" e não
- * "do {nome}": o artigo por pessoa seria inferir gênero pelo nome (a mesma
- * decisão do T2 no corpo do estado vazio), e "só" é o que o filtro faz (R4).
+ * Os filtros ativos, na ordem do frame `DXg1A`, como chips do estado vazio.
  */
 function describeFilters(filters: ListFilters, names: Record<string, string>): ActiveFilter[] {
   const out: ActiveFilter[] = []
   if (filters.category !== 'all') {
     const label = CATEGORY_LABELS[filters.category].many
-    out.push({ key: 'category', summary: label, chip: label, clear: { category: 'all' } })
+    out.push({ key: 'category', chip: label, clear: { category: 'all' } })
   }
-  if (filters.status === 'done') out.push({ key: 'status', summary: 'já feitas', chip: 'Já fizemos', clear: { status: 'all' } })
-  if (filters.status === 'want') out.push({ key: 'status', summary: 'a fazer', chip: 'Quero fazer', clear: { status: 'all' } })
+  if (filters.status === 'done') out.push({ key: 'status', chip: 'Já fizemos', clear: { status: 'all' } })
+  if (filters.status === 'want') out.push({ key: 'status', chip: 'Quero fazer', clear: { status: 'all' } })
   if (filters.status === 'done' && filters.who !== 'all') {
     const name = filters.who === 'both' ? null : (names[filters.who] ?? 'Alguém')
     out.push({
       key: 'who',
-      summary: name ? `só ${name}` : 'os dois',
       chip: name ?? '♥ os dois',
       clear: { who: 'all' },
     })
   }
   const query = filters.query.trim()
-  if (query !== '') out.push({ key: 'query', summary: `“${query}”`, chip: `“${query}”`, clear: { query: '' } })
+  if (query !== '') out.push({ key: 'query', chip: `“${query}”`, clear: { query: '' } })
   return out
 }
 
@@ -841,6 +895,7 @@ function ItemCard({
   memberList,
   today,
   pendingFeatured,
+  open = false,
   onOpen,
   onMarkDone,
   onToggleFeatured,
@@ -851,6 +906,8 @@ function ItemCard({
   memberList: readonly ListMember[]
   today: string
   pendingFeatured: boolean
+  /** Este item está aberto no painel da direita. */
+  open?: boolean
   onOpen: () => void
   onMarkDone: () => void
   onToggleFeatured: () => void
@@ -875,7 +932,7 @@ function ItemCard({
   }
 
   return (
-    <article className={`ls-card ${catClass(item.category)} lg`} aria-label={item.name}>
+    <article className={`ls-card ${catClass(item.category)} ${open ? 'is-open' : ''} lg`} aria-label={item.name}>
       <ItemPhoto category={item.category} url={url} className="ls-card-photo">
         {item.featured && (
           <span className="ls-card-emphasis" title="Em destaque">
@@ -913,7 +970,7 @@ function ItemCard({
       </ItemPhoto>
       <div className="ls-card-body">
         <h3 className="ls-card-name">
-          <button type="button" className="ls-card-open" onClick={onOpen}>
+          <button type="button" className="ls-card-open" aria-current={open || undefined} onClick={onOpen}>
             {item.name}
           </button>
         </h3>

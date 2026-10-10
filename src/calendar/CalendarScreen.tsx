@@ -26,7 +26,6 @@ import { clearCalendarFocus, peekCalendarFocus } from '../app/calendarFocus'
 import { PanelSkeleton } from '../app/PanelSkeleton'
 import type { DataResult } from '../data/result'
 import type { SettingsData } from '../data/settings'
-import { countDrawn } from '../domain/calendar'
 import type { CalCity, CalendarEvent, EventDraft, Run } from '../domain/calendar'
 import type { CalendarApi, CalendarData } from './api'
 import { CalendarModals } from './CalendarModals'
@@ -37,8 +36,10 @@ import { FirstPeriodCard } from './FirstPeriodCard'
 import type { FirstPeriodCardProps } from './FirstPeriodCard'
 import { CalendarPanel } from './CalendarPanel'
 import { BareMonthGrid, MonthView } from './MonthView'
-import { gridBounds, monthBounds, monthOf, monthTitle, shiftYearMonth, yearKicker } from './view'
+import { gridBounds, monthOf, monthTitle, shiftYearMonth } from './view'
 import { YearView } from './YearView'
+import { PageArea, PageHeader } from '../ui/Page'
+import { Loading, Skeleton } from '../ui/Skeleton'
 import './calendar.css'
 
 export interface CalendarScreenProps {
@@ -190,12 +191,10 @@ export function CalendarScreen({ api, renderCityPicker = defaultCityPicker }: Ca
   if (!snap) {
     return (
       <div className="cal">
-        <div className="cal-area">
-          <header className="cal-header">
-            <div className="cal-title">
-              <h1>Calendário</h1>
-            </div>
-          </header>
+        <PageArea className="cal-area">
+          <Header visibleMonth={visibleMonth} onShift={(d) => setVisibleMonth(shiftYearMonth(visibleMonth, d))}>
+            <PendingControls />
+          </Header>
           {loadError !== null ? (
             <div className="cal-load-error lg" role="alert">
               <p>Não deu pra carregar o calendário: {loadError}</p>
@@ -204,9 +203,9 @@ export function CalendarScreen({ api, renderCityPicker = defaultCityPicker }: Ca
               </button>
             </div>
           ) : (
-            <Skeleton />
+            <CalendarSkeleton />
           )}
-        </div>
+        </PageArea>
         <EmptyPanel busy={loadError === null} />
       </div>
     )
@@ -249,16 +248,46 @@ function EmptyPanel({ busy = false }: { busy?: boolean }) {
   )
 }
 
-function Skeleton() {
+/** O corpo do Calendário enquanto lê: a grade do mês, cinco semanas. */
+function CalendarSkeleton() {
   return (
-    <div className="cal-skeleton" aria-busy="true">
-      <span className="visually-hidden">Carregando o calendário…</span>
+    <Loading label="Carregando o calendário…">
       <div className="cal-skeleton-grid" aria-hidden="true">
         {Array.from({ length: 35 }, (_, i) => (
-          <span key={i} />
+          <Skeleton key={i} height={112} radius={16} />
         ))}
       </div>
-    </div>
+    </Loading>
+  )
+}
+
+/**
+ * Os controles do cabeçalho antes da leitura: no lugar e com a cara de
+ * sempre, sem ação. A visão (Mês/Ano) ainda não está marcada — a padrão vem
+ * das preferências do casal, que estão no banco.
+ */
+function PendingControls() {
+  return (
+    <>
+      <div className="cal-segmented lg" role="group" aria-label="Visão">
+        <button type="button" aria-pressed={false} aria-disabled="true">
+          <CalendarDays size={14} aria-hidden="true" />
+          Mês
+        </button>
+        <button type="button" aria-pressed={false} aria-disabled="true">
+          <CalendarRange size={14} aria-hidden="true" />
+          Ano
+        </button>
+      </div>
+      <button type="button" className="cal-btn lg" aria-disabled="true">
+        <CalendarCheck size={16} aria-hidden="true" />
+        Hoje
+      </button>
+      <button type="button" className="cal-btn cal-btn--primary" aria-disabled="true">
+        <Plus size={17} aria-hidden="true" />
+        Novo evento
+      </button>
+    </>
   )
 }
 
@@ -362,8 +391,8 @@ function Loaded({
     // e nunca o primeiro período (seção 7).
     return (
       <div className="cal">
-        <div className="cal-area">
-          <Header visibleMonth={visibleMonth} kicker={null} onShift={(d) => setVisibleMonth(shiftYearMonth(visibleMonth, d))}>
+        <PageArea className="cal-area">
+          <Header visibleMonth={visibleMonth} onShift={(d) => setVisibleMonth(shiftYearMonth(visibleMonth, d))}>
             <button type="button" className="cal-btn lg" onClick={goToToday}>
               <CalendarCheck size={16} aria-hidden="true" />
               Hoje
@@ -379,7 +408,7 @@ function Loaded({
             showAdjacentDays={settings.showAdjacentDays}
             today={today}
           />
-        </div>
+        </PageArea>
         <EmptyPanel />
       </div>
     )
@@ -389,31 +418,26 @@ function Loaded({
     // Saiu do casal em outro aparelho: nada aqui é mais dele.
     return (
       <div className="cal">
-        <div className="cal-area">
+        <PageArea className="cal-area">
+          <Header visibleMonth={visibleMonth} onShift={(d) => setVisibleMonth(shiftYearMonth(visibleMonth, d))}>
+            <PendingControls />
+          </Header>
           <div className="cal-load-error lg" role="alert">
             <p>Este espaço mudou. Recarregue a página.</p>
           </div>
-        </div>
+        </PageArea>
         <EmptyPanel />
       </div>
     )
   }
 
-  const month = monthBounds(visibleMonth)
-  const counts = countDrawn(month.from, month.to, value.stays, value.members)
-  const kicker =
-    view === 'month'
-      ? `${counts.home1 + counts.home2 + counts.away} dias juntos · ${counts.apart} separados`
-      : yearKicker(visibleMonth.year, today, value.stays, value.members)
-
   return (
     <CalendarContext.Provider value={value}>
       <div className="cal">
-        <div className="cal-area">
+        <PageArea className="cal-area">
           <Header
             visibleMonth={visibleMonth}
             title={view === 'year' ? String(visibleMonth.year) : undefined}
-            kicker={kicker}
             onShift={(d) => shiftMonth(view === 'year' ? d * 12 : d)}
           >
             <div className="cal-segmented lg" role="group" aria-label="Visão">
@@ -439,7 +463,7 @@ function Loaded({
           {notices}
 
           {view === 'month' ? <MonthView /> : <YearView />}
-        </div>
+        </PageArea>
 
         <aside className="cal-panel lg" aria-label="Onde a gente está">
           <div className="cal-panel-scroll">
@@ -459,36 +483,29 @@ function Loaded({
 function Header({
   visibleMonth,
   title,
-  kicker,
   onShift,
   children,
 }: {
   visibleMonth: YearMonth
   title?: string
-  kicker: string | null
+  /** As setas andam pelos meses mesmo com a tela ainda lendo. */
   onShift: (delta: number) => void
   children: ReactNode
 }) {
   return (
-    <header className="cal-header">
-      <div className="cal-title">
-        {kicker !== null && (
-          <p className="cal-kicker">
-            <span className="cal-kicker-dot" aria-hidden="true" />
-            {kicker}
-          </p>
-        )}
-        <div className="cal-title-row">
-          <h1>{title ?? monthTitle(visibleMonth)}</h1>
+    <PageHeader
+      title={title ?? monthTitle(visibleMonth)}
+      titleAside={
+        <>
           <button type="button" className="cal-round-btn lg" aria-label="Anterior" onClick={() => onShift(-1)}>
             <ChevronLeft size={16} aria-hidden="true" />
           </button>
           <button type="button" className="cal-round-btn lg" aria-label="Próximo" onClick={() => onShift(1)}>
             <ChevronRight size={16} aria-hidden="true" />
           </button>
-        </div>
-      </div>
-      <div className="cal-controls">{children}</div>
-    </header>
+        </>
+      }
+      actions={children}
+    />
   )
 }

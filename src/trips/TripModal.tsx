@@ -12,13 +12,19 @@
 //   `/viagens`. Na falha fica aberto com o que foi digitado e a causa (R27).
 // ─────────────────────────────────────────────────────────────────────────────
 //
+// ADR 0025: a Nova viagem pergunta quem viaja (os dois ou um só) e não pede
+// mais hospedagem, saídas nem nota (a hospedagem se edita no Detalhe). O topo
+// da coluna é o banner da capa: a primeira foto do destino no Unsplash, que a
+// pessoa troca por outra sugestão ou por um arquivo seu (a logo do lugar).
+//
 // Criar (R25): `resolveCity` (cidade do mundo vira linha do casal só agora) →
-// `createTrip` (evento + pintura + `trips` + preparação + hospedagem + saídas,
-// numa transação) → a capa, se houver (`uploadCover`). Capa que falha não
-// desfaz a viagem: o detalhe abre com o aviso.
+// `createTrip` (evento + pintura de quem viaja + `trips` + preparação + capa do
+// Unsplash, numa transação) → o arquivo da capa, se houver (`uploadCover`).
+// Capa que falha não desfaz a viagem: o detalhe abre com o aviso.
 //
 // Editar (R26): o EVENTO muda (`updateTripEvent`, nunca repinta — ADR 0018),
-// e só o que mudou em `trips` (hospedagem, capa) e nas saídas é gravado.
+// e só o que mudou na capa é gravado em `trips`. Quem viaja não se edita aqui:
+// mudar sem repintar deixaria o calendário dizendo outra coisa.
 //
 // _Ao salvar_ é a prévia da pintura: `paintStays` + `bandsByDay` sobre as
 // estadias lidas, a mesma regra do `create_event` (A2 da Fase 5). _Da lista em
@@ -26,7 +32,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import { Check, House, ImagePlus, PlaneLanding, PlaneTakeoff, Sparkles, StickyNote, Trash2, Type } from 'lucide-react'
+import { Check, Heart, ImageIcon, ImagePlus, PlaneLanding, PlaneTakeoff, Sparkles, StickyNote, Trash2, Type } from 'lucide-react'
 import { navigate } from '../app/router'
 import { BandStrip, CalDialog, ModalField } from '../calendar/CalDialog'
 import { CityPicker } from '../calendar/CityPicker'
@@ -35,21 +41,23 @@ import type { CityChoice } from '../calendar/cityChoice'
 import { bandsByDay, daysBetween, monthNameOf } from '../calendar/modalPreview'
 import { Avatar, CouplePair, DateField } from '../calendar/parts'
 import { bandColor } from '../calendar/view'
+import { stockCoverOf } from '../data/stockCovers'
+import type { StockPhoto } from '../data/stockCovers'
 import { tripEventDraft } from '../data/trips'
 import { CALENDAR_LIMITS, entriesForEvent, paintStays, shortCityName, validateEvent } from '../domain/calendar'
 import type { Band } from '../domain/calendar'
 import { CATEGORY_LABELS } from '../domain/list'
 import { arrowRangeLabel, destinationLabel, itemsLabel, nearbyListItems, sortPhotos } from '../domain/tripDerive'
-import { TRIP_LIMITS } from '../domain/trips'
-import type { NewTripDraft, Trip, TripDeparture } from '../domain/trips'
+import type { NewTripDraft, StockCover, Trip } from '../domain/trips'
 import { addDays, daysInclusive, diffDays, weekdayDayMonthYear, weekdayOf } from '../lib/date'
 import { CATEGORY_ICONS, catClass } from '../list/categories'
 import { ItemPhoto } from '../list/parts'
 import { cityPickerApi } from './api'
 import type { TripRef } from './api'
-import { tripFailureMessage, useTrips } from './context'
+import { coverPath, tripFailureMessage, useTrips } from './context'
 import type { TripPerson } from './context'
 import { tripPath } from './links'
+import { StockCredit } from './parts'
 import './trips.css'
 
 export type TripModalProps =
@@ -59,19 +67,25 @@ export type TripModalProps =
 const SUBTITLE = 'Cria o período no calendário e puxa itens da lista do destino'
 const EDIT_NOTICE = 'Mudar datas ou destino aqui não muda o período. Pra isso, ajuste no calendário.'
 const COVER_FAILED = 'A viagem foi salva, mas a capa não subiu.'
-const DEPARTURE_PLACEHOLDER = 'voo GRU → FLN · 1h05'
+/** Sugestões do Unsplash na fila de miniaturas, além da que está no banner. */
+const STOCK_OPTIONS = 6
 const STRIP_WEEKDAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
 /** O mini-mês mostra no máximo cinco semanas (uma viagem pode ter 366 dias). */
 const STRIP_MAX_DAYS = 35
 /** R24: até 3 nomes da Lista. */
 const LIST_PREVIEW = 3
 
-type Field = 'title' | 'cityId' | 'startsOn' | 'endsOn' | 'note' | 'lodgingName'
+type Field = 'title' | 'cityId' | 'startsOn' | 'endsOn' | 'note'
 
 type CoverChoice =
   | { kind: 'keep' }
   | { kind: 'photo'; id: string }
   | { kind: 'file'; file: File; url: string | null }
+  /** `auto`: escolhida pelo app; trocar o destino troca a foto. Tocada pela pessoa, fica. */
+  | { kind: 'stock'; photo: StockPhoto; auto: boolean }
+
+/** O que a busca no Unsplash devolveu para o destino da vez. */
+type StockState = { query: string; photos: StockPhoto[] } | { query: string; photos: null }
 
 interface FormState {
   title: string
@@ -79,9 +93,8 @@ interface FormState {
   startsOn: string
   endsOn: string
   note: string
-  lodgingName: string
-  /** Por `profileId`: o "voo POA → FLN · 55min" de cada um. */
-  departures: Record<string, string>
+  /** `both`, ou o `profileId` de quem vai sozinho (só na Nova viagem). */
+  who: 'both' | string
   cover: CoverChoice
 }
 
@@ -89,7 +102,7 @@ const trimOrNull = (s: string): string | null => (s.trim() === '' ? null : s.tri
 
 function initialState(props: TripModalProps, cities: ReturnType<typeof useTrips>['cities']): FormState {
   if (props.mode === 'new') {
-    return { title: '', dest: null, startsOn: '', endsOn: '', note: '', lodgingName: '', departures: {}, cover: { kind: 'keep' } }
+    return { title: '', dest: null, startsOn: '', endsOn: '', note: '', who: 'both', cover: { kind: 'keep' } }
   }
   const t = props.trip
   return {
@@ -98,8 +111,7 @@ function initialState(props: TripModalProps, cities: ReturnType<typeof useTrips>
     startsOn: t.startsOn,
     endsOn: t.endsOn,
     note: t.note ?? '',
-    lodgingName: t.lodging.name ?? '',
-    departures: Object.fromEntries(t.departures.map((d) => [d.profileId, d.note ?? ''])),
+    who: t.travelers === 'solo' && t.travelerId ? t.travelerId : 'both',
     cover: { kind: 'keep' },
   }
 }
@@ -129,7 +141,7 @@ export function TripModal(props: TripModalProps) {
   const { onClose } = props
   const editing = props.mode === 'edit'
   const ctx = useTrips()
-  const { api, coupleId, people, members, stays, settings, today, cities, listItems, urls, events, reload, showNotice } = ctx
+  const { api, coupleId, me, people, members, stays, settings, today, cities, listItems, urls, events, reload, showNotice } = ctx
   const [s, setS] = useState<FormState>(() => initialState(props, cities))
   const [fieldError, setFieldError] = useState<{ field: Field; message: string } | null>(null)
   const [failure, setFailure] = useState<string | null>(null)
@@ -139,6 +151,7 @@ export function TripModal(props: TripModalProps) {
   const uid = useId()
   const fid = (name: string) => `${uid}-${name}`
   const slots: TripPerson[] = [people[1], people[2]]
+  const [stock, setStock] = useState<StockState | null>(null)
 
   // A prévia da capa escolhida é uma URL local; solta quando troca ou fecha.
   const coverUrl = s.cover.kind === 'file' ? s.cover.url : null
@@ -152,6 +165,29 @@ export function TripModal(props: TripModalProps) {
   useEffect(() => {
     if (fieldError) document.getElementById(`${uid}-${fieldError.field}`)?.focus()
   }, [fieldError, uid])
+
+  // A busca no Unsplash a cada destino. Na Nova viagem, a primeira foto vira a
+  // capa sozinha, a menos que a pessoa já tenha escolhido outra coisa.
+  const stockQuery = s.dest ? shortCityName(destInfo(s.dest).name) : null
+  useEffect(() => {
+    if (stockQuery === null) return
+    let live = true
+    void api.searchStockPhotos(stockQuery).then((result) => {
+      if (!live) return
+      const photos = result.status === 'ok' ? result.photos.slice(0, STOCK_OPTIONS) : null
+      setStock({ query: stockQuery, photos })
+      if (editing) return
+      setS((prev) => {
+        const replaceable = prev.cover.kind === 'keep' || (prev.cover.kind === 'stock' && prev.cover.auto)
+        if (!replaceable) return prev
+        const first = photos?.[0]
+        return { ...prev, cover: first ? { kind: 'stock', photo: first, auto: true } : { kind: 'keep' } }
+      })
+    })
+    return () => {
+      live = false
+    }
+  }, [api, stockQuery, editing])
 
   function set(patch: Partial<FormState>) {
     setS((prev) => ({ ...prev, ...patch }))
@@ -172,7 +208,7 @@ export function TripModal(props: TripModalProps) {
 
   const preview = (() => {
     if (editing || !valid || !s.dest) return null
-    const draft = tripEventDraft({ title: '·', cityId: previewCityId(s.dest), startsOn: s.startsOn, endsOn: s.endsOn, note: null })
+    const draft = tripEventDraft({ title: '·', cityId: previewCityId(s.dest), startsOn: s.startsOn, endsOn: s.endsOn, note: null, ...travelersOf() })
     let n = 0
     const after = paintStays(stays, entriesForEvent(draft, members), () => `preview-${++n}`)
     const offset = (weekdayOf(s.startsOn) - (settings.weekStartsOn === 'mon' ? 1 : 0) + 7) % 7
@@ -202,13 +238,15 @@ export function TripModal(props: TripModalProps) {
 
   // --- gravar --------------------------------------------------------------
 
-  function departuresOf(): TripDeparture[] {
-    const old = props.mode === 'edit' ? props.trip.departures : []
-    return slots.map((p) => ({
-      profileId: p.profileId,
-      originCode: old.find((d) => d.profileId === p.profileId)?.originCode ?? null,
-      note: trimOrNull(s.departures[p.profileId] ?? ''),
-    }))
+  function travelersOf(): Pick<NewTripDraft, 'travelers' | 'travelerId'> {
+    return s.who === 'both' ? { travelers: 'both', travelerId: null } : { travelers: 'solo', travelerId: s.who }
+  }
+
+  const chosenStock: StockCover | null = s.cover.kind === 'stock' ? stockCoverOf(s.cover.photo) : null
+
+  /** A licença do Unsplash pede o aviso quando a foto é usada. Falhar não muda nada. */
+  function trackStock() {
+    if (s.cover.kind === 'stock') void api.trackStockDownload(s.cover.photo)
   }
 
   async function uploadCover(trip: TripRef): Promise<boolean> {
@@ -243,9 +281,11 @@ export function TripModal(props: TripModalProps) {
           cityId: city.id,
           startsOn: s.startsOn,
           endsOn: s.endsOn,
-          note: trimOrNull(s.note),
-          lodgingName: trimOrNull(s.lodgingName),
-          departures: departuresOf(),
+          note: null,
+          ...travelersOf(),
+          coverStock: chosenStock,
+          lodgingName: null,
+          departures: [],
         }
         const verdict = validateEvent(tripEventDraft(draft))
         if (!verdict.ok) {
@@ -258,6 +298,7 @@ export function TripModal(props: TripModalProps) {
           return
         }
         const id = created.value.id
+        trackStock()
         const ref: TripRef = { id, startsOn: draft.startsOn, endsOn: draft.endsOn, itinerary: [], prep: [], budget: [], photos: [] }
         if (!(await uploadCover(ref))) showNotice(COVER_FAILED)
         await reload()
@@ -285,19 +326,11 @@ export function TripModal(props: TripModalProps) {
         return
       }
       const failures: string[] = []
-      const lodgingName = trimOrNull(s.lodgingName)
-      if (lodgingName !== trip.lodging.name) {
-        const r = await api.updateTrip(trip.id, { lodging: { ...trip.lodging, name: lodgingName } })
-        if (r.status !== 'ok') failures.push(`a hospedagem: ${tripFailureMessage(r)}`)
-      }
-      const departures = departuresOf()
-      const changed = departures.some((d) => {
-        const old = trip.departures.find((o) => o.profileId === d.profileId)
-        return (old?.note ?? null) !== d.note
-      })
-      if (changed) {
-        const r = await api.saveDepartures(coupleId, trip.id, departures)
-        if (r.status !== 'ok') failures.push(`as saídas: ${tripFailureMessage(r)}`)
+      // A foto de vocês vence a do Unsplash: escolher a do Unsplash tira a capa própria.
+      if (chosenStock && (chosenStock.url !== trip.coverStock?.url || trip.coverPhotoId !== null)) {
+        const r = await api.updateTrip(trip.id, { coverStock: chosenStock, coverPhotoId: null })
+        if (r.status !== 'ok') failures.push(`a capa: ${tripFailureMessage(r)}`)
+        else trackStock()
       }
       if (s.cover.kind === 'photo' && s.cover.id !== trip.coverPhotoId) {
         const r = await api.updateTrip(trip.id, { coverPhotoId: s.cover.id })
@@ -396,18 +429,118 @@ export function TripModal(props: TripModalProps) {
 
   const destError = errorFor('cityId')
 
-  // Capa: na edição, até 3 fotos da viagem (a capa atual primeiro); na nova, a
-  // escolhida. Sempre o _Enviar_ no fim.
+  // Capa: o banner mostra a escolhida (ou, na edição, a atual); a fila embaixo
+  // tem até 3 fotos da viagem (só na edição) e as sugestões do Unsplash.
   const photos = props.mode === 'edit' ? sortPhotos(props.trip.photos) : []
   const currentCover = props.mode === 'edit' ? props.trip.coverPhotoId : null
   const photoOptions =
-    props.mode === 'edit'
-      ? [...photos.filter((p) => p.id === currentCover), ...photos.filter((p) => p.id !== currentCover)].slice(0, s.cover.kind === 'file' ? 2 : 3)
-      : []
+    props.mode === 'edit' ? [...photos.filter((p) => p.id === currentCover), ...photos.filter((p) => p.id !== currentCover)].slice(0, 3) : []
   const selectedPhoto = s.cover.kind === 'photo' ? s.cover.id : s.cover.kind === 'keep' ? currentCover : null
+  const stockPhotos = stock && stock.query === stockQuery ? stock.photos : null
+  const searching = stockQuery !== null && (stock === null || stock.query !== stockQuery)
+
+  const banner = ((): { url: string | null; credit: StockCover | null } => {
+    switch (s.cover.kind) {
+      case 'file':
+        return { url: s.cover.url, credit: null }
+      case 'stock':
+        return { url: s.cover.photo.url, credit: stockCoverOf(s.cover.photo) }
+      case 'photo': {
+        const path = photos.find((p) => p.id === (s.cover as { id: string }).id)?.path
+        return { url: (path && urls.get(path)) || null, credit: null }
+      }
+      case 'keep': {
+        if (props.mode !== 'edit') return { url: null, credit: null }
+        const path = coverPath(props.trip)
+        const own = (path && urls.get(path)) || null
+        if (own) return { url: own, credit: null }
+        return { url: props.trip.coverStock?.url ?? null, credit: props.trip.coverStock }
+      }
+    }
+  })()
+
+  const bannerHint =
+    stockQuery === null
+      ? 'Escolha o destino para ver uma foto de lá.'
+      : searching
+        ? `Procurando fotos de ${destShort}…`
+        : 'Envie uma foto ou a logo do lugar.'
+
+  // Quem viaja (ADR 0025): quem vê primeiro, depois a outra pessoa, depois os dois.
+  const whoOptions: { id: 'both' | string; label: string; person?: TripPerson }[] = [
+    ...[me, ...slots.filter((p) => p.profileId !== me.profileId)].map((p) => ({ id: p.profileId, label: p.name, person: p })),
+    { id: 'both', label: 'Os dois' },
+  ]
 
   const form = (
     <div className="tr-mform">
+      <div className="tr-banner-block" data-field="cover">
+        <div className={`tr-banner ${banner.url ? '' : 'tr-banner--empty'}`} role="group" aria-label="Capa">
+          {banner.url ? <img src={banner.url} alt="" /> : (
+            <span className="tr-banner-hint">
+              <ImageIcon size={22} aria-hidden="true" />
+              {bannerHint}
+            </span>
+          )}
+          <button type="button" className="tr-banner-upload lg" disabled={pending} onClick={() => fileRef.current?.click()}>
+            <ImagePlus size={15} aria-hidden="true" />
+            Enviar foto
+          </button>
+          {banner.credit && <StockCredit stock={banner.credit} className="tr-banner-credit" />}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="visually-hidden"
+            aria-label="Escolher a foto da capa"
+            tabIndex={-1}
+            onChange={(e) => {
+              pickFile(e.target.files?.[0])
+              e.target.value = ''
+            }}
+          />
+        </div>
+        {(photoOptions.length > 0 || (stockPhotos?.length ?? 0) > (editing ? 0 : 1) || s.cover.kind === 'file') && (
+          <div className="tr-covers" role="group" aria-label="Outras capas">
+            {s.cover.kind === 'file' && (
+              <span className="tr-cover-option tr-cover-option--file" aria-pressed="true" role="img" aria-label={`Capa escolhida: ${s.cover.file.name}`}>
+                {s.cover.url && <img src={s.cover.url} alt="" />}
+              </span>
+            )}
+            {photoOptions.map((p) => {
+              const url = urls.get(p.path)
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  className="tr-cover-option"
+                  aria-pressed={selectedPhoto === p.id}
+                  aria-label={p.caption ? `Usar como capa: ${p.caption}` : 'Usar esta foto como capa'}
+                  disabled={pending}
+                  onClick={() => set({ cover: { kind: 'photo', id: p.id } })}
+                >
+                  {url && <img src={url} alt="" />}
+                </button>
+              )
+            })}
+            {(stockPhotos ?? []).map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                className="tr-cover-option"
+                style={p.color ? ({ background: p.color } as CSSProperties) : undefined}
+                aria-pressed={s.cover.kind === 'stock' && s.cover.photo.id === p.id}
+                aria-label={`Usar a foto de ${p.author} como capa`}
+                disabled={pending}
+                onClick={() => set({ cover: { kind: 'stock', photo: p, auto: false } })}
+              >
+                <img src={p.thumb} alt="" loading="lazy" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
       {editing && (
         <ModalField label="Nome da viagem" htmlFor={fid('title')} field="title" error={errorFor('title')} errorId={fid('title-error')}>
           {textInput('title', s.title, (title) => set({ title }), <Type size={15} aria-hidden="true" />, CALENDAR_LIMITS.title)}
@@ -443,78 +576,24 @@ export function TripModal(props: TripModalProps) {
         </ModalField>
       </div>
 
-      <ModalField label="Capa" field="cover">
-        <div className="tr-covers" role="group" aria-label="Capa">
-          {photoOptions.map((p) => {
-            const url = urls.get(p.path)
-            return (
-              <button
-                key={p.id}
-                type="button"
-                className="tr-cover-option"
-                aria-pressed={selectedPhoto === p.id}
-                aria-label={p.caption ? `Usar como capa: ${p.caption}` : 'Usar esta foto como capa'}
-                disabled={pending}
-                onClick={() => set({ cover: { kind: 'photo', id: p.id } })}
-              >
-                {url && <img src={url} alt="" />}
+      {!editing && (
+        <ModalField label="Quem viaja" field="travelers">
+          <div className="tr-who" role="group" aria-label="Quem viaja">
+            {whoOptions.map((o) => (
+              <button key={o.id} type="button" className="lg" aria-pressed={s.who === o.id} disabled={pending} onClick={() => set({ who: o.id })}>
+                {o.person ? <Avatar person={o.person} size={22} /> : <Heart size={13} fill="currentColor" aria-hidden="true" />}
+                {o.label}
               </button>
-            )
-          })}
-          {s.cover.kind === 'file' && (
-            <span className="tr-cover-option tr-cover-option--file" aria-pressed="true" role="img" aria-label={`Capa escolhida: ${s.cover.file.name}`}>
-              {s.cover.url && <img src={s.cover.url} alt="" />}
-            </span>
-          )}
-          <button type="button" className="tr-cover-upload lg" disabled={pending} onClick={() => fileRef.current?.click()}>
-            <ImagePlus size={18} aria-hidden="true" />
-            Enviar
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="visually-hidden"
-            aria-label="Escolher a foto da capa"
-            tabIndex={-1}
-            onChange={(e) => {
-              pickFile(e.target.files?.[0])
-              e.target.value = ''
-            }}
-          />
-        </div>
-      </ModalField>
-
-      <ModalField label="De onde cada um sai" field="departures">
-        <div className="tr-mrow">
-          {slots.map((p) => (
-            <div key={p.profileId} className="tr-departure lg">
-              <Avatar person={p} size={28} />
-              <span className="tr-departure-text">
-                <span className="tr-departure-home">{p.homeCity.name}</span>
-                <input
-                  type="text"
-                  aria-label={`Como ${p.name} vai`}
-                  placeholder={DEPARTURE_PLACEHOLDER}
-                  maxLength={TRIP_LIMITS.departureNote}
-                  value={s.departures[p.profileId] ?? ''}
-                  disabled={pending}
-                  onChange={(e) => set({ departures: { ...s.departures, [p.profileId]: e.target.value } })}
-                />
-              </span>
-            </div>
-          ))}
-        </div>
-      </ModalField>
-
-      <div className="tr-mrow">
-        <ModalField label="Hospedagem" htmlFor={fid('lodgingName')} field="lodging" error={errorFor('lodgingName')}>
-          {textInput('lodgingName', s.lodgingName, (lodgingName) => set({ lodgingName }), <House size={15} aria-hidden="true" />, TRIP_LIMITS.lodgingName, 'Opcional')}
+            ))}
+          </div>
         </ModalField>
+      )}
+
+      {editing && (
         <ModalField label="Nota" htmlFor={fid('note')} field="note" error={errorFor('note')}>
           {textInput('note', s.note, (note) => set({ note }), <StickyNote size={15} aria-hidden="true" />, CALENDAR_LIMITS.note, 'Opcional')}
         </ModalField>
-      </div>
+      )}
     </div>
   )
 
@@ -570,7 +649,7 @@ export function TripModal(props: TripModalProps) {
             data-band={preview.band}
             style={{ '--band': preview.band === 'unknown' ? undefined : bandColor(settings, preview.band) } as CSSProperties}
           >
-            <CouplePair people={slots} together={preview.band !== 'apart'} />
+            <CouplePair people={s.who === 'both' ? slots : slots.filter((p) => p.profileId === s.who)} together={preview.band !== 'apart'} />
             <span className="tr-mprev-card-text">
               <span className="tr-mprev-card-title">{stateName(preview.band)}</span>
               <span className="tr-mprev-card-sub">

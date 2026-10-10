@@ -4,7 +4,7 @@
 // Spec: .agent/Tasks/fase-7-mapa.md — R4, I2
 //
 // As linhas saem de `coupleStatusLines(currentPeriod(…))` (domínio, sobre
-// `runAround`): nada é recalculado aqui. A segunda linha (_"Juntos há 12
+// `runAround` e `streakAround`): nada é recalculado aqui. A segunda linha (_"Juntos há 12
 // dias"_) some com `show_home_counter` desligado e em `unknown`.
 
 import { useMemo } from 'react'

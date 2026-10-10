@@ -203,7 +203,7 @@ export interface NowSummary {
   subtitle: string | null
   /** O trecho de hoje; `null` em `unknown`. */
   run: Run | null
-  /** Barra 1b: só com trecho fechado. */
+  /** Barra 1b: a sequência do lado (juntos/separados), só quando fechada. */
   progress: { from: string; to: string; dayK: number; total: number } | null
   /** 1c: até dois, na ordem do frame. */
   countdowns: Countdown[]
@@ -441,6 +441,40 @@ export function runAround(day: string, stays: readonly Stay[], members: MembersB
   return found.to === hi ? { ...found, to: null } : found
 }
 
+/** O lado do casal num trecho: as três faixas de juntos são um lado só. */
+export type Side = 'together' | 'apart' | 'unknown'
+
+export function sideOf(band: Band): Side {
+  return band === 'apart' || band === 'unknown' ? band : 'together'
+}
+
+/** Dias seguidos do mesmo lado, atravessando troca de cidade. */
+export interface Streak {
+  from: string
+  /** `null` = segue em aberto até o horizonte. */
+  to: string | null
+  side: Side
+}
+
+/**
+ * A sequência que contém `day`: os trechos vizinhos do mesmo LADO fundidos.
+ * É ela que diz "Separados há N dias" — não `runAround`, que corta a cada
+ * troca de cidade. Ir de SJC para São Francisco com a outra pessoa em Marau
+ * troca o trecho, mas não acaba a separação.
+ */
+export function streakAround(day: string, stays: readonly Stay[], members: MembersBySlot): Streak {
+  const hi = addDays(day, RUN_AROUND_HORIZON)
+  const all = runs(stays, members, addDays(day, -RUN_AROUND_HORIZON), hi)
+  const i = all.findIndex((r) => r.from <= day && day <= (r.to as string))
+  const side = sideOf(all[i].band)
+  let a = i
+  let b = i
+  while (a > 0 && sideOf(all[a - 1].band) === side) a -= 1
+  while (b < all.length - 1 && sideOf(all[b + 1].band) === side) b += 1
+  const to = all[b].to as string
+  return { from: all[a].from, to: to === hi ? null : to, side }
+}
+
 /**
  * I5: conta o DESENHADO em `[from, to]` — estadia em aberto vai até `to`, e dia
  * futuro conta como planejado. Não é `countStates` (vivido, nunca passa de hoje).
@@ -551,9 +585,13 @@ export function nowSummary(
     return { band: 'unknown', title: 'Sem registro de onde vocês estão hoje', subtitle: null, run: null, progress: null, countdowns: [] }
   }
 
-  const n = diffDays(run.from, today)
+  // O "há N dias" e a barra contam a sequência do lado (juntos/separados), não
+  // o trecho da cidade: o "desde" do subtítulo é que fala da cidade.
+  const streak = streakAround(today, stays, members)
+  const n = diffDays(streak.from, today)
   const since = n === 0 ? 'desde hoje' : `há ${daysWord(n)}`
   const sinceDay = shortDayMonth(run.from)
+  const crossesCities = streak.from !== run.from
 
   let title: string
   let subtitle: string
@@ -567,14 +605,14 @@ export function nowSummary(
     )
     if (together) second = { kind: 'meet', label: 'Juntos de novo em', days: diffDays(today, together.from) }
   } else if (run.band === 'away') {
-    title = `Viajando juntos ${since}`
+    title = crossesCities ? `Juntos ${since}` : `Viajando juntos ${since}`
     subtitle = `Em ${cityShort(cities, run.cityId)} desde ${sinceDay}`
     const back = [members[1], members[2]]
       .map((m) => nextHomeDay(m.profileId, m.homeCityId, today, stays))
       .filter((d): d is string => d !== null)
     if (back.length > 0) second = { kind: 'home', label: 'Voltam pra casa em', days: diffDays(today, back.reduce(minDay)) }
   } else {
-    title = `Juntos em ${cityShort(cities, run.cityId)} ${since}`
+    title = crossesCities ? `Juntos ${since}` : `Juntos em ${cityShort(cities, run.cityId)} ${since}`
     const visitor = visitorSlot(run.cityId as string, members)
     if (visitor === null) {
       subtitle = `Em casa desde ${sinceDay}`
@@ -598,9 +636,9 @@ export function nowSummary(
     subtitle,
     run,
     progress:
-      run.to === null
+      streak.to === null
         ? null
-        : { from: run.from, to: run.to, dayK: n + 1, total: daysInclusive(run.from, run.to) },
+        : { from: streak.from, to: streak.to, dayK: n + 1, total: daysInclusive(streak.from, streak.to) },
     countdowns,
   }
 }

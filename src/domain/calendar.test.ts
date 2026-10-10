@@ -17,6 +17,7 @@ import {
   personStatus,
   previewImpact,
   runAround,
+  streakAround,
   runs,
   shortCityName,
   upcoming,
@@ -353,6 +354,19 @@ describe('runs e runAround (A4)', () => {
     expect(runAround('2026-12-25', STAYS, MEMBERS)).toMatchObject({ from: '2026-10-13', to: null, band: 'apart' })
   })
 
+  it('streakAround: funde trechos vizinhos do mesmo lado e para na lacuna', () => {
+    const stays = [
+      stay(G, SJC, '2026-09-01', '2026-09-15'),
+      stay(G, LISBOA, '2026-09-16', null),
+      stay(L, MARAU, '2026-09-01', '2026-09-30'),
+      stay(L, LISBOA, '2026-10-01', '2026-10-10'),
+      stay(L, MARAU, '2026-10-20', null),
+    ]
+    expect(streakAround('2026-09-20', stays, MEMBERS)).toEqual({ from: '2026-09-01', to: '2026-09-30', side: 'apart' })
+    expect(streakAround('2026-10-05', stays, MEMBERS)).toEqual({ from: '2026-10-01', to: '2026-10-10', side: 'together' })
+    expect(streakAround('2026-12-01', stays, MEMBERS)).toEqual({ from: '2026-10-20', to: null, side: 'apart' })
+  })
+
   it('runAround: o buraco é um trecho unknown fechado', () => {
     expect(runAround('2026-10-11', STAYS, MEMBERS)).toMatchObject({ from: '2026-10-10', to: '2026-10-12', band: 'unknown' })
   })
@@ -518,6 +532,36 @@ describe('nowSummary (A5)', () => {
     expect(now.subtitle).toBe('Gabriel em SJC · Lana em Marau')
     expect(now.progress).toEqual({ from: '2026-09-01', to: '2026-10-29', dayK: 26, total: 59 })
     expect(now.countdowns).toEqual([{ kind: 'meet', label: 'Juntos de novo em', days: 34 }])
+  })
+
+  it('separados atravessando cidades: conta a separação inteira, não o último trecho', () => {
+    // Gabriel sozinho em SJC, depois sozinho em Lisboa; a Lana em Marau o tempo todo.
+    const stays = [
+      stay(G, SJC, '2026-09-01', '2026-09-20'),
+      stay(G, LISBOA, '2026-09-21', '2026-10-05'),
+      stay(G, SJC, '2026-10-06', null),
+      stay(L, MARAU, '2026-09-01', null),
+    ]
+    const now = nowSummary(TODAY, stays, MEMBERS, NAMES, [], CITIES)
+    expect(now.title).toBe('Separados há 25 dias')
+    expect(now.subtitle).toBe('Gabriel em Lisboa · Lana em Marau')
+    expect(now.progress).toBeNull()
+  })
+
+  it('juntos em casa e depois viajando: "Juntos há", com a viagem no subtítulo', () => {
+    const stays = [
+      stay(G, SJC, '2026-09-10', '2026-09-19'),
+      stay(G, LISBOA, '2026-09-20', '2026-09-30'),
+      stay(G, SJC, '2026-10-01', null),
+      stay(L, SJC, '2026-09-10', '2026-09-19'),
+      stay(L, LISBOA, '2026-09-20', '2026-09-30'),
+      stay(L, MARAU, '2026-10-01', null),
+    ]
+    const now = nowSummary(TODAY, stays, MEMBERS, NAMES, [], CITIES)
+    expect(now.band).toBe('away')
+    expect(now.title).toBe('Juntos há 16 dias')
+    expect(now.subtitle).toBe('Em Lisboa desde 20 set')
+    expect(now.progress).toEqual({ from: '2026-09-10', to: '2026-09-30', dayK: 17, total: 21 })
   })
 
   it('separados sem reencontro marcado: nenhum contador', () => {

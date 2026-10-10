@@ -53,9 +53,20 @@ export function PersonAvatar({ person, size }: { person: Pick<HomePerson, 'name'
  * cartão — nunca um `<img>` quebrado. O pedido das URLs é de quem monta a
  * seção (`usePhotoUrls`, só das visíveis).
  */
-export function PanelPhoto({ path, className, children }: { path: string | null; className: string; children?: ReactNode }) {
+/** A foto assinada; sem ela, a capa do Unsplash da viagem (`stock`, ADR 0025). */
+export function PanelPhoto({
+  path,
+  stock,
+  className,
+  children,
+}: {
+  path: string | null
+  stock?: string | null
+  className: string
+  children?: ReactNode
+}) {
   const { urls } = useHome()
-  const url = path ? urls.get(path) : undefined
+  const url = (path ? urls.get(path) : undefined) ?? stock ?? undefined
   return (
     <div className={`hp-photo ${url ? '' : 'hp-photo--empty'} ${className}`}>
       {url && <img src={url} alt="" loading="lazy" />}

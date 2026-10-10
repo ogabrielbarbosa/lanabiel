@@ -198,21 +198,6 @@
   order: 2;
 }
 
-/* A marca fica acima dos destinos, no mesmo grupo de cima. */
-.shell-nav-top {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 18px;
-}
-
-.shell-logo {
-  display: grid;
-  place-items: center;
-  border-radius: 12px;
-  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent-2) 35%, transparent);
-}
-
 .shell-nav-group {
   display: flex;
   flex-direction: column;
@@ -669,36 +654,6 @@
   flex-direction: column;
   gap: 8px;
   padding-bottom: 4px;
-}
-
-.panel-skeleton span {
-  flex: none;
-  border-radius: 22px;
-  background: var(--glass);
-  animation: panel-pulse 1.4s ease-in-out infinite;
-}
-
-.panel-skeleton-head span {
-  width: 42%;
-  height: 14px;
-  border-radius: 999px;
-}
-
-.panel-skeleton-head span + span {
-  width: 72%;
-  height: 28px;
-}
-
-@keyframes panel-pulse {
-  50% {
-    opacity: 0.45;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .panel-skeleton span {
-    animation: none;
-  }
 }
 
 /* --- a abertura (Splash.tsx) --------------------------------------------- */

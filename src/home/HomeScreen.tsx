@@ -15,6 +15,7 @@
 
 import { useState } from 'react'
 import { RotateCw } from 'lucide-react'
+import { PanelSkeleton } from '../app/PanelSkeleton'
 import type { HomeApi } from './api'
 import { HomeContext, useHomeData } from './context'
 import { HomePanel } from './HomePanel'
@@ -38,11 +39,7 @@ export function HomeScreen({ api }: HomeScreenProps) {
         <div className="home-map-blank" aria-hidden="true" />
         <aside className="home-panel-state lg">
           <span className="visually-hidden">Carregando a Home…</span>
-          <div className="home-skeleton" aria-hidden="true">
-            {Array.from({ length: 5 }, (_, i) => (
-              <span key={i} />
-            ))}
-          </div>
+          <PanelSkeleton cards={[156, 140, 140, 168]} />
         </aside>
       </div>
     )

@@ -13,12 +13,14 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { ArrowLeft, RotateCw } from 'lucide-react'
 import { PanelSkeleton } from '../app/PanelSkeleton'
+import { PageArea } from '../ui/Page'
+import { Loading, Skeleton } from '../ui/Skeleton'
 import { navigate } from '../app/router'
 import type { TripsApi } from './api'
 import { TripsContext, useTrips, useTripsData } from './context'
 import { TripDetail } from './detail/TripDetail'
 import { TripModal } from './TripModal'
-import { TripsScreen } from './TripsScreen'
+import { TripsHeader, TripsScreen } from './TripsScreen'
 import './trips.css'
 
 export type TripsView = { name: 'trips' } | { name: 'trip'; id: string }
@@ -33,19 +35,15 @@ export function TripsRoute({ api, view }: TripsRouteProps) {
   const load = useTripsData(api)
 
   if (load.status === 'loading') {
-    const skeleton = (
-      <>
-        <span className="visually-hidden">Carregando as viagens…</span>
-        <div className="trips-skeleton" aria-hidden="true">
-          {Array.from({ length: 5 }, (_, i) => (
-            <span key={i} />
-          ))}
-        </div>
-      </>
-    )
     return (
-      <div className="trips-route" aria-busy="true">
-        {view.name === 'trips' ? <WithPanel busy>{skeleton}</WithPanel> : skeleton}
+      <div className="trips-route">
+        {view.name === 'trips' ? (
+          <WithPanel busy>
+            <GridSkeleton />
+          </WithPanel>
+        ) : (
+          <DetailSkeleton />
+        )}
       </div>
     )
   }
@@ -101,20 +99,57 @@ export function TripsRoute({ api, view }: TripsRouteProps) {
 }
 
 /**
- * A Grade antes do `ok` (ou sem ele): o estado na área — sem o título, que
- * só vem com a leitura (A17) — e o painel
- * _Pelo mundo, juntos_ já no lugar e do mesmo tamanho, para a área não se
- * mexer quando os dados chegam. O Detalhe não tem painel e não passa aqui.
+ * A Grade antes do `ok` (ou sem ele): o cabeçalho — texto e botão, não
+ * depende do banco — já no lugar, o estado (esqueleto, erro, aviso) no corpo,
+ * e o painel _Pelo mundo, juntos_ do mesmo tamanho, para a área não se mexer
+ * quando os dados chegam. O Detalhe não tem painel e não passa aqui.
  */
 function WithPanel({ busy = false, children }: { busy?: boolean; children: ReactNode }) {
   return (
     <div className="tr-screen">
-      <div className="tr-area">{children}</div>
+      <PageArea className="tr-area">
+        <TripsHeader />
+        {children}
+      </PageArea>
       <aside className="tr-panel lg" aria-label="Pelo mundo, juntos" aria-busy={busy || undefined}>
         <div className="tr-panel-scroll">
           <PanelSkeleton busy={busy} cards={[248, 188, 168, 148]} />
         </div>
       </aside>
+    </div>
+  )
+}
+
+/** O corpo da Grade enquanto lê: os números, o herói e a grade de capas. */
+function GridSkeleton() {
+  return (
+    <Loading label="Carregando as viagens…">
+      <div className="trips-skeleton-stats" aria-hidden="true">
+        {Array.from({ length: 5 }, (_, i) => (
+          <Skeleton key={i} height={76} />
+        ))}
+      </div>
+      <div className="trips-skeleton" aria-hidden="true">
+        <Skeleton height={240} className="trips-skeleton-hero" />
+        {Array.from({ length: 4 }, (_, i) => (
+          <Skeleton key={i} height={180} />
+        ))}
+      </div>
+    </Loading>
+  )
+}
+
+/** O Detalhe enquanto lê: o herói e as duas colunas de cartões. */
+function DetailSkeleton() {
+  return (
+    <div className="td">
+      <Loading label="Carregando a viagem…">
+        <Skeleton height={440} radius="var(--radius-xl)" />
+        <div className="trips-skeleton-detail" aria-hidden="true">
+          <Skeleton height={260} radius="var(--radius-lg)" />
+          <Skeleton height={260} radius="var(--radius-lg)" />
+        </div>
+      </Loading>
     </div>
   )
 }

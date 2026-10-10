@@ -5,7 +5,8 @@
 //
 // Tudo aqui é derivado das estadias e dos eventos já lidos pela tela (nada é
 // gravado, I1). As DUAS contagens não se misturam (I5): o _Agora_ conta a
-// partir do começo do trecho de hoje (`nowSummary`); o _Resumo_ conta o
+// partir do começo da sequência de hoje — juntos ou separados, atravessando
+// cidades (`nowSummary`, `streakAround`); o _Resumo_ conta o
 // DESENHADO do mês visível (`countDrawn`), com o planejado incluso.
 //
 // Cidade: nome curto (I9) no Agora, nos contadores e no Resumo; nome inteiro

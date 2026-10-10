@@ -12,8 +12,19 @@ import mocoto from './__fixtures__/photon/mocoto.json'
 import vicentina from './__fixtures__/photon/vicentina.json'
 import type { City } from './cities'
 import type { DataResult } from './result'
-import { PHOTON_URL, formatCoordinate, osmRef, searchPlaces } from './places'
-import type { PlaceSearchResult } from './places'
+import type { NearbyPlace } from './nearbyPlaces'
+import {
+  PHOTON_URL,
+  PLACE_LIMIT,
+  formatCoordinate,
+  mergeNearby,
+  nearbyToCandidate,
+  osmRef,
+  proximityRing,
+  rankByProximity,
+  searchPlaces,
+} from './places'
+import type { PlaceCandidate, PlaceSearchOptions, PlaceSearchResult } from './places'
 
 function respond(body: unknown, status = 200) {
   return vi.fn<typeof fetch>(async () => new Response(JSON.stringify(body), { status }))
@@ -122,13 +133,13 @@ describe('A11 — mapeamento das Features reais', () => {
 })
 
 describe('A11 — a requisição', () => {
-  it('parâmetros: q, limit=5, lang=default; layer por modo; viés em lat/lon', async () => {
+  it('parâmetros: q, limit (10 com viés, para ordenar por proximidade; 5 sem), lang=default; layer por modo; viés em lat/lon', async () => {
     const place = respond(mocoto)
     await searchPlaces('  Mocotó São Paulo ', { mode: 'place', bias: { lat: -23.18, lng: -45.89 }, fetchFn: place })
     const url = calledUrl(place)
     expect(`${url.origin}${url.pathname}`).toBe(PHOTON_URL)
     expect(url.searchParams.get('q')).toBe('Mocotó São Paulo')
-    expect(url.searchParams.get('limit')).toBe('5')
+    expect(url.searchParams.get('limit')).toBe('10')
     expect(url.searchParams.get('lang')).toBe('default')
     expect(url.searchParams.has('layer')).toBe(false)
     expect(url.searchParams.get('lat')).toBe('-23.18')
@@ -138,6 +149,7 @@ describe('A11 — a requisição', () => {
     await searchPlaces('Gramado', { mode: 'city', fetchFn: city })
     expect(calledUrl(city).searchParams.get('layer')).toBe('city')
     expect(calledUrl(city).searchParams.has('lat')).toBe(false)
+    expect(calledUrl(city).searchParams.get('limit')).toBe('5')
 
     const country = respond(japaoCountry)
     await searchPlaces('Japão', { mode: 'country', fetchFn: country })
@@ -274,5 +286,195 @@ describe('A12 — `osmRef` a partir de `osm_type` + `osm_id` das respostas grava
     const [only] = rows(await searchPlaces('Gramado', { mode: 'city', fetchFn: respond(body) }))
     expect(only.label).toBe('Gramado')
     expect(only).not.toHaveProperty('osmRef')
+  })
+})
+
+// ADR 0027 — os estabelecimentos do Overture perto de casa, junto do Photon.
+describe('Overture perto de casa (ADR 0027)', () => {
+  const MARAU = { lat: -28.449, lng: -52.199 }
+  const BAMBINA: NearbyPlace = {
+    name: 'Bambina Pizzaria',
+    address: 'Rua Parana, 201',
+    city: 'Marau',
+    state: 'RS',
+    countryCode: 'BR',
+    lat: -28.4512,
+    lng: -52.2004,
+  }
+  const nearbyOk = (...places: NearbyPlace[]) =>
+    vi.fn<NonNullable<PlaceSearchOptions['searchNearby']>>(async () => ({ status: 'ok', places }))
+  const failing = vi.fn<typeof fetch>(async () => {
+    throw new TypeError('Failed to fetch')
+  })
+
+  it('o estabelecimento do Overture vem primeiro, no formato do Photon, e o Photon completa a lista', async () => {
+    const searchNearby = nearbyOk(BAMBINA)
+    const result = rows(
+      await searchPlaces('Bambina', { mode: 'place', bias: MARAU, searchNearby, fetchFn: respond(mocoto) }),
+    )
+    expect(result[0]).toEqual({
+      label: 'Bambina Pizzaria',
+      address: 'Rua Parana, 201',
+      city: 'Marau',
+      state: 'RS',
+      country: 'Brasil',
+      countryCode: 'BR',
+      lat: -28.4512,
+      lng: -52.2004,
+      detail: 'Rua Parana, 201 · Marau, RS',
+    })
+    expect(result).toHaveLength(PLACE_LIMIT)
+    const photonOnly = rows(await searchPlaces('Bambina', { mode: 'place', fetchFn: respond(mocoto) }))
+    expect(result.slice(1)).toEqual(photonOnly.slice(0, PLACE_LIMIT - 1))
+    expect(searchNearby).toHaveBeenCalledWith('Bambina', MARAU, undefined)
+  })
+
+  it('Overture cheio ainda deixa duas vagas ao Photon (a rua de mesmo nome não some)', async () => {
+    const many = Array.from({ length: 8 }, (_, i) => ({ ...BAMBINA, name: `Lugar ${i}`, lat: BAMBINA.lat + i * 0.01 }))
+    const result = rows(
+      await searchPlaces('Lugar', { mode: 'place', bias: MARAU, searchNearby: nearbyOk(...many), fetchFn: respond(mocoto) }),
+    )
+    expect(result.map((r) => r.label)).toEqual(['Lugar 0', 'Lugar 1', 'Lugar 2', 'Mocotó', expect.any(String)])
+  })
+
+  it('o mesmo lugar nas duas fontes aparece uma vez (nome sem acento/caixa, a menos de ~150 m)', () => {
+    const overture = nearbyToCandidate({ ...BAMBINA, name: 'Mocotó' })
+    const photon = { ...overture, label: 'MOCOTO', lat: overture.lat + 0.0005, address: null }
+    const far = { ...overture, label: 'Mocotó', lat: overture.lat + 0.01 }
+    expect(mergeNearby([overture], [photon, far], 5)).toEqual([overture, far])
+  })
+
+  it('só no modo place e com viés: cidade e país não chamam o Overture', async () => {
+    const searchNearby = nearbyOk(BAMBINA)
+    await searchPlaces('Gramado', { mode: 'city', bias: MARAU, searchNearby, fetchFn: respond(gramadoCity) })
+    await searchPlaces('Japão', { mode: 'country', bias: MARAU, searchNearby, fetchFn: respond(japaoCountry) })
+    await searchPlaces('Bambina', { mode: 'place', searchNearby, fetchFn: respond(mocoto) })
+    expect(searchNearby).not.toHaveBeenCalled()
+  })
+
+  it('Overture sem chave, com erro ou rejeitando: fica o Photon, sem aviso', async () => {
+    const photonOnly = rows(await searchPlaces('Mocotó', { mode: 'place', fetchFn: respond(mocoto) }))
+    for (const searchNearby of [
+      vi.fn(async () => ({ status: 'unconfigured' as const })),
+      vi.fn(async () => ({ status: 'error' as const, cause: 'Open Places 402' })),
+      vi.fn(async () => {
+        throw new Error('rede')
+      }),
+    ]) {
+      const result = await searchPlaces('Mocotó', { mode: 'place', bias: MARAU, searchNearby, fetchFn: respond(mocoto) })
+      expect(result).toEqual({ status: 'ok', rows: photonOnly, fallback: false })
+    }
+  })
+
+  it('Photon fora e Overture ok: o Overture sozinho, sem cair no IBGE', async () => {
+    const searchCities = vi.fn()
+    const result = await searchPlaces('Bambina', {
+      mode: 'place',
+      bias: MARAU,
+      searchNearby: nearbyOk(BAMBINA),
+      searchCities,
+      fetchFn: failing,
+    })
+    expect(result).toMatchObject({ status: 'ok', fallback: false, rows: [{ label: 'Bambina Pizzaria' }] })
+    expect(searchCities).not.toHaveBeenCalled()
+  })
+
+  it('Photon fora e Overture vazio: o IBGE, como antes', async () => {
+    const searchCities = vi.fn(async (): Promise<DataResult<City[]>> => ({ status: 'ok', rows: [GRAMADO_IBGE] }))
+    const result = await searchPlaces('Gramado', {
+      mode: 'place',
+      bias: MARAU,
+      searchNearby: nearbyOk(),
+      searchCities,
+      fetchFn: failing,
+    })
+    expect(result).toMatchObject({ status: 'ok', fallback: true, rows: [{ label: 'Gramado' }] })
+  })
+
+  it('abort cancela as duas buscas e devolve aborted', async () => {
+    const controller = new AbortController()
+    const searchNearby = vi.fn<NonNullable<PlaceSearchOptions['searchNearby']>>(async (_q, _near, signal) => {
+      controller.abort()
+      return signal?.aborted ? { status: 'aborted' } : { status: 'ok', places: [BAMBINA] }
+    })
+    const result = await searchPlaces('Bambina', {
+      mode: 'place',
+      bias: MARAU,
+      searchNearby,
+      signal: controller.signal,
+      fetchFn: respond(mocoto),
+    })
+    expect(result).toEqual({ status: 'aborted' })
+    expect(searchNearby.mock.calls[0][2]).toBe(controller.signal)
+  })
+})
+
+// Do meio para fora: bairro, cidade, estado, país, continente, mundo.
+describe('ordem por proximidade', () => {
+  const SJC = { lat: -23.1794, lng: -45.8869 }
+  const at = (label: string, lat: number, lng: number): PlaceCandidate => ({
+    label,
+    detail: '',
+    address: null,
+    city: null,
+    state: null,
+    country: 'Brasil',
+    countryCode: 'BR',
+    lat,
+    lng,
+  })
+  const centro = at('Vaca Preta (centro de SJC)', -23.1830, -45.8850)
+  const urbanova = at('Vaca Preta (Urbanova)', -23.2000, -45.9500)
+  const saoPaulo = at('Vaca Preta (São Paulo)', -23.5505, -46.6333)
+  const bahia = at('Vaca Preta (norte da Bahia)', -9.4100, -40.5000)
+  const lisboa = { ...at('Vaca Preta (Lisboa)', 38.7223, -9.1393), country: 'Portugal', countryCode: 'PT' }
+  const toquio = { ...at('Vaca Preta (Tóquio)', 35.6762, 139.6503), country: 'Japão', countryCode: 'JP' }
+
+  it('cada lugar no seu anel: bairro, cidade, estado, país, continente, mundo', () => {
+    const rings = [centro, urbanova, saoPaulo, bahia, lisboa, toquio].map((p) => proximityRing(SJC, p, 'BR'))
+    expect(rings).toEqual([0, 1, 2, 3, 5, 5])
+    // Buenos Aires está mais perto de SJC que o norte da Bahia, mas é outro país.
+    const buenosAires = { ...at('Buenos Aires', -34.6037, -58.3816), countryCode: 'AR' }
+    expect(proximityRing(SJC, buenosAires, 'BR')).toBe(4)
+    // Sem saber o país de origem, o anel do país é distância (até 1.500 km).
+    expect(proximityRing(SJC, buenosAires)).toBe(4)
+    expect(proximityRing(SJC, bahia)).toBe(4)
+  })
+
+  it('o país de origem sai do resultado mais perto: o norte da Bahia fica no anel do país', () => {
+    expect(rankByProximity([toquio, bahia, lisboa, centro], SJC)).toEqual([centro, bahia, toquio, lisboa])
+  })
+
+  it('o de perto passa na frente do de longe, venha na ordem que vier', () => {
+    expect(rankByProximity([toquio, bahia, saoPaulo, urbanova, centro], SJC)).toEqual([centro, urbanova, saoPaulo, bahia, toquio])
+  })
+
+  it('no mesmo anel a ordem do provedor fica (o nome que bate melhor não perde para o mais perto)', () => {
+    const longe = at('Vaca Preta (7 km)', -23.2, -45.95)
+    const perto = at('Vaca Preta (5 km)', -23.22, -45.9)
+    expect([longe, perto].map((p) => proximityRing(SJC, p))).toEqual([1, 1])
+    expect(rankByProximity([longe, perto], SJC)).toEqual([longe, perto])
+  })
+
+  it('busca com viés: o resultado do Photon na Bahia vai para depois do de SJC', async () => {
+    const feature = (name: string, p: PlaceCandidate) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
+      properties: { name, city: 'X', state: 'Y', country: 'Brasil', countrycode: 'BR', osm_type: 'N', osm_id: Math.round(Math.abs(p.lat) * 1000) },
+    })
+    const body = { features: [feature('Vaca Preta', bahia), feature('Vaca Preta', saoPaulo), feature('Vaca Preta', centro)] }
+    const result = rows(await searchPlaces('Vaca Preta', { mode: 'place', bias: SJC, fetchFn: respond(body) }))
+    expect(result.map((r) => r.lat)).toEqual([centro.lat, saoPaulo.lat, bahia.lat])
+
+    // Sem viés, fica a ordem do Photon.
+    const raw = rows(await searchPlaces('Vaca Preta', { mode: 'place', fetchFn: respond(body) }))
+    expect(raw.map((r) => r.lat)).toEqual([bahia.lat, saoPaulo.lat, centro.lat])
+  })
+
+  it('Overture e Photon juntos por anel, e o Photon ainda com duas vagas', () => {
+    const overture = Array.from({ length: 6 }, (_, i) => at(`Overture ${i}`, -23.18 - i * 0.001, -45.887))
+    const photon = [at('Rua Vaca Preta', -23.19, -45.89), bahia]
+    const merged = mergeNearby(overture, photon, 5, SJC)
+    expect(merged.map((r) => r.label)).toEqual(['Overture 0', 'Overture 1', 'Overture 2', 'Rua Vaca Preta', bahia.label])
   })
 })

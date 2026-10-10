@@ -541,7 +541,33 @@ describe('yearTogether / monthStrip / currentPeriod (A8, I7, R17)', () => {
   })
 
   it('currentPeriod sem estadia hoje: unknown, sem trecho', () => {
-    expect(currentPeriod(TODAY, [], MEMBERS)).toEqual({ kind: 'unknown', run: null, dayK: 0, total: null })
+    expect(currentPeriod(TODAY, [], MEMBERS)).toEqual({ kind: 'unknown', run: null, from: null, to: null, dayK: 0, total: null })
+  })
+
+  it('currentPeriod: trocar de cidade sem se encontrar não zera a separação', () => {
+    // Gabriel em SJC e depois em Lisboa, a Lana sempre em Marau: 27 dias separados, não 7.
+    const stays = [stay(G, SJC_ID, '2026-09-01', '2026-09-20'), stay(G, LIS_ID, '2026-09-21', '2026-09-30'), stay(L, MARAU_ID, '2026-09-01', null)]
+    expect(currentPeriod(TODAY, stays, MEMBERS)).toMatchObject({ kind: 'apart', from: '2026-09-01', to: '2026-09-30', dayK: 27, total: 30 })
+    expect(coupleStatusLines(currentPeriod(TODAY, stays, MEMBERS), cityName, G).counter).toBe('Separados há 27 dias')
+  })
+
+  it('currentPeriod: juntos em casa e depois viajando juntos é uma sequência só', () => {
+    const stays = [
+      stay(G, SJC_ID, '2026-09-10', '2026-09-19'),
+      stay(G, LIS_ID, '2026-09-20', '2026-10-02'),
+      stay(L, SJC_ID, '2026-09-10', '2026-09-19'),
+      stay(L, LIS_ID, '2026-09-20', '2026-10-02'),
+    ]
+    expect(currentPeriod(TODAY, stays, MEMBERS)).toMatchObject({ kind: 'together', from: '2026-09-10', to: '2026-10-02', dayK: 18, total: 23 })
+    expect(coupleStatusLines(currentPeriod(TODAY, stays, MEMBERS), cityName, G)).toEqual({
+      status: 'Juntos agora · Lisboa',
+      counter: 'Juntos há 18 dias',
+    })
+  })
+
+  it('currentPeriod: a lacuna corta a sequência', () => {
+    const stays = [stay(G, SJC_ID, '2026-09-01', null), stay(L, MARAU_ID, '2026-09-01', '2026-09-10'), stay(L, MARAU_ID, '2026-09-15', null)]
+    expect(currentPeriod(TODAY, stays, MEMBERS)).toMatchObject({ kind: 'apart', from: '2026-09-15', dayK: 13 })
   })
 })
 
@@ -600,7 +626,10 @@ describe('latestMemory (A9, I10)', () => {
       startsOn: '2026-07-12',
       endsOn: '2026-07-19',
       note: null,
+      travelers: 'both',
+      travelerId: null,
       coverPhotoId: null,
+      coverStock: null,
       lodging: EMPTY_LODGING,
       departures: [],
       days: [],

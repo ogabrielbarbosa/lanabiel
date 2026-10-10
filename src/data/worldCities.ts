@@ -16,10 +16,17 @@ import type { CalCity } from '../domain/calendar'
 import type { Database } from '../lib/database.types'
 import { translateCalendarError } from './calendar'
 import { rowToCalCity } from './cities'
-import { searchPlaces } from './places'
+import { PLACE_LIMIT, searchPlaces } from './places'
 import type { PlaceCandidate } from './places'
 
 type Db = SupabaseClient<Database>
+
+/**
+ * Quantos resultados pedir ao Photon antes de descartar o Brasil. Com o limite
+ * da Lista (5), "São Paulo" ou "São Francisco" vinham só com cidades
+ * brasileiras, todas descartadas, e a cidade de fora nunca aparecia.
+ */
+const WORLD_FETCH_LIMIT = 25
 
 /** `cities_region` (≤ 80). A região é só de exibir: cortar não muda identidade. */
 const REGION_MAX = 80
@@ -54,12 +61,20 @@ export function toWorldCandidate(c: PlaceCandidate): WorldCityCandidate | null {
  * duas vezes. Photon fora → `error`, e a tela mostra só o Brasil com o aviso.
  */
 export async function searchWorldCities(query: string, options: WorldSearchOptions = {}): Promise<WorldSearchResult> {
-  const result = await searchPlaces(query, { mode: 'city', signal: options.signal, fetchFn: options.fetchFn })
+  const result = await searchPlaces(query, {
+    mode: 'city',
+    limit: WORLD_FETCH_LIMIT,
+    signal: options.signal,
+    fetchFn: options.fetchFn,
+  })
   switch (result.status) {
     case 'ok':
       return {
         status: 'ok',
-        rows: result.rows.map(toWorldCandidate).filter((c): c is WorldCityCandidate => c !== null),
+        rows: result.rows
+          .map(toWorldCandidate)
+          .filter((c): c is WorldCityCandidate => c !== null)
+          .slice(0, PLACE_LIMIT),
       }
     case 'aborted':
       return result

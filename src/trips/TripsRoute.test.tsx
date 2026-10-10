@@ -12,7 +12,7 @@ import type { TripsApi } from './api'
 import { TripsContext, usePhotoUrls, useTrips, useTripsData } from './context'
 import { deferred, fakeTripsApi, seededTripsApi } from './test/fakeApi'
 import { TRIP_ILHABELA, TRIP_ILHABELA_ID, UNKNOWN_TRIP_ID, signedUrlOf } from './test/fixtures'
-import { renderTripsRoute } from './test/renderInTrips'
+import { gridLoaded, renderTripsRoute } from './test/renderInTrips'
 
 const failing = { status: 'error', cause: 'projeto pausado' } as const
 
@@ -22,10 +22,13 @@ function setVisibility(state: 'visible' | 'hidden') {
 }
 
 describe('A17 — leitura: esqueleto, erro e nunca a Grade vazia', () => {
-  it('com a leitura em voo, esqueleto — sem o título da Grade', () => {
+  it('com a leitura em voo: o cabeçalho no lugar e o corpo em esqueleto', () => {
     renderTripsRoute(seededTripsApi({}, { loadTrips: vi.fn<TripsApi['loadTrips']>(() => new Promise(() => undefined)) }))
     expect(screen.getByText('Carregando as viagens…')).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Nossas viagens' })).not.toBeInTheDocument()
+    // O cabeçalho é texto e botão: aparece antes da leitura, e o botão não age ainda.
+    expect(screen.getByRole('heading', { name: 'Nossas viagens', level: 1 })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Nova viagem' })).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     // Na Grade, o painel já está no lugar (sem layout shift), só com o esqueleto.
     const panel = screen.getByRole('complementary', { name: 'Pelo mundo, juntos' })
     expect(panel).toHaveAttribute('aria-busy', 'true')
@@ -38,12 +41,13 @@ describe('A17 — leitura: esqueleto, erro e nunca a Grade vazia', () => {
       const api = seededTripsApi({}, { [fn]: vi.fn(async () => failing) } as Partial<TripsApi>)
       renderTripsRoute(api)
       expect(await screen.findByRole('alert')).toHaveTextContent('Não deu para carregar as viagens.')
-      expect(screen.queryByRole('heading', { name: 'Nossas viagens' })).not.toBeInTheDocument()
+      // Nunca a Grade vazia (A17): sem números nem capas, só o cabeçalho e o erro.
+      expect(screen.queryByRole('heading', { name: 'Já fizemos' })).not.toBeInTheDocument()
 
       const healthy = seededTripsApi()
       vi.mocked(api[fn]).mockImplementation(healthy[fn] as never)
       await userEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }))
-      expect(await screen.findByRole('heading', { name: 'Nossas viagens', level: 1 })).toBeInTheDocument()
+      expect(await gridLoaded()).toBeInTheDocument()
       expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     },
   )
@@ -55,7 +59,7 @@ describe('A17 — leitura: esqueleto, erro e nunca a Grade vazia', () => {
 
   it('zero viagens com leitura ok É a Grade (vazia de verdade)', async () => {
     renderTripsRoute(fakeTripsApi())
-    expect(await screen.findByRole('heading', { name: 'Nossas viagens', level: 1 })).toBeInTheDocument()
+    expect(await gridLoaded()).toBeInTheDocument()
   })
 })
 
@@ -85,7 +89,7 @@ describe('ADR 0015 — releitura ao voltar à aba', () => {
   it('relê tudo; a releitura que falha mantém a tela e avisa', async () => {
     const api = seededTripsApi()
     renderTripsRoute(api)
-    await screen.findByRole('heading', { name: 'Nossas viagens' })
+    await gridLoaded()
     expect(api.loadTrips).toHaveBeenCalledTimes(1)
 
     vi.mocked(api.loadTrips).mockResolvedValue(failing)
@@ -94,7 +98,7 @@ describe('ADR 0015 — releitura ao voltar à aba', () => {
     await act(async () => setVisibility('visible'))
     await waitFor(() => expect(api.loadTrips).toHaveBeenCalledTimes(2))
     expect(await screen.findByText('Não deu pra atualizar. Você está vendo a última versão carregada.')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Nossas viagens' })).toBeInTheDocument()
+    expect(screen.getByRole('list', { name: 'Números das viagens feitas' })).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 })

@@ -14,6 +14,10 @@
 //                        `MarkDoneModal`.
 //   onDeleted()        — o item foi apagado (seção 7, cascata arquivos →
 //                        linha): a tela fecha e relê.
+//   placement          — 'panel' (tela larga): o detalhe entra no lugar do
+//                        painel da direita, sem véu nem modal, e o topo volta
+//                        ao _O que vem por aí_. 'sheet' (padrão): a gaveta
+//                        sobreposta, para quando o painel não existe (< 1100).
 //
 // Escritas que ficam DENTRO do detalhe (nota de corações, memória, fotos)
 // chamam `reload()` do contexto depois do `ok` e continuam abertas.
@@ -35,7 +39,8 @@
 // copiado) do tipo Date, com o título e o vínculo do item. O modal ENTRA NO
 // LUGAR do detalhe enquanto está aberto, em vez de por cima: os dois diálogos
 // escutam o Esc no documento, e empilhados um Esc fecharia os dois. Fechar
-// o modal volta ao detalhe; salvar volta com _"Agendado para {d mmm}"_.
+// o modal volta ao detalhe; salvar volta com _"Agendado para {d mmm}"_. No
+// painel o detalhe fica à vista atrás do modal, com o Esc dele desligado.
 
 import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent, ReactNode } from 'react'
@@ -68,7 +73,7 @@ import { failureMessage, memberName, useList } from './context'
 import type { ListMember } from './context'
 import { dayMonthYear, weekdayDayMonthYear } from '../lib/date'
 import { Hearts } from './Hearts'
-import { Avatar, CategoryTag, ItemPhoto, ListDialog } from './parts'
+import { Avatar, CategoryTag, ItemPhoto, ListDialog, ListSidePanel } from './parts'
 
 export interface ItemSheetProps {
   itemId: string
@@ -76,6 +81,7 @@ export interface ItemSheetProps {
   onEdit: (item: ListItem) => void
   onMarkDone: (item: ListItem) => void
   onDeleted: () => void
+  placement?: 'sheet' | 'panel'
 }
 
 const REJECTED: Record<'not_image' | 'too_large', string> = {
@@ -83,12 +89,12 @@ const REJECTED: Record<'not_image' | 'too_large', string> = {
   too_large: 'é grande demais',
 }
 
-export function ItemSheet({ itemId, onClose, onEdit, onMarkDone, onDeleted }: ItemSheetProps) {
+export function ItemSheet({ itemId, onClose, onEdit, onMarkDone, onDeleted, placement = 'sheet' }: ItemSheetProps) {
   const { items } = useList()
   const item = items.find((i) => i.id === itemId)
   if (!item) {
-    return (
-      <ListDialog variant="sheet" title="Item" onClose={onClose}>
+    const gone = (
+      <>
         <p className="ls-hint" role="status">
           Este item não existe mais
         </p>
@@ -97,14 +103,34 @@ export function ItemSheet({ itemId, onClose, onEdit, onMarkDone, onDeleted }: It
             Fechar
           </button>
         </div>
+      </>
+    )
+    return placement === 'panel' ? (
+      <ListSidePanel title="Item" onBack={onClose}>
+        {gone}
+      </ListSidePanel>
+    ) : (
+      <ListDialog variant="sheet" title="Item" onClose={onClose}>
+        {gone}
       </ListDialog>
     )
   }
-  return <Sheet key={item.id} item={item} onClose={onClose} onEdit={onEdit} onMarkDone={onMarkDone} onDeleted={onDeleted} />
+  return (
+    <Sheet
+      key={item.id}
+      item={item}
+      placement={placement}
+      onClose={onClose}
+      onEdit={onEdit}
+      onMarkDone={onMarkDone}
+      onDeleted={onDeleted}
+    />
+  )
 }
 
 function Sheet({
   item,
+  placement,
   onClose,
   onEdit,
   onMarkDone,
@@ -181,8 +207,7 @@ function Sheet({
   const cityLine = place ? [place.city, place.city ? (place.state ?? place.country) : place.country].filter(Boolean).join(', ') : ''
   const added = memberName(members, item.addedBy)
 
-  if (scheduleEnv) {
-    return (
+  const scheduleModal = scheduleEnv && (
       <EventModal
         env={scheduleEnv}
         mode={{
@@ -196,11 +221,10 @@ function Sheet({
           setScheduled(`Agendado para ${shortDayMonth(startsOn)}`)
         }}
       />
-    )
-  }
+  )
+  if (scheduleModal && placement !== 'panel') return scheduleModal
 
-  return (
-    <ListDialog variant="sheet" title={item.name} onClose={onClose} footer={
+  const footer = (
       <div className="ls-sheet-foot">
         {confirmDelete ? (
           <div className="ls-sheet-confirm" role="alertdialog" aria-label="Confirmar apagar">
@@ -257,7 +281,10 @@ function Sheet({
           </p>
         )}
       </div>
-    }>
+  )
+
+  const body = (
+    <>
       <ItemPhoto category={item.category} url={photoUrl} className="ls-sheet-photo">
         {done && item.doneOn && <span className="ls-sheet-done-on lg">Feito em {dayMonthYear(item.doneOn)}</span>}
       </ItemPhoto>
@@ -329,6 +356,22 @@ function Sheet({
       <p className="ls-meta ls-meta--small">
         Adicionado · {added} · {dayMonthYear(localDateOf(item.createdAt))}
       </p>
+    </>
+  )
+
+  if (placement === 'panel') {
+    return (
+      <>
+        <ListSidePanel title={item.name} onBack={onClose} escape={!scheduleModal} footer={footer}>
+          {body}
+        </ListSidePanel>
+        {scheduleModal}
+      </>
+    )
+  }
+  return (
+    <ListDialog variant="sheet" title={item.name} onClose={onClose} footer={footer}>
+      {body}
     </ListDialog>
   )
 }

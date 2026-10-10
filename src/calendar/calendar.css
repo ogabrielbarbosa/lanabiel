@@ -90,16 +90,8 @@
   height: 100%;
 }
 
-/* 40 entre a grade e o painel (a área do frame acaba 40 depois da grade). */
-.cal-area {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 20px 40px 40px 24px;
-  overflow-y: auto;
-}
+/* A área é a `PageArea` do kit (src/ui): o respiro de 40 entre a grade e o
+   painel vem de lá. */
 
 .cal p {
   margin: 0;
@@ -129,67 +121,7 @@
   border-radius: inherit;
 }
 
-@media (max-width: 1359px) {
-  .cal-area {
-    padding-right: 24px;
-  }
-}
-
-/* --- cabeçalho ----------------------------------------------------------- */
-
-.cal-header {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 16px;
-  margin-bottom: 8px;
-}
-
-.cal-title {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.cal-kicker {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-
-.cal-kicker-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 8px var(--accent-glow);
-}
-
-.cal-title-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.cal-title h1 {
-  margin: 0 10px 0 0;
-  font-size: 44px;
-  font-weight: 600;
-  letter-spacing: -1.8px;
-  line-height: 1.05;
-}
-
-.cal-controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-}
+/* --- cabeçalho: o PageHeader do kit (src/ui) ----------------------------- */
 
 /* --- botões -------------------------------------------------------------- */
 
@@ -306,8 +238,11 @@
   color: var(--accent);
 }
 
+/* O contorno genérico de campo vai por `:where`: um campo dentro de uma caixa
+   (`.cal-field`, `.cal-mf-input`) desliga o dele e acende a caixa, e essa regra
+   precisa vencer sem depender da ordem dos arquivos. */
 .cal button:focus-visible,
-.cal input:focus-visible {
+:where(.cal) input:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -347,19 +282,6 @@
   padding: 16px;
   border-radius: 28px;
   background: var(--glass-soft);
-}
-
-.cal-skeleton-grid span {
-  height: 112px;
-  border-radius: 16px;
-  background: var(--glass);
-  animation: cal-pulse 1.4s ease-in-out infinite;
-}
-
-@keyframes cal-pulse {
-  50% {
-    opacity: 0.45;
-  }
 }
 
 /* --- grade do mês (oLicQ) ------------------------------------------------ */
@@ -1060,15 +982,6 @@ span.cal-chip {
 @media (max-width: 759px) {
   .cal {
     height: auto;
-  }
-
-  .cal-area {
-    padding: 8px 0 24px;
-    overflow: visible;
-  }
-
-  .cal-title h1 {
-    font-size: 32px;
   }
 
   .cal-week {

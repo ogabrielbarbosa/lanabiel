@@ -47,22 +47,21 @@ describe('A14 — feita (Ilhabela, Peoa7)', () => {
     expect(await screen.findByRole('heading', { name: 'Ilhabela, SP', level: 1 })).toBeInTheDocument()
 
     // R15
-    expect(screen.getByText('Já fomos · Brasil')).toBeInTheDocument()
+    expect(screen.queryByText('Já fomos · Brasil')).not.toBeInTheDocument() // o selo saiu da feita
     expect(screen.getByText('12–19 jul 2026')).toBeInTheDocument()
     expect(screen.getByText('Férias de inverno')).toBeInTheDocument()
     expect(screen.getByText('Gabriel e Lana')).toBeInTheDocument()
     expect(screen.getByText('nota da viagem')).toBeInTheDocument()
     expect(screen.getByText('12 fotos')).toBeInTheDocument()
 
-    // R16
+    // R16: datas, dias e lugares numa linha só no herói, sem cartões nem km
     const stats = within(screen.getByRole('list', { name: 'Números da viagem' }))
-    expect(stats.getByText('Ilhabela')).toBeInTheDocument()
-    expect(stats.getByText('1 cidade')).toBeInTheDocument()
-    expect(stats.getByText(km(CITY_ILHABELA))).toBeInTheDocument()
-    expect(stats.getByText('percorridos · SJC → Ilhabela → SJC')).toBeInTheDocument()
-    expect(stats.getByText('juntos · 12 a 19 jul')).toBeInTheDocument()
-    expect(stats.getByText('7 lugares')).toBeInTheDocument()
-    expect(stats.getByText('visitados · 1 da nossa lista')).toBeInTheDocument()
+    expect(stats.getAllByRole('listitem').map((li) => li.textContent)).toEqual([
+      '12–19 jul 2026',
+      '8 dias',
+      '7 lugares visitados',
+      'Férias de inverno',
+    ])
 
     // R18 feita
     expect(screen.getByRole('heading', { name: 'Galeria · 12 fotos' })).toBeInTheDocument()
@@ -113,11 +112,7 @@ describe('A14 — futura (Lisboa, f3yqz)', () => {
     expect(screen.getByText('3 de 5 prontos')).toBeInTheDocument()
 
     const stats = within(screen.getByRole('list', { name: 'Números da viagem' }))
-    expect(stats.getByText(km(CITY_LISBOA))).toBeInTheDocument()
-    expect(stats.getByText('GRU → Lisboa')).toBeInTheDocument()
-    expect(stats.getByText('juntos · 1 a 9 out')).toBeInTheDocument()
-    expect(stats.getByText('3 itens')).toBeInTheDocument()
-    expect(stats.getByText('da lista em Lisboa')).toBeInTheDocument()
+    expect(stats.getByText('3 itens da lista')).toBeInTheDocument()
 
     const prep = section('Preparação')
     expect(prep.getByText('3 de 5')).toBeInTheDocument()

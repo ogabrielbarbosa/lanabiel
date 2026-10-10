@@ -42,6 +42,8 @@ export interface ListContextValue {
   urls: ReadonlyMap<string, string>
   /** Onde o casal está hoje (I9, I11). Distância só com `kind === 'together'`. */
   where: WhereWeAre
+  /** De onde a busca de lugar parte: a cidade de hoje de quem vê, ou a casa (`searchOrigin`, ADR 0027). */
+  searchFrom: { lat: number; lng: number }
   /** `YYYY-MM-DD`, do relógio injetado. */
   today: string
   /**

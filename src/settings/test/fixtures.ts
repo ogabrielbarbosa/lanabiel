@@ -249,7 +249,10 @@ export function tripsExportData(): Trip[] {
       startsOn: '2026-10-01',
       endsOn: '2026-10-09',
       note: 'Primeira vez na Europa',
+      travelers: 'both',
+      travelerId: null,
       coverPhotoId: 'photo-1',
+      coverStock: null,
       lodging: {
         name: 'Casa do Largo',
         address: null,
@@ -321,6 +324,7 @@ export function fakeApi(data: SettingsData = settingsData(), overrides: Partial<
     removeSavedCity: vi.fn(async () => ({ status: 'ok' as const })),
     prepareAvatar: vi.fn(async () => ({ status: 'not_image' as const })),
     uploadAvatar: vi.fn(async () => ({ status: 'ok' as const, path: 'u-gabriel/x.webp' })),
+    setPartnerAvatar: vi.fn(async () => ({ status: 'ok' as const })),
     avatarUrl: vi.fn(async () => null),
     prepareCover: vi.fn(async () => ({ status: 'not_image' as const })),
     replaceCover: vi.fn(async () => ({ status: 'ok' as const, path: 'couple-1/cover/x.webp' })),

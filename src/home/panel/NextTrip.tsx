@@ -50,7 +50,7 @@ export function NextTrip() {
           open()
         }}
       >
-        <PanelPhoto path={cover} className="hp-trip-cover">
+        <PanelPhoto path={cover} stock={trip.coverStock?.url} className="hp-trip-cover">
           <span className="hp-trip-top">
             <span className="hp-route">
               <Plane size={13} aria-hidden="true" />

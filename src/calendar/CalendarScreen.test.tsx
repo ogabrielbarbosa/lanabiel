@@ -27,6 +27,10 @@ describe('A13 — leitura: esqueleto, erro, e nunca o primeiro período antes do
     renderScreen(fakeCalendarApi({ loadCalendar: vi.fn<CalendarApi['loadCalendar']>(() => new Promise(() => undefined)) }))
     expect(screen.getByText('Carregando o calendário…')).toBeInTheDocument()
     expect(document.querySelector('[aria-busy="true"]')).not.toBeNull()
+    // O cabeçalho já está lá: o mês (não depende do banco) e os botões, sem agir.
+    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Novo evento' })).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByRole('button', { name: 'Mês' })).toHaveAttribute('aria-pressed', 'false')
     // O painel já está no lugar (sem layout shift), só com o esqueleto.
     const panel = screen.getByRole('complementary', { name: 'Onde a gente está' })
     expect(panel).toHaveAttribute('aria-busy', 'true')

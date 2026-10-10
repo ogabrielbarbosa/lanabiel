@@ -32,6 +32,7 @@ import type {
   NewTripDraft,
   PrepDraft,
   PrepItem,
+  StockCover,
   Trip,
   TripDeparture,
   TripMemory,
@@ -212,7 +213,6 @@ export async function loadTrips(db: Db): Promise<DataResult<TripsData>> {
         .from('calendar_events')
         .select('*')
         .eq('kind', 'viagem')
-        .eq('travelers', 'both')
         .order('starts_on')
         .order('id')
         .range(from, to),
@@ -283,8 +283,15 @@ export function tripSignedUrls(db: Db, paths: readonly (string | null)[]): Promi
 // A viagem: criar, editar o evento, editar `trips`, apagar
 // ---------------------------------------------------------------------------
 
-/** O evento que `create_trip` grava (a RPC força `viagem`, os dois, dia inteiro). */
-export function tripEventDraft(draft: Pick<NewTripDraft, 'title' | 'cityId' | 'startsOn' | 'endsOn' | 'note'>): EventDraft {
+/**
+ * O evento que `create_trip` grava (a RPC força `viagem` e dia inteiro). Sem
+ * `travelers`, os dois — como antes do ADR 0025.
+ */
+export function tripEventDraft(
+  draft: Pick<NewTripDraft, 'title' | 'cityId' | 'startsOn' | 'endsOn' | 'note'> &
+    Partial<Pick<NewTripDraft, 'travelers' | 'travelerId'>>,
+): EventDraft {
+  const solo = draft.travelers === 'solo'
   return {
     kind: 'viagem',
     title: draft.title,
@@ -293,8 +300,8 @@ export function tripEventDraft(draft: Pick<NewTripDraft, 'title' | 'cityId' | 's
     allDay: true,
     startsAt: null,
     endsAt: null,
-    travelers: 'both',
-    travelerId: null,
+    travelers: solo ? 'solo' : 'both',
+    travelerId: solo ? (draft.travelerId ?? null) : null,
     cityId: draft.cityId,
     place: null,
     repeatsYearly: false,
@@ -378,10 +385,12 @@ export async function updateTripEvent(db: Db, event: CalendarEvent, patch: TripE
   }
 }
 
-/** Colunas de `trips` que a tela muda: a hospedagem (R20d) e a capa (R22). */
+/** Colunas de `trips` que a tela muda: a hospedagem (R20d) e a capa (R22, ADR 0025). */
 export interface TripPatch {
   lodging?: Lodging
   coverPhotoId?: string | null
+  /** A capa do Unsplash; os três campos vão juntos (`trip_cover_stock_whole`). */
+  coverStock?: StockCover | null
 }
 
 /** Zero linhas = a viagem sumiu (a outra pessoa apagou) → `not_found`, e a tela relê. */
@@ -395,6 +404,14 @@ export async function updateTrip(db: Db, tripId: string, patch: TripPatch): Prom
     columns = { ...columns, ...lodgingToColumns(lodging) }
   }
   if (patch.coverPhotoId !== undefined) columns = { ...columns, cover_photo_id: patch.coverPhotoId }
+  if (patch.coverStock !== undefined) {
+    columns = {
+      ...columns,
+      cover_stock_url: patch.coverStock?.url ?? null,
+      cover_stock_author: patch.coverStock?.author ?? null,
+      cover_stock_author_url: patch.coverStock?.authorUrl ?? null,
+    }
+  }
   if (Object.keys(columns).length === 0) return { status: 'ok', value: null }
   const { data, error } = await db.from('trips').update(columns).eq('event_id', tripId).select('event_id')
   if (error) return translateTripError(error)

@@ -20,16 +20,18 @@ const countdowns = () =>
     .map((li) => li.textContent)
 
 describe('A16 — Agora', () => {
-  it('visitando: o título com a cidade curta, quem visita, "dia k de N" e os dois contadores', async () => {
+  it('visitando: juntos desde Paraty, quem visita, "dia k de N" da sequência e os dois contadores', async () => {
+    // Juntos sem parar de 11/set (Paraty → Marau → SJC) a 5/out (Lisboa): o
+    // "há" e a barra contam a sequência; a cidade fica no subtítulo.
     const value = calendarValue()
     renderInCalendar(<CalendarPanel />, value)
     const now = card('Agora')
-    expect(now.getByText('Juntos em SJC há 4 dias')).toBeInTheDocument()
+    expect(now.getByText('Juntos há 14 dias')).toBeInTheDocument()
     expect(now.getByText('Lana está visitando desde 21 set')).toBeInTheDocument()
-    expect(now.getByRole('progressbar', { name: 'Andamento do período' })).toHaveAttribute('aria-valuenow', '5')
-    expect(now.getByText('dia 5 de 10')).toBeInTheDocument()
-    expect(now.getByText('21 set')).toBeInTheDocument()
-    expect(now.getByText('30 set')).toBeInTheDocument()
+    expect(now.getByRole('progressbar', { name: 'Andamento do período' })).toHaveAttribute('aria-valuenow', '15')
+    expect(now.getByText('dia 15 de 25')).toBeInTheDocument()
+    expect(now.getByText('11 set')).toBeInTheDocument()
+    expect(now.getByText('5 out')).toBeInTheDocument()
     // Lisboa começa em 1/out; a Lana volta pra Marau em 6/out.
     expect(countdowns()).toEqual(['Lisboa começa em6 dias', 'Lana volta pra casa em11 dias'])
 
@@ -49,7 +51,8 @@ describe('A16 — Agora', () => {
   it('viajando juntos: "Em {cidade curta} desde" e "Voltam pra casa em"', () => {
     renderInCalendar(<CalendarPanel />, calendarValue({ today: '2026-10-02' }))
     const now = card('Agora')
-    expect(now.getByText('Viajando juntos há 1 dia')).toBeInTheDocument()
+    // Juntos desde 11/set; a viagem a Lisboa é só o trecho de agora.
+    expect(now.getByText('Juntos há 21 dias')).toBeInTheDocument()
     expect(now.getByText('Em Lisboa desde 1 out')).toBeInTheDocument()
     expect(countdowns()).toEqual(['Voltam pra casa em4 dias'])
   })

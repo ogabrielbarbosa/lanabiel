@@ -5,7 +5,7 @@
 // casais de verdade, e as duas direções — o parceiro lê, o de fora não.
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { admin, buildScenario, signIn } from './harness'
+import { admin, anonClient, buildScenario, signIn } from './harness'
 import type { Db, Scenario } from './harness'
 
 let scene: Scenario
@@ -49,9 +49,9 @@ describe('A16 — fotos por casal', () => {
     paths.push(path)
   })
 
-  it('ninguém grava na pasta de outro', async () => {
-    const path = `${scene.lana.id}/intruso.jpg`
-    const { error } = await upload(asGabriel, path)
+  it('ninguém grava na pasta de quem é de outro casal', async () => {
+    const path = `${scene.gabriel.id}/intruso.jpg`
+    const { error } = await upload(asOutsider, path)
     expect(error).not.toBeNull()
     paths.push(path) // se tivesse entrado, sai no afterAll
   })
@@ -142,4 +142,75 @@ describe('A7 (Fase 4) — fotos da Lista, na pasta do próprio casal', () => {
       expect(error).not.toBeNull()
     })
   }
+})
+
+// ADR 0028 — trocar a foto da outra pessoa do casal. A foto sobe na pasta DELA
+// (o CHECK `profiles_avatar_in_own_folder` não muda) e `set_partner_avatar`
+// grava o caminho.
+describe('ADR 0028 — a foto da outra pessoa', () => {
+  const inFolder = (owner: string) => `${owner}/${crypto.randomUUID()}.jpg`
+
+  async function setPartnerAvatar(db: Db, profileId: string, path: string) {
+    const { data, error } = await db.rpc('set_partner_avatar', { p_profile_id: profileId, p_path: path })
+    expect(error).toBeNull()
+    return (data as { status: string }).status
+  }
+
+  it('quem divide casal sobe na pasta da outra pessoa, e a RPC grava no perfil dela', async () => {
+    const path = inFolder(scene.lana.id)
+    paths.push(path)
+    expect((await upload(asGabriel, path)).error).toBeNull()
+
+    expect(await setPartnerAvatar(asGabriel, scene.lana.id, path)).toBe('ok')
+    const { data } = await admin.from('profiles').select('avatar_path').eq('id', scene.lana.id).single()
+    expect(data?.avatar_path).toBe(path)
+
+    // A dona da pasta lê a foto que a outra pessoa subiu.
+    const own = await asLana.storage.from('avatars').download(path)
+    expect(own.error).toBeNull()
+  })
+
+  it('não sobrescreve nem apaga o arquivo da outra pessoa', async () => {
+    const path = inFolder(scene.lana.id)
+    paths.push(path)
+    expect((await upload(asLana, path)).error).toBeNull()
+
+    // upsert = update na policy: só a dona.
+    expect((await upload(asGabriel, path)).error).not.toBeNull()
+    await asGabriel.storage.from('avatars').remove([path])
+    const still = await admin.storage.from('avatars').download(path)
+    expect(still.error).toBeNull()
+  })
+
+  it('a de quem é de outro casal: recusada', async () => {
+    const path = inFolder(scene.outsider.id)
+    paths.push(path)
+    await admin.storage.from('avatars').upload(path, JPEG, { contentType: 'image/jpeg' })
+    expect(await setPartnerAvatar(asGabriel, scene.outsider.id, path)).toBe('not_partner')
+    const { data } = await admin.from('profiles').select('avatar_path').eq('id', scene.outsider.id).single()
+    expect(data?.avatar_path).not.toBe(path)
+  })
+
+  it('a própria não passa pela RPC', async () => {
+    const path = inFolder(scene.gabriel.id)
+    paths.push(path)
+    await upload(asGabriel, path)
+    expect(await setPartnerAvatar(asGabriel, scene.gabriel.id, path)).toBe('not_partner')
+  })
+
+  it('caminho fora da pasta dela, ou arquivo que não existe: invalid', async () => {
+    const mine = inFolder(scene.gabriel.id)
+    paths.push(mine)
+    await upload(asGabriel, mine)
+    expect(await setPartnerAvatar(asGabriel, scene.lana.id, mine)).toBe('invalid')
+    expect(await setPartnerAvatar(asGabriel, scene.lana.id, inFolder(scene.lana.id))).toBe('invalid')
+  })
+
+  it('anônimo não chama a RPC', async () => {
+    const { error } = await anonClient().rpc('set_partner_avatar', {
+      p_profile_id: scene.lana.id,
+      p_path: inFolder(scene.lana.id),
+    })
+    expect(error).not.toBeNull()
+  })
 })

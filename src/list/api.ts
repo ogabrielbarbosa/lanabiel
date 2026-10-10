@@ -28,13 +28,14 @@ import {
   signedUrls,
   updateItem,
 } from '../data/list'
+import { searchNearbyPlaces } from '../data/nearbyPlaces'
 import { searchPlaces } from '../data/places'
 import type { PlaceSearchOptions } from '../data/places'
 import { loadSettings } from '../data/settings'
 
 type Db = SupabaseClient<Database>
 
-/** O que a busca de lugar recebe da tela: o `fetch` e o fallback do IBGE já vêm ligados. */
+/** O que a busca de lugar recebe da tela: o `fetch`, o Overture (ADR 0027) e o fallback do IBGE já vêm ligados. */
 export type PlaceQueryOptions = Pick<PlaceSearchOptions, 'mode' | 'bias' | 'signal'>
 
 type Tail<F> = F extends (db: Db, ...rest: infer R) => infer Out ? (...rest: R) => Out : never
@@ -105,7 +106,11 @@ export function listApi(db: Db): ListApi {
     removePhoto: (photo) => removePhoto(db, photo),
     replaceItemPhoto: (coupleId, item, file) => replaceItemPhoto(db, coupleId, item, file),
     searchPlaces: (query, options) =>
-      searchPlaces(query, { ...options, searchCities: (q) => searchCities(db, q) }),
+      searchPlaces(query, {
+        ...options,
+        searchCities: (q) => searchCities(db, q),
+        searchNearby: (q, near, signal) => searchNearbyPlaces(db, q, near, signal),
+      }),
     searchCities: (query) => searchCities(db, query),
     calendar: calendarApi(db),
   }

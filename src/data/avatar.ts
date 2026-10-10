@@ -106,18 +106,21 @@ async function prepareImage(file: File, shape: Shape): Promise<PrepareResult> {
 export type UploadResult = { status: 'ok'; path: string } | Failure
 
 /**
- * Sobe para `<uid>/<uuid>.<ext>`. O nome aleatório impede o cache de servir a
- * foto antiga depois de uma troca.
+ * Sobe para `<dono>/<uuid>.<ext>`. O nome aleatório impede o cache de servir a
+ * foto antiga depois de uma troca. O dono é quem está logado, ou — trocando a
+ * foto da outra pessoa (ADR 0028) — o perfil dela: a foto mora sempre na pasta
+ * de quem aparece nela.
  */
 export async function uploadAvatar(
   db: Db,
   image: { blob: Blob; extension: 'webp' | 'jpg' },
+  ownerId?: string,
 ): Promise<UploadResult> {
   const { data: session } = await db.auth.getSession()
   const userId = session.session?.user.id
   if (!userId) return { status: 'unauthenticated' }
 
-  const path = `${userId}/${crypto.randomUUID()}.${image.extension}`
+  const path = `${ownerId ?? userId}/${crypto.randomUUID()}.${image.extension}`
   const { error } = await db.storage.from('avatars').upload(path, image.blob, {
     contentType: image.extension === 'webp' ? 'image/webp' : 'image/jpeg',
     upsert: false,

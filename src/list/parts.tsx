@@ -3,7 +3,7 @@
 
 import { useEffect, useId, useRef } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import { Heart, X } from 'lucide-react'
+import { ChevronLeft, Heart, X } from 'lucide-react'
 import { useExitTransition } from '../app/motion'
 import { CATEGORY_LABELS } from '../domain/list'
 import type { ListCategory } from '../domain/list'
@@ -133,5 +133,59 @@ export function ListDialog({
         {footer && <div className="ls-dialog-foot">{footer}</div>}
       </div>
     </div>
+  )
+}
+
+/**
+ * O detalhe no lugar do painel da direita (tela larga): não é modal. Entra no
+ * mesmo retângulo do _O que vem por aí_, sem véu, então a grade continua
+ * clicável e tocar outro card troca o item aberto. _Voltar_, no topo, leva de
+ * volta ao painel; o Esc também, enquanto `escape` (desligado quando um modal do
+ * detalhe está aberto, para um Esc não fechar os dois).
+ */
+export function ListSidePanel({
+  title,
+  onBack,
+  escape = true,
+  children,
+  footer,
+}: {
+  title: string
+  onBack: () => void
+  escape?: boolean
+  children?: ReactNode
+  footer?: ReactNode
+}) {
+  const titleId = useId()
+  const backRef = useRef(onBack)
+  useEffect(() => {
+    backRef.current = onBack
+  }, [onBack])
+
+  useEffect(() => {
+    if (!escape) return
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') backRef.current()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [escape])
+
+  return (
+    <aside className="ls-panel ls-side lg" aria-labelledby={titleId}>
+      <div className="ls-side-head">
+        <button type="button" className="ls-side-back" onClick={onBack}>
+          <ChevronLeft size={16} aria-hidden="true" />
+          Voltar
+        </button>
+        <h2 id={titleId} className="ls-side-title">
+          {title}
+        </h2>
+      </div>
+      <div className="ls-side-scroll">
+        <div className="ls-side-body">{children}</div>
+      </div>
+      {footer && <div className="ls-side-foot">{footer}</div>}
+    </aside>
   )
 }

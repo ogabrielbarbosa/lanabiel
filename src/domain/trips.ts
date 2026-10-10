@@ -2,8 +2,8 @@
 //
 // Spec: .agent/Tasks/fase-6-viagens.md (seções 4 e 5) · ADR 0019.
 //
-// A viagem É o evento `viagem` dos dois (`calendar_events`): datas, destino,
-// título e nota moram lá e só lá. Aqui ficam os tipos do que `trips` e as
+// A viagem É o evento `viagem` (`calendar_events`), dos dois ou de um só
+// (ADR 0025): datas, destino, título, nota e quem viaja moram lá e só lá. Aqui ficam os tipos do que `trips` e as
 // tabelas-filhas acrescentam. Os limites e as listas são os dos CHECK da
 // migration `20260927120000_trips.sql`, com paridade provada em
 // `supabase/tests/trips.test.ts` (A1). Mudou aqui, muda lá.
@@ -74,6 +74,19 @@ export const TRIP_LIMITS = {
   /** Fotos escolhidas de uma vez no _Adicionar fotos_ (R21); não é CHECK. */
   photosPerUpload: 50,
 } as const
+
+/**
+ * A capa de banco de imagens (ADR 0025): a foto do Unsplash pela URL DELES e o
+ * crédito, que a licença exige na tela. Os três juntos ou nenhum
+ * (`trip_cover_stock_whole`).
+ */
+export interface StockCover {
+  /** `https://images.unsplash.com/…` (`trip_cover_stock_url`). */
+  url: string
+  author: string
+  /** `https://unsplash.com/@…` (`trip_cover_stock_author_url`). */
+  authorUrl: string
+}
 
 /** Estado derivado de hoje (I4), nunca gravado. */
 export type TripStatus = 'planned' | 'ongoing' | 'done'
@@ -161,7 +174,7 @@ export interface TripPhoto {
   createdAt: string
 }
 
-/** Um evento `viagem` dos dois + o que é dele (I1). */
+/** Um evento `viagem` + o que é dele (I1). */
 export interface Trip {
   /** = `calendar_events.id` = `trips.event_id`. */
   id: string
@@ -170,7 +183,12 @@ export interface Trip {
   startsOn: string
   endsOn: string
   note: string | null
+  /** ADR 0025: `solo` = só `travelerId` viaja. */
+  travelers: 'both' | 'solo'
+  travelerId: string | null
   coverPhotoId: string | null
+  /** Usada só quando não há `coverPhotoId`: foto de vocês vence a de banco. */
+  coverStock: StockCover | null
   lodging: Lodging
   departures: TripDeparture[]
   days: TripDayTitle[]
@@ -192,6 +210,10 @@ export interface NewTripDraft {
   startsOn: string
   endsOn: string
   note: string | null
+  travelers: 'both' | 'solo'
+  /** Só com `solo`. */
+  travelerId: string | null
+  coverStock: StockCover | null
   lodgingName: string | null
   departures: TripDeparture[]
 }

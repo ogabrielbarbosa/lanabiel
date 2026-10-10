@@ -452,6 +452,26 @@ export function whereWeAre(
   return { kind: 'together', city, until }
 }
 
+/**
+ * De onde a busca de lugar parte (ADR 0027): a cidade da estadia de hoje de
+ * quem busca. Sem estadia no dia, ou com a cidade ainda não lida, a
+ * cidade-casa. É a cidade de UMA pessoa, não `whereWeAre`: separados, cada um
+ * busca a partir de onde está.
+ */
+export function searchOrigin(
+  stays: readonly Stay[],
+  profileId: string,
+  cities: ReadonlyMap<string, LatLng>,
+  today: string,
+  home: LatLng,
+): LatLng {
+  const stay = stays.find(
+    (s) => s.profileId === profileId && s.startsOn <= today && (s.endsOn === null || today <= s.endsOn),
+  )
+  const city = stay ? cities.get(stay.cityId) : undefined
+  return city ? { lat: city.lat, lng: city.lng } : { lat: home.lat, lng: home.lng }
+}
+
 /** Geográficos não feitos a até `radiusKm` (linha reta), do mais perto ao mais longe. */
 export function nearby(
   items: readonly ListItem[],

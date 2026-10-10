@@ -10,7 +10,7 @@
 // paralelo (I2).
 
 import { addDays, daysInclusive, diffDays, isoOf, localDateOf } from '../lib/date'
-import { countDrawn, runAround, runs } from './calendar'
+import { countDrawn, runAround, runs, streakAround } from './calendar'
 import { COUNTRY_CENTERS, COUNTRY_CODES } from './countries'
 import type { CalCity, CityMap, MembersBySlot, Run } from './calendar'
 import { countStates, stayOn } from './coupleState'
@@ -533,23 +533,36 @@ export function personMarkers(
 
 export interface CurrentPeriod {
   kind: 'together' | 'traveling' | 'apart' | 'unknown'
+  /** O trecho de hoje (a cidade); `null` em `unknown`. */
   run: Run | null
-  /** Dia k do trecho (1 = o primeiro). */
+  /** Começo da sequência do lado de hoje (juntos/separados), atravessando cidades. */
+  from: string | null
+  /** Fim da sequência; `null` em aberto. */
+  to: string | null
+  /** Dia k da sequência (1 = o primeiro). */
   dayK: number
-  /** Dias do trecho; `null` em aberto. */
+  /** Dias da sequência; `null` em aberto. */
   total: number | null
 }
 
-/** O trecho de hoje com as bordas reais (`runAround`). */
+/**
+ * O trecho de hoje com as bordas reais (`runAround`) e a contagem pela
+ * sequência do lado (`streakAround`): trocar de cidade sem se encontrar não
+ * zera "Separados há N dias". Viajar juntos depois de dias juntos em casa é
+ * `together`, não `traveling` — "viajando, dia 20" afirmaria 20 dias de viagem.
+ */
 export function currentPeriod(today: string, stays: readonly Stay[], members: MembersBySlot): CurrentPeriod {
   const run = runAround(today, stays, members)
-  if (run.band === 'unknown') return { kind: 'unknown', run: null, dayK: 0, total: null }
-  const kind = run.band === 'apart' ? 'apart' : run.band === 'away' ? 'traveling' : 'together'
+  if (run.band === 'unknown') return { kind: 'unknown', run: null, from: null, to: null, dayK: 0, total: null }
+  const streak = streakAround(today, stays, members)
+  const kind = run.band === 'apart' ? 'apart' : run.band === 'away' && streak.from === run.from ? 'traveling' : 'together'
   return {
     kind,
     run,
-    dayK: diffDays(run.from, today) + 1,
-    total: run.to === null ? null : daysInclusive(run.from, run.to),
+    from: streak.from,
+    to: streak.to,
+    dayK: diffDays(streak.from, today) + 1,
+    total: streak.to === null ? null : daysInclusive(streak.from, streak.to),
   }
 }
 

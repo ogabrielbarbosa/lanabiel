@@ -62,33 +62,37 @@
   --lg-fill: linear-gradient(var(--glass-soft), var(--glass-soft));
 }
 
+.trips-skeleton-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .trips-skeleton {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
 }
 
-.trips-skeleton span {
-  height: 180px;
-  border-radius: 22px;
-  background: var(--glass);
-  animation: trips-pulse 1.4s ease-in-out infinite;
-}
-
-.trips-skeleton span:first-child {
+.trips-skeleton-hero {
   grid-column: 1 / -1;
-  height: 240px;
 }
 
-@keyframes trips-pulse {
-  50% {
-    opacity: 0.45;
+.trips-skeleton-detail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+@media (max-width: 759px) {
+  .trips-skeleton-stats,
+  .trips-skeleton,
+  .trips-skeleton-detail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .trips-skeleton span {
-    animation: none;
+  .trips-skeleton-detail {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -121,29 +125,10 @@
 .tr-tone--accent { color: var(--accent); }
 .tr-tone--heart { color: var(--heart); }
 
-/* --- layout e os brilhos (Glow Terra em cima, Glow Aqua embaixo) --------- */
-
-.shell:has(.tr-screen)::before {
-  top: -280px;
-  left: 500px;
-  width: 700px;
-  height: 520px;
-  background: var(--glow-terra);
-  opacity: 0.5;
-  filter: blur(140px);
-}
-
-.shell:has(.tr-screen)::after {
-  top: 520px;
-  right: auto;
-  bottom: auto;
-  left: -240px;
-  width: 760px;
-  height: 620px;
-  background: var(--glow-aqua);
-  opacity: 0.5;
-  filter: blur(140px);
-}
+/* --- layout ----------------------------------------------------------------
+   Os brilhos são os da casca (app.css), como na Lista: o par terra/aqua do
+   .pen, preso à janela e não ao conteúdo, partia o fundo em duas cores ao
+   rolar. */
 
 .tr-screen {
   display: flex;
@@ -155,29 +140,12 @@
   margin: 0;
 }
 
+/* A `PageArea` do kit (src/ui), com uma diferença: só seções aqui (sem
+   linha de filtro), então 24 entre elas. O fim é o da Lista: o respiro da
+   página, sem máscara nem espaçador (os 100px que sumiam sobravam como um
+   vão vazio no fim da rolagem). */
 .tr-area {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  /* Sem padding embaixo: o respiro do fim é o `.tr-fade`. */
-  padding: 20px 40px 0 24px;
-  overflow-y: auto;
-  /* O `Bottom Fade` do frame: os últimos 100px da área somem ao rolar. É
-     máscara, não faixa pintada por cima: a faixa escura sobre o fundo com
-     gradiente aparecia como retângulo e, sem viagens, ficava colada no
-     herói, cortando a tela no meio. */
-  mask-image: linear-gradient(180deg, #000 calc(100% - 100px), transparent);
-  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 100px), transparent);
-}
-
-/* O respiro do fim (76 + o gap de 24 = os 100px da máscara): no fim da
-   rolagem o último bloco sai inteiro da parte que some. */
-.tr-fade {
-  flex: none;
-  height: 76px;
-  pointer-events: none;
+  gap: var(--space-6);
 }
 
 .tr-screen a {
@@ -185,58 +153,15 @@
   text-decoration: none;
 }
 
-.tr-screen :is(a, button, input):focus-visible {
+/* O `:where` no campo: os modais (`CalDialog`, sem portal) moram dentro de
+   `.tr-screen`, e o `.cal-mf-input` precisa vencer para o foco ficar na caixa. */
+.tr-screen :is(a, button):focus-visible,
+:where(.tr-screen) :is(input, select, textarea):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-/* --- cabeçalho ----------------------------------------------------------- */
-
-.tr-header {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 16px;
-  margin-bottom: 1px;
-}
-
-.tr-title {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.tr-kicker {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 17px;
-  color: var(--text-secondary);
-}
-
-.tr-kicker svg {
-  flex: none;
-  color: var(--emphasis);
-}
-
-.tr-title h1 {
-  margin: 0;
-  font-size: 44px;
-  font-weight: 600;
-  letter-spacing: -1.8px;
-  line-height: 1.05;
-}
-
-.tr-controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-}
+/* --- cabeçalho: o PageHeader do kit; aqui a alternância -------------------- */
 
 .tr-segmented {
   display: inline-flex;
@@ -725,9 +650,13 @@
   grid-auto-columns: calc((100% - 16px) / 2);
   overflow-x: auto;
   scroll-snap-type: x mandatory;
+  scroll-padding-inline: 2px;
   scrollbar-width: thin;
-  padding-bottom: 6px;
-  margin-bottom: -6px;
+  /* O `overflow-x` corta também na vertical: o respiro, devolvido com margem
+     negativa, deixa caber o contorno do vidro (1 de cada lado) e a sombra do
+     cartão (`0 14px 36px`) até onde o vão dos vizinhos permite. */
+  padding: 11px 2px 22px;
+  margin: -11px -2px -22px;
 }
 
 .tr-planned--scroll > li {
@@ -1681,11 +1610,93 @@
   min-height: 43px;
 }
 
+.tr-banner-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* O banner da capa (ADR 0025): a foto escolhida ocupa o topo da coluna. */
+.tr-banner {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16 / 7;
+  border-radius: 18px;
+  background: var(--glass-soft);
+}
+
+.tr-banner > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tr-banner--empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px dashed var(--glass-stroke);
+}
+
+.tr-banner-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0 24px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  text-align: center;
+}
+
+.tr-banner-upload {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  --lg-fill: linear-gradient(#00000059, #00000059);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tr-banner-upload:hover:not(:disabled) {
+  --lg-fill: linear-gradient(#00000080, #00000080);
+}
+
+.tr-banner-credit {
+  position: absolute;
+  bottom: 8px;
+  left: 10px;
+}
+
+/* O crédito do Unsplash, por cima de foto: branco com sombra para ler em qualquer céu. */
+.tr-credit {
+  margin: 0;
+  color: #ffffffd9;
+  font-size: 11px;
+  line-height: 14px;
+  text-shadow: 0 1px 3px #000000b3;
+}
+
+.tr-credit a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .tr-covers {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  height: 72px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+  height: 46px;
 }
 
 .tr-cover-option {
@@ -1710,76 +1721,39 @@
   box-shadow: 0 0 0 2px var(--emphasis), 0 0 14px color-mix(in srgb, var(--emphasis) 33%, transparent);
 }
 
-.tr-cover-upload {
+.tr-who {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tr-who button {
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  grid-column: -2;
-  border-radius: 14px;
+  gap: 7px;
+  height: 40px;
+  padding: 0 14px 0 9px;
+  border-radius: 999px;
+  --lg-fill: linear-gradient(var(--glass-soft), var(--glass-soft));
   color: var(--text-secondary);
   font: inherit;
-  font-size: 11px;
+  font-size: 13px;
   cursor: pointer;
 }
 
-.tr-cover-upload:hover:not(:disabled) {
-  --lg-fill: linear-gradient(var(--glass-hover), var(--glass-hover));
+.tr-who button:last-child {
+  padding-left: 14px;
 }
 
-.tr-departure {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  padding: 10px 12px;
-  border-radius: 14px;
-}
-
-.tr-departure:focus-within {
-  --lg-edge: linear-gradient(var(--accent), var(--accent));
-}
-
-.tr-departure .cal-avatar {
-  box-shadow: 0 0 0 2px var(--glass-stroke);
-  font-size: 12px;
-}
-
-.tr-departure-text {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-
-.tr-departure-home {
-  overflow: hidden;
-  font-size: 13px;
+.tr-who button[aria-pressed='true'] {
+  --lg-fill: linear-gradient(var(--glass-strong), var(--glass-strong));
+  --lg-edge: linear-gradient(var(--emphasis), var(--emphasis));
+  color: var(--text-primary);
   font-weight: 600;
-  line-height: 17px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.tr-departure-text input {
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--text-secondary);
-  font: inherit;
-  font-size: 11px;
-  line-height: 14px;
-}
-
-.tr-departure-text input::placeholder {
-  color: var(--text-tertiary);
-}
-
-.tr-departure-text input:focus-visible {
-  outline: none;
+.tr-who button > svg {
+  color: var(--heart);
 }
 
 .tr-mprev {
@@ -1966,10 +1940,6 @@
 /* --- estreito -------------------------------------------------------------- */
 
 @media (max-width: 1359px) {
-  .tr-area {
-    padding-right: 24px;
-  }
-
   .tr-done {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   }
@@ -2013,15 +1983,6 @@
 @media (max-width: 759px) {
   .trips-route {
     height: auto;
-  }
-
-  .tr-area {
-    padding: 8px 0 24px;
-    overflow: visible;
-  }
-
-  .tr-title h1 {
-    font-size: 32px;
   }
 
   .tr-planned {

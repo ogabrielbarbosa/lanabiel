@@ -113,6 +113,7 @@ src/map/                   # a engine do mapa atrás de MapEngine; SÓ mapbox/ad
 src/domain/map.ts          # Home: pins, regiões, câmera, contagens do painel (puro)
 src/dev/                   # SÓ DEV: harness `?preview` com os dados do .pen, sem login
 src/settings/              # as nove abas das Configurações, recebe SettingsApi
+src/ui/                    # kit de tela (ADR 0026): PageArea, PageHeader, ChipRow, Skeleton, tokens de espaço
 src/lib/                   # supabase.ts, database.types.ts (GERADO), date.ts
 supabase/functions/        # edge functions (send-invite)
 supabase/migrations/       # o schema, append-only
@@ -199,7 +200,11 @@ Identificadores em inglês, texto de interface em português. **Texto de
 interface sem refrão** (travessão emendando frases, "Hmm."/"Opa." como título,
 "seu amor" e "de vocês dois" em toda tela, frase de efeito): leia
 [`.agent/SOP/copy.md`](.agent/SOP/copy.md) antes de escrever qualquer copy. CSS é arquivo único
-por feature (`list/list.css`), sem framework nem CSS-in-JS. Exceções registradas:
+por feature (`list/list.css`), sem framework nem CSS-in-JS. **Ritmo de página
+não mora na feature**: área, cabeçalho, faixa de chips, esqueleto e os tokens
+`--space-*`/`--radius-*` são do kit `src/ui` (ADR 0026). Tela nova usa
+`PageArea` + `PageHeader`; o cabeçalho (texto e botão) aparece antes da
+leitura, e só o corpo vira `Loading`/`Skeleton`. Exceções registradas:
 o Calendário tem `calendar.css` e `modals.css`; as Viagens, `trips.css` e
 `detail/trip-detail.css`; a Home, `home.css` (área do mapa) e `panel.css`.
 

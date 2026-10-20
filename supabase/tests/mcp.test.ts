@@ -13,7 +13,8 @@ import { consentApi } from '../../src/auth/consentApi'
 import { ANON_KEY, URL as SUPABASE_URL, admin, coupleOfTwo, userFactory } from './harness'
 import type { SignedUser } from './harness'
 
-const MCP_URL = `${SUPABASE_URL}/functions/v1/mcp`
+// `MCP_URL=https://lanabiel.ogabarbosa.com/mcp` prova o endereço público (rewrite da Vercel).
+const MCP_URL = process.env.MCP_URL ?? `${SUPABASE_URL}/functions/v1/mcp`
 const factory = userFactory('mcp')
 
 let a: SignedUser

@@ -7,7 +7,7 @@
     { "source": "/mcp", "destination": "https://smdtcznadmnrdubeidyz.supabase.co/functions/v1/mcp?via=public" },
     { "source": "/.well-known/oauth-protected-resource/mcp", "destination": "https://smdtcznadmnrdubeidyz.supabase.co/functions/v1/mcp/.well-known/oauth-protected-resource?via=public" },
     { "source": "/.well-known/oauth-protected-resource", "destination": "https://smdtcznadmnrdubeidyz.supabase.co/functions/v1/mcp/.well-known/oauth-protected-resource?via=public" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!assets/).*)", "destination": "/index.html" }
   ],
   "headers": [
     {

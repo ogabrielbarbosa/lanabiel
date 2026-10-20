@@ -117,6 +117,11 @@ const settingsApi = stubApi<SettingsApi>({
   coverUrl: () => Promise.resolve(null),
   loadTrips: tripsApi.loadTrips,
   signOut: () => Promise.resolve(),
+  listAssistants: () =>
+    Promise.resolve({
+      status: 'ok',
+      rows: [{ clientId: 'claude', name: 'Claude', grantedAt: new Date(Date.now() - 3 * 86_400_000).toISOString() }],
+    }),
   download: () => {},
 })
 

@@ -86,6 +86,7 @@ export const SETTINGS_TABS = [
   'lista',
   'notificacoes',
   'aparencia',
+  'assistentes',
   'dados-e-privacidade',
   'zona-sensivel',
 ] as const

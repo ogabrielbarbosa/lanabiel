@@ -1550,3 +1550,32 @@
     justify-content: center;
   }
 }
+
+/* --- Assistentes (ADR 0031) ------------------------------------------------ */
+
+.st-mcp-url {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.st-steps {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+
+.st-steps b {
+  font-weight: 600;
+}
+
+.st-steps-foot {
+  margin: 12px 0 0;
+}

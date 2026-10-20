@@ -62,10 +62,10 @@ describe('A14 — leitura: esqueleto, erro, e nunca padrão no lugar de dado', (
 })
 
 describe('A12 — menu', () => {
-  it('as nove abas e a ativa marcada', () => {
+  it('as dez abas (as nove do .pen e Assistentes) e a ativa marcada', () => {
     renderTab('cidades')
     const menu = screen.getByRole('navigation', { name: 'Seções das configurações' })
-    expect(within(menu).getAllByRole('link')).toHaveLength(9)
+    expect(within(menu).getAllByRole('link')).toHaveLength(10)
     expect(within(menu).getByRole('link', { name: 'Cidades' })).toHaveAttribute('aria-current', 'page')
   })
 })

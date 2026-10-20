@@ -9,6 +9,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { createHash, randomBytes } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { disconnectAssistant, listAssistants } from '../../src/data/assistants'
 import { consentApi } from '../../src/auth/consentApi'
 import { ANON_KEY, URL as SUPABASE_URL, admin, coupleOfTwo, userFactory } from './harness'
 import type { SignedUser } from './harness'
@@ -282,6 +283,12 @@ describe('MCP publicado', () => {
       const { body } = await call(oauthClient, 'get_context')
       expect(body.me.name).toBe('mcp-a')
       await oauthClient.close()
+
+      // 6. A aba Assistentes vê a conexão e a desfaz.
+      const listed = await listAssistants(a.db)
+      expect(listed).toMatchObject({ status: 'ok', rows: [{ clientId: client.client_id, name: 'Cliente de teste do MCP' }] })
+      expect(await disconnectAssistant(a.db, client.client_id)).toEqual({ status: 'ok' })
+      expect(await listAssistants(a.db)).toEqual({ status: 'ok', rows: [] })
     } finally {
       await admin.auth.admin.oauth.deleteClient(client.client_id)
     }

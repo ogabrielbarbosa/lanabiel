@@ -14,6 +14,7 @@ import { loadCalCities, searchCities } from '../data/cities'
 import { loadCalendarExport } from '../data/calendar'
 import { createInvite, loadOpenInvite, sendInvite } from '../data/invites'
 import { endMySession, listMySessions } from '../data/sessions'
+import { disconnectAssistant, listAssistants } from '../data/assistants'
 import { loadListCounts, loadListExport } from '../data/listSummary'
 import {
   cancelInvite,
@@ -65,6 +66,9 @@ export interface SettingsApi {
   signOut: () => Promise<void>
   listSessions: () => ReturnType<typeof listMySessions>
   endSession: (sessionId: string) => ReturnType<typeof endMySession>
+  /** Assistentes conectados pelo MCP: as autorizações do OAuth do Auth (ADR 0031). */
+  listAssistants: () => ReturnType<typeof listAssistants>
+  disconnectAssistant: (clientId: string) => ReturnType<typeof disconnectAssistant>
   loadPhotoStats: (couple: SettingsCouple) => ReturnType<typeof loadPhotoStats>
   /** R26: total e contagem por categoria da Lista. */
   loadListCounts: () => ReturnType<typeof loadListCounts>
@@ -120,6 +124,8 @@ export function settingsApi(db: Db): SettingsApi {
     signOut: () => signOut(db),
     listSessions: () => listMySessions(db),
     endSession: (sessionId) => endMySession(db, sessionId),
+    listAssistants: () => listAssistants(db),
+    disconnectAssistant: (clientId) => disconnectAssistant(db, clientId),
     loadPhotoStats: (couple) => loadPhotoStats(db, couple),
     loadListCounts: () => loadListCounts(db),
     loadListExport: () => loadListExport(db),

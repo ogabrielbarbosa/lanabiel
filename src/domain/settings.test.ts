@@ -32,7 +32,7 @@ describe('paletas e vocabulário (lado cliente de A1)', () => {
 
   it('oito categorias e nove abas, sem repetição', () => {
     expect(new Set(LIST_CATEGORIES).size).toBe(8)
-    expect(new Set(SETTINGS_TABS).size).toBe(9)
+    expect(new Set(SETTINGS_TABS).size).toBe(10)
     expect(isSettingsTab('cidades')).toBe(true)
     expect(isSettingsTab('cidade')).toBe(false)
   })

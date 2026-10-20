@@ -6,6 +6,7 @@
 import { useCallback, useState } from 'react'
 import {
   Bell,
+  Bot,
   CalendarHeart,
   Heart,
   ListChecks,
@@ -32,6 +33,7 @@ export const TAB_META: Record<SettingsTab, { label: string; icon: LucideIcon; le
   lista: { label: 'Lista', icon: ListChecks, lead: 'Como os itens aparecem e o que o app sugere.' },
   notificacoes: { label: 'Notificações', icon: Bell, lead: 'Quem é avisado, de quê, e por onde.' },
   aparencia: { label: 'Aparência', icon: Palette, lead: 'Como o app se parece.' },
+  assistentes: { label: 'Assistentes', icon: Bot, lead: 'Use o lanabiel pelo Claude ou por outro assistente que aceite MCP.' },
   'dados-e-privacidade': { label: 'Dados e privacidade', icon: ShieldCheck, lead: 'O que existe e quem alcança.' },
   'zona-sensivel': { label: 'Zona sensível', icon: TriangleAlert, lead: 'Coisas que não dá pra desfazer.' },
 }

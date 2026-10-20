@@ -1,4 +1,4 @@
-// Configurações (Fase 3): as nove abas do Pencil, o menu e o painel "O espaço
+// Configurações (Fase 3): as nove abas do Pencil (mais Assistentes, ADR 0031), o menu e o painel "O espaço
 // de vocês".
 //
 // Spec: .agent/Tasks/fase-3-configuracoes.md
@@ -31,6 +31,7 @@ import { CalendarTab } from './tabs/CalendarTab'
 import { ListTab } from './tabs/ListTab'
 import { NotificationsTab } from './tabs/NotificationsTab'
 import { AppearanceTab } from './tabs/AppearanceTab'
+import { AssistantsTab } from './tabs/AssistantsTab'
 import { DataTab } from './tabs/DataTab'
 import { DangerTab } from './tabs/DangerTab'
 import { PageArea, PageHeader } from '../ui/Page'
@@ -245,6 +246,8 @@ function Tab({ tab, ctx }: { tab: SettingsTab; ctx: TabContext }) {
       return <NotificationsTab {...ctx} />
     case 'aparencia':
       return <AppearanceTab {...ctx} />
+    case 'assistentes':
+      return <AssistantsTab {...ctx} />
     case 'dados-e-privacidade':
       return <DataTab {...ctx} />
     case 'zona-sensivel':

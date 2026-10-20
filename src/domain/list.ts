@@ -461,15 +461,21 @@ export function whereWeAre(
 export function searchOrigin(
   stays: readonly Stay[],
   profileId: string,
-  cities: ReadonlyMap<string, LatLng>,
+  cities: ReadonlyMap<string, LatLng & { name?: string }>,
   today: string,
-  home: LatLng,
-): LatLng {
+  home: LatLng & { name?: string },
+): SearchFrom {
   const stay = stays.find(
     (s) => s.profileId === profileId && s.startsOn <= today && (s.endsOn === null || today <= s.endsOn),
   )
-  const city = stay ? cities.get(stay.cityId) : undefined
-  return city ? { lat: city.lat, lng: city.lng } : { lat: home.lat, lng: home.lng }
+  const city = (stay ? cities.get(stay.cityId) : undefined) ?? home
+  // O nome vai junto: o endereço com número só acha a rua certa com a cidade no texto (ADR 0030).
+  return city.name ? { lat: city.lat, lng: city.lng, name: city.name } : { lat: city.lat, lng: city.lng }
+}
+
+/** De onde a busca parte: a coordenada e, quando se sabe, o nome da cidade. */
+export interface SearchFrom extends LatLng {
+  name?: string
 }
 
 /** Geográficos não feitos a até `radiusKm` (linha reta), do mais perto ao mais longe. */

@@ -12,7 +12,7 @@ import { calendarApi } from '../calendar/api'
 import type { CalendarApi } from '../calendar/api'
 import { todayISO } from '../lib/date'
 import { avatarUrl } from '../data/avatar'
-import { loadCitiesByIds, searchCities } from '../data/cities'
+import { loadCitiesByIds, loadCountryCities, searchCities } from '../data/cities'
 import {
   addPhoto,
   createItem,
@@ -30,8 +30,14 @@ import {
 } from '../data/list'
 import { searchNearbyPlaces } from '../data/nearbyPlaces'
 import { searchPlaces } from '../data/places'
+import { searchAddresses } from '../data/addresses'
 import type { PlaceSearchOptions } from '../data/places'
 import { loadSettings } from '../data/settings'
+
+/** O token público do mapa (ADR 0022) serve também ao endereço (ADR 0030). Nunca um `sk.`. */
+const MAPBOX_TOKEN = ((t: string | undefined) => (t?.startsWith('pk.') ? t : null))(
+  import.meta.env.VITE_MAPBOX_TOKEN as string | undefined,
+)
 
 type Db = SupabaseClient<Database>
 
@@ -77,6 +83,8 @@ export interface ListApi {
 
   searchPlaces: (query: string, options: PlaceQueryOptions) => ReturnType<typeof searchPlaces>
   searchCities: Tail<typeof searchCities>
+  /** As cidades de um país de fora, do GeoNames (ADR 0029): o "Países e cidades". */
+  countryCities: Tail<typeof loadCountryCities>
 
   /**
    * O _Agendar_ do detalhe (Fase 5, R23) abre o `EventModal` do Calendário
@@ -110,8 +118,10 @@ export function listApi(db: Db): ListApi {
         ...options,
         searchCities: (q) => searchCities(db, q),
         searchNearby: (q, near, signal) => searchNearbyPlaces(db, q, near, signal),
+        searchAddresses: MAPBOX_TOKEN ? (q, near, signal) => searchAddresses(q, near, { token: MAPBOX_TOKEN, signal }) : undefined,
       }),
     searchCities: (query) => searchCities(db, query),
+    countryCities: (code) => loadCountryCities(db, code),
     calendar: calendarApi(db),
   }
 }

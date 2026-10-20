@@ -216,7 +216,7 @@ export function MapArea({ request = null }: { request?: FocusRequest | null }) {
       <div ref={stageRef} className="hm-stage">
         <div className="hm-top">
           <CoupleStatus />
-          <Breadcrumb nav={nav} pins={pins} stateCities={api.stateCities} />
+          <Breadcrumb nav={nav} pins={pins} stateCities={api.stateCities} countryCities={api.countryCities} />
         </div>
 
         <div className="hm-zoom lg" role="group" aria-label="Zoom">

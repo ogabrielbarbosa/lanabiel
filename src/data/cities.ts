@@ -65,6 +65,46 @@ export async function loadStateCities(db: Db, uf: string): Promise<DataResult<Ci
   }
 }
 
+/** Uma cidade do GeoNames (ADR 0029): fora do Brasil, só referência. O `id` é `geo:<geonameid>`, não de `cities`. */
+export interface WorldCity extends City {
+  countryCode: string
+  /** Província ou estado, como o GeoNames escreve (em inglês). */
+  region: string | null
+}
+
+/**
+ * As cidades de um país de fora (≥ 15 mil habitantes, ADR 0029), da maior
+ * para a menor — o seletor de cidades da Home e o "Países e cidades" da Lista.
+ * Os EUA passam de mil: paginado. Sem sessão a policy devolve zero linhas, e a
+ * lista vazia diria que o país não tem cidade.
+ */
+export async function loadCountryCities(db: Db, countryCode: string): Promise<DataResult<WorldCity[]>> {
+  const { data: session } = await db.auth.getSession()
+  if (!session.session) return { status: 'unauthenticated' }
+  const result = await selectAll((from, to) =>
+    db
+      .from('geo_cities')
+      .select('geoname_id, name, country_code, region, lat, lng')
+      .eq('country_code', countryCode)
+      .order('population', { ascending: false })
+      .order('geoname_id')
+      .range(from, to),
+  )
+  if (result.status !== 'ok') return result
+  return {
+    status: 'ok',
+    rows: result.rows.map((c) => ({
+      id: `geo:${c.geoname_id}`,
+      name: c.name,
+      stateCode: null,
+      countryCode: c.country_code,
+      region: c.region,
+      lat: c.lat,
+      lng: c.lng,
+    })),
+  }
+}
+
 /** Cidades por id — para o export resolver as das estadias. Global, legível por qualquer sessão. */
 export async function loadCitiesByIds(db: Db, ids: readonly string[]): Promise<DataResult<Map<string, City>>> {
   const unique = [...new Set(ids)]

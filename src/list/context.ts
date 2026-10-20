@@ -10,7 +10,7 @@
 
 import { createContext, useContext } from 'react'
 import type { ListFailure } from '../data/list'
-import type { ListItem, ListMemory, ListPhoto, WhereWeAre } from '../domain/list'
+import type { ListItem, ListMemory, ListPhoto, WhereWeAre, SearchFrom } from '../domain/list'
 import type { ListApi } from './api'
 
 /** Um integrante do casal, como a Lista o mostra. */
@@ -43,7 +43,7 @@ export interface ListContextValue {
   /** Onde o casal está hoje (I9, I11). Distância só com `kind === 'together'`. */
   where: WhereWeAre
   /** De onde a busca de lugar parte: a cidade de hoje de quem vê, ou a casa (`searchOrigin`, ADR 0027). */
-  searchFrom: { lat: number; lng: number }
+  searchFrom: SearchFrom
   /** `YYYY-MM-DD`, do relógio injetado. */
   today: string
   /**

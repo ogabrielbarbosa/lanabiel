@@ -2280,24 +2280,25 @@
 }
 
 .ls-add-tiles {
-  display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
+/* Botão compacto: ícone e texto na mesma linha, sem a caixa alta de antes
+   (que deixava um vazio embaixo de cada rótulo curto). */
 .ls-add-tile {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
-  min-height: 82px;
-  padding: 10px 4px;
-  border-radius: 16px;
+  min-height: 40px;
+  padding: 6px 14px 6px 6px;
+  border-radius: 999px;
   --lg-fill: linear-gradient(var(--glass-soft), var(--glass-soft));
   color: var(--text-secondary);
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
+  white-space: nowrap;
   cursor: pointer;
 }
 
@@ -2313,8 +2314,8 @@
 .ls-add-tile-icon {
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: var(--glass);
   color: var(--cat, var(--text-secondary));
@@ -2467,6 +2468,8 @@
 }
 
 .ls-add-results ul {
+  max-height: 264px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -2773,10 +2776,6 @@
 }
 
 @media (max-width: 759px) {
-  .ls-add-tiles {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
   .ls-add-body,
   .ls-add-row {
     grid-template-columns: minmax(0, 1fr);

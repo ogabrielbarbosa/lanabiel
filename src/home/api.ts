@@ -12,8 +12,8 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { avatarUrl } from '../data/avatar'
-import { loadCalCities, loadStateCities } from '../data/cities'
-import type { City } from '../data/cities'
+import { loadCalCities, loadCountryCities, loadStateCities } from '../data/cities'
+import type { City, WorldCity } from '../data/cities'
 import { loadList } from '../data/list'
 import type { ListData } from '../data/list'
 import { signedMediaUrls } from '../data/media'
@@ -57,6 +57,8 @@ export interface HomeApi {
   coverUrl: (path: string | null) => Promise<string | null>
   /** Todos os municípios do IBGE de uma UF — o seletor de cidades (R9). */
   stateCities: (uf: string) => Promise<DataResult<City[]>>
+  /** As cidades de um país de fora, do GeoNames (ADR 0029) — o seletor de cidades fora do Brasil. */
+  countryCities: (countryCode: string) => Promise<DataResult<WorldCity[]>>
 
   /** A engine do mapa. Em produção, o Mapbox (ADR 0022); nos testes, `fakeMapEngine`. */
   mapEngine: MapEngine
@@ -65,6 +67,7 @@ export interface HomeApi {
 export function homeApi(db: Db): HomeApi {
   // Os municípios não mudam: cada UF é lida uma vez por sessão da tela.
   const byUf = new Map<string, Promise<DataResult<City[]>>>()
+  const byCountry = new Map<string, Promise<DataResult<WorldCity[]>>>()
   return {
     today: todayISO,
     loadContext: () => loadSettings(db),
@@ -82,6 +85,16 @@ export function homeApi(db: Db): HomeApi {
         return result
       })
       byUf.set(uf, pending)
+      return pending
+    },
+    countryCities: (code) => {
+      const cached = byCountry.get(code)
+      if (cached) return cached
+      const pending = loadCountryCities(db, code).then((result) => {
+        if (result.status !== 'ok') byCountry.delete(code)
+        return result
+      })
+      byCountry.set(code, pending)
       return pending
     },
     mapEngine: mapboxEngine,

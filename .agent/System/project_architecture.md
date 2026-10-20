@@ -102,7 +102,8 @@ src/
 │   ├── profile.ts · couple.ts · invites.ts · cities.ts · avatar.ts   # Fase 2
 │   ├── stays.ts            # leitura e escrita de estadias, fronteira snake→camel
 │   ├── list.ts · listRow.ts # Fase 4: leitura/escritas/cascatas da Lista; mapeador snake↔camel
-│   ├── places.ts           # busca de lugar no Photon/OSM + Overture perto de casa (ADR 0027), fallback IBGE (ADR 0016); `osmRef`
+│   ├── places.ts           # busca de lugar no Photon/OSM + Overture perto de casa (ADR 0027), fallback IBGE (ADR 0016); `osmRef`, `kind`
+│   ├── addresses.ts        # endereço com número no Mapbox Geocoding permanente (ADR 0030)
 │   ├── nearbyPlaces.ts     # chama a edge function `places-nearby` (Overture, ADR 0027)
 │   ├── calendar.ts · calendarRow.ts # Fase 5: leitura, pintura, eventos, 💋; mapeador snake↔camel
 │   ├── worldCities.ts      # cidade do mundo: busca no Photon (sem BR) e `ensureWorldCity` (ADR 0017)
@@ -267,8 +268,23 @@ ordena por anéis de proximidade: bairro, cidade, estado, país, continente,
 mundo (`rankByProximity`). No modo `place`, os estabelecimentos do Overture num
 raio de ~80 km entram junto, pela edge function `places-nearby`; sem chave ou
 fora do ar, fica só o Photon
-([ADR 0027](../Decisions/0027-estabelecimentos-pelo-overture-perto-de-casa.md)). A Lista
-**não** escreve em `cities`. A regra do formato mora em dois lugares com prova
+([ADR 0027](../Decisions/0027-estabelecimentos-pelo-overture-perto-de-casa.md)).
+Texto com número também vai ao Mapbox Geocoding v6 **permanente**
+(`addresses.ts`, com ", {cidade de partida}" no texto), e o endereço achado
+entra no topo, fora dos anéis
+([ADR 0030](../Decisions/0030-endereco-pelo-mapbox-geocoding-permanente.md)). A Lista
+**não** escreve em `cities`.
+
+**O modal de adicionar tem cinco grupos e o banco continua com oito
+categorias**: Países e cidades (`pais`/`cidade`, decidido por ter ou não
+cidade), Restaurantes e parques (`restaurante`/`parque`, parque do OSM já
+marcado), Comidas, Filmes e séries (`filme`/`serie`), Experiências. O
+formulário não pede mais `link`, `region`, `highlights` nem `seasons`. A
+edição mantém o que o item já tinha nessas colunas. Os países são os do
+seletor da Home. As cidades de um país de fora vêm de `geo_cities` (GeoNames,
+só leitura, sem o Brasil,
+[ADR 0029](../Decisions/0029-cidades-do-mundo-por-seed-do-geonames.md)), que
+também enche o seletor de cidades da Home num país sem lugar. A regra do formato mora em dois lugares com prova
 de paridade: `validateItem` (`src/domain/list.ts`) e o `CHECK`
 `list_items_format`; `listValidationCases.ts` roda contra os dois.
 

@@ -211,6 +211,12 @@ export function previewHomeApi(store: PreviewStore, trips: TripsApi): HomeApi {
           .filter((c) => c.countryCode === 'BR' && c.stateCode === uf)
           .map((c) => ({ id: c.id, name: c.name, stateCode: c.stateCode, lat: c.lat, lng: c.lng })),
       ),
+    countryCities: (code) =>
+      ok(
+        [...store.cities.values()]
+          .filter((c) => c.countryCode === code)
+          .map((c) => ({ id: c.id, name: c.name, stateCode: null, countryCode: c.countryCode, region: c.region, lat: c.lat, lng: c.lng })),
+      ),
     mapEngine: mapboxEngine,
   }
 }

@@ -36,6 +36,7 @@ export function fakeListApi(overrides: Partial<ListApi> = {}): ListApi {
     replaceItemPhoto: vi.fn<ListApi['replaceItemPhoto']>(async () => notWired),
     searchPlaces: vi.fn<ListApi['searchPlaces']>(async () => ({ status: 'ok', rows: [], fallback: false })),
     searchCities: vi.fn<ListApi['searchCities']>(async () => ({ status: 'ok', rows: [] })),
+    countryCities: vi.fn<ListApi['countryCities']>(async () => ({ status: 'ok', rows: [] })),
     calendar: fakeCalendarApi(),
     ...overrides,
   }

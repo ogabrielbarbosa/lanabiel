@@ -27,7 +27,7 @@ const FEATURES: PhotonFeature[] = [
 ]
 
 const pick = (c: Record<string, unknown> | null) =>
-  c && { address: c.address, city: c.city, state: c.state, country: c.country, countryCode: c.countryCode, lat: c.lat, lng: c.lng, label: c.label }
+  c && { address: c.address, city: c.city, state: c.state, country: c.country, countryCode: c.countryCode, lat: c.lat, lng: c.lng, label: c.label, kind: c.kind }
 
 describe('paridade com o resolvedor da Lista', () => {
   for (const mode of ['place', 'city', 'country'] as PlaceMode[]) {

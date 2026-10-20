@@ -3,15 +3,16 @@
 //
 // Spec: .agent/Tasks/fase-7-mapa.md — R8, R9, I4, I9
 //
-// Cada seletor mostra TUDO de uma vez: os países do ISO, as 27 UFs e, num
-// estado, todos os municípios do IBGE (`stateCities`). As contagens são
+// Cada seletor mostra TUDO de uma vez: os países do ISO, as 27 UFs, num
+// estado todos os municípios do IBGE (`stateCities`) e, num país de fora, as
+// cidades do GeoNames (`countryCities`, ADR 0029). As contagens são
 // `regionRows` sobre os pins JÁ FILTRADOS (R12: os filtros valem para as
 // contagens dos seletores); os com lugar vêm primeiro, e a busca só filtra a
 // lista que já está na tela.
 
 import { useEffect, useState } from 'react'
 import { ChevronRight, Search } from 'lucide-react'
-import type { City } from '../../data/cities'
+import type { City, WorldCity } from '../../data/cities'
 import type { DataResult } from '../../data/result'
 import type { CalCity } from '../../domain/calendar'
 import { BR_STATES, cityKeyOf, countryName, normalizeName, regionRows, regionsWithPlaces } from '../../domain/map'
@@ -25,6 +26,7 @@ export interface RegionPickerProps {
   /** Os pins sob os filtros (R12). */
   pins: readonly Pin[]
   stateCities: HomeApi['stateCities']
+  countryCities: HomeApi['countryCities']
   onChoose: (level: PickerLevel, row: RegionRow) => void
   onChooseCity: (city: CalCity) => void
   /** Fechando: ainda na tela enquanto a silhueta recolhe, mas fora de alcance. */
@@ -56,39 +58,52 @@ const matches = (row: RegionRow, q: string) => {
   return normalizeName(row.name).includes(n) || row.code.toLowerCase() === n
 }
 
-/** Os municípios da UF em foco, lidos ao abrir o seletor de um estado. */
-function useStateCities(uf: string | null, stateCities: HomeApi['stateCities']) {
-  const [landed, setLanded] = useState<{ uf: string; result: DataResult<City[]> } | null>(null)
+/** As cidades do lugar em foco (UF ou país de fora), lidas ao abrir o seletor. */
+function useCities<T>(key: string | null, load: (key: string) => Promise<DataResult<T[]>>) {
+  const [landed, setLanded] = useState<{ key: string; result: DataResult<T[]> } | null>(null)
   useEffect(() => {
-    if (!uf) return
+    if (!key) return
     let live = true
-    void stateCities(uf).then((result) => {
-      if (live) setLanded({ uf, result })
+    void load(key).then((result) => {
+      if (live) setLanded({ key, result })
     })
     return () => {
       live = false
     }
-  }, [uf, stateCities])
-  return uf && landed?.uf === uf ? landed.result : null
+  }, [key, load])
+  return key && landed?.key === key ? landed.result : null
 }
 
-export function RegionPicker({ level, path, pins, stateCities, onChoose, onChooseCity, inert }: RegionPickerProps) {
+export function RegionPicker({
+  level,
+  path,
+  pins,
+  stateCities,
+  countryCities,
+  onChoose,
+  onChooseCity,
+  inert,
+}: RegionPickerProps) {
   const [query, setQuery] = useState('')
   const ibgeUf = level === 'state' && path.countryCode === 'BR' ? path.uf : null
-  const loaded = useStateCities(ibgeUf, stateCities)
-  const cities = loaded?.status === 'ok' ? loaded.rows : []
+  const worldCode = level === 'country' && path.countryCode && path.countryCode !== 'BR' ? path.countryCode : null
+  const ibge = useCities<City>(ibgeUf, stateCities)
+  const world = useCities<WorldCity>(worldCode, countryCities)
+  const loaded = ibgeUf ? ibge : worldCode ? world : null
+  const cities: (City & { region?: string | null })[] = loaded?.status === 'ok' ? loaded.rows : []
   const title = titleOf(level, path)
   const q = query.trim()
-  const loading = ibgeUf !== null && loaded === null
+  const loading = (ibgeUf !== null || worldCode !== null) && loaded === null
 
   const all = regionRows(pins, level, path, cities)
   const rows = q === '' ? all : all.filter((r) => matches(r, q))
   const focus = focusKey(level, path)
-  const ibgeByKey = new Map(cities.map((c) => [cityKeyOf('BR', ibgeUf, c.name), c]))
+  const code = path.countryCode ?? 'BR'
+  const byKey = new Map(cities.map((c) => [cityKeyOf(code, ibgeUf, c.name), c]))
 
   function choose(row: RegionRow) {
-    const city = ibgeByKey.get(row.key)
-    if (city) onChooseCity({ ...city, countryCode: 'BR', region: null })
+    const city = byKey.get(row.key)
+    if (city) onChooseCity({ ...city, countryCode: code, region: city.region ?? null })
     else onChoose(level, row)
   }
 

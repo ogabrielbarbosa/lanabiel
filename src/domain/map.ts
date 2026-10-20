@@ -343,8 +343,10 @@ export function regionRows(
   } else {
     const inRegion = pins.filter((p) => isInRegion(p, level, path) && p.cityKey && p.cityName)
     for (const p of inRegion) bump(p.cityKey as string, cityCode(p.cityName as string), p.cityName as string)
-    if (level === 'state' && path.countryCode) {
-      for (const c of cities) zero(cityKeyOf(path.countryCode, path.uf, c.name), cityCode(c.name), c.name)
+    // As cidades sem lugar: os municípios da UF (IBGE) ou, num país de fora, as do GeoNames.
+    if (path.countryCode) {
+      const uf = level === 'state' ? path.uf : null
+      for (const c of cities) zero(cityKeyOf(path.countryCode, uf, c.name), cityCode(c.name), c.name)
     }
   }
   return [...rows.values()].sort(byCountThenName)

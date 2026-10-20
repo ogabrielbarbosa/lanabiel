@@ -29,10 +29,12 @@ export function Breadcrumb({
   nav,
   pins,
   stateCities,
+  countryCities,
 }: {
   nav: MapNav
   pins: readonly Pin[]
   stateCities: RegionPickerProps['stateCities']
+  countryCities: RegionPickerProps['countryCities']
 }) {
   const { level, path, picker } = nav.state
   const levels = levelsOf(path)
@@ -83,6 +85,7 @@ export function Breadcrumb({
                   inert={picker === null}
                   pins={pins}
                   stateCities={stateCities}
+                  countryCities={countryCities}
                   onChoose={nav.choose}
                   onChooseCity={nav.chooseCity}
                 />

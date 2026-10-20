@@ -217,6 +217,26 @@ describe('A10 — breadcrumb e seletores: Brasil → São Paulo → São José d
     expect(lastFlight(map)).toMatchObject({ kind: 'center', center: { lat: -23.0264, lng: -45.5553 }, pitch: 60 })
   })
 
+  it('país de fora sem lugar lista as cidades dele (GeoNames); escolher uma voa até ela', async () => {
+    const countryCities = vi.fn<HomeApi['countryCities']>(async () => ({
+      status: 'ok',
+      rows: [
+        { id: 'geo:993800', name: 'Joanesburgo', stateCode: null, countryCode: 'ZA', region: 'Gauteng', lat: -26.2, lng: 28.04 },
+        { id: 'geo:3369157', name: 'Cidade do Cabo', stateCode: null, countryCode: 'ZA', region: 'Western Cape', lat: -33.93, lng: 18.42 },
+      ],
+    }))
+    const { area, user, map } = await renderHome({}, { countryCities })
+    await user.click(segment(area, 'Mundo'))
+    await user.click(within(picker(area)).getByRole('button', { name: /África do Sul/ }))
+    expect(picker(area)).toHaveAccessibleName('Cidades em África do Sul')
+    expect(countryCities).toHaveBeenLastCalledWith('ZA')
+    await waitFor(() => expect(pickerRows(area)).toEqual(['CDC Cidade do Cabo 0', 'JOA Joanesburgo 0']))
+
+    await user.click(within(picker(area)).getByRole('button', { name: /Cidade do Cabo/ }))
+    expect(current(area)).toHaveTextContent('Cidade do Cabo')
+    expect(lastFlight(map)).toMatchObject({ kind: 'center', center: { lat: -33.93, lng: 18.42 } })
+  })
+
   it('municípios que não carregam: ficam as cidades com lugar e o aviso', async () => {
     const stateCities = vi.fn<HomeApi['stateCities']>(async () => ({ status: 'error', cause: 'pausado' }))
     const { area, user } = await renderHome({}, { stateCities })

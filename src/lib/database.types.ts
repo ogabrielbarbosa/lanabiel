@@ -471,6 +471,36 @@ export type Database = {
           },
         ]
       }
+      geo_cities: {
+        Row: {
+          country_code: string
+          geoname_id: number
+          lat: number
+          lng: number
+          name: string
+          population: number
+          region: string | null
+        }
+        Insert: {
+          country_code: string
+          geoname_id: number
+          lat: number
+          lng: number
+          name: string
+          population?: number
+          region?: string | null
+        }
+        Update: {
+          country_code?: string
+          geoname_id?: number
+          lat?: number
+          lng?: number
+          name?: string
+          population?: number
+          region?: string | null
+        }
+        Relationships: []
+      }
       list_items: {
         Row: {
           added_by: string | null

@@ -1,4 +1,5 @@
-// Critério A14 — .agent/Tasks/fase-4-lista.md, seção 10 (R11–R15, R28, seção 7).
+// Critério A14 — .agent/Tasks/fase-4-lista.md, seção 10 (R11–R15, R28, seção 7),
+// com o modal de cinco grupos de .agent/Research/lista-adicionar-simples.md.
 // O modal se prova renderizado dentro do `ListContext`, com a `ListApi` falsa:
 // cada resposta do banco e da busca de lugar é dirigida pelo teste.
 
@@ -52,17 +53,9 @@ const MOCOTO = candidate({
   detail: 'Av. Nossa Senhora do Loreto, 1100 · São Paulo, SP',
 })
 const MOCOTO_CAFE = candidate({ label: 'Mocotó Café', detail: 'Mercado de Pinheiros · São Paulo, SP', lat: -23.56 })
-const JAPAO = candidate({
-  label: 'Japão',
-  city: null,
-  state: null,
-  country: 'Japão',
-  countryCode: 'JP',
-  lat: 36.2,
-  lng: 138.25,
-  detail: 'País · 36,20, 138,25',
-})
-const SAO_PAULO_CITY = candidate({ label: 'São Paulo', detail: 'São Paulo, Brasil · −23,55, −46,63', lat: -23.55, lng: -46.63 })
+const SAO_PAULO_CITY = candidate({ label: 'São Paulo', detail: 'São Paulo, Brasil · −23,55, −46,63', lat: -23.55, lng: -46.63, kind: 'city' })
+const VILACA = candidate({ label: 'Rua Vilaça 500', address: 'Rua Vilaça, 500', city: 'São José dos Campos', detail: 'Rua Vilaça, 500 · São José dos Campos, SP', kind: 'address' })
+const IBIRAPUERA = candidate({ label: 'Parque Ibirapuera', detail: 'São Paulo, SP', kind: 'park' })
 
 const ok = (rows: PlaceCandidate[], fallback = false): PlaceSearchResult => ({ status: 'ok', rows, fallback })
 
@@ -108,6 +101,7 @@ function renderModal(
 }
 
 const tile = (name: string) => screen.getByRole('button', { name })
+const nota = () => screen.getByLabelText(/^Nota/)
 const saveButton = () => screen.getByRole('button', { name: /Adicionar à lista|Salvar/ })
 
 function fieldLabels(): string[] {
@@ -134,114 +128,55 @@ afterEach(() => {
 })
 
 // ---------------------------------------------------------------------------
-// R11: os campos de cada categoria
+// Os cinco grupos
 // ---------------------------------------------------------------------------
 
-describe('A14 — cada categoria mostra exatamente os campos de R11', () => {
-  const table: [string, ListCategory, string, string[]][] = [
-    ['Países', 'pais', '2 · Detalhes do país', ['Nome', 'Cidades que interessam', 'Link', 'Nota']],
-    ['Cidades', 'cidade', '2 · Detalhes da cidade', ['Nome', 'País', 'Região', 'Local · busca de cidade', 'Link', 'Nota']],
-    ['Restaurantes', 'restaurante', '2 · Detalhes do restaurante', ['Nome', 'Link', 'Local', 'Nota']],
-    ['Parques', 'parque', '2 · Detalhes do parque', ['Nome', 'Link', 'Local', 'Nota']],
-    ['Comidas', 'comida', '2 · Detalhes da comida', ['Nome', 'Onde comer · opcional', 'Local · cidade', 'Link', 'Nota']],
-    ['Experiências', 'experiencia', '2 · Detalhes da experiência', ['Nome', 'Link', 'Local', 'Nota']],
-    ['Filmes', 'filme', '2 · Detalhes do filme', ['Nome', 'Onde assistir', 'Link', 'Nota']],
-    ['Séries', 'serie', '2 · Detalhes da série', ['Nome', 'Onde assistir', 'Temporadas', 'Link', 'Nota']],
-  ]
-
-  it.each(table)('%s', async (tileName, category, heading, fields) => {
+describe('cinco grupos, poucos campos', () => {
+  it('o passo 1 tem os cinco grupos, e nenhum formulário antes de escolher', () => {
     renderModal(fakeListApi())
-    expect(screen.getByRole('heading', { name: 'Adicionar à lista' })).toBeInTheDocument()
-    // Passo 1 aberto: os 8 chips, nenhum campo ainda.
-    expect(within(screen.getByRole('group', { name: '1 · Categoria' })).getAllByRole('button')).toHaveLength(8)
-    expect(document.querySelector('.ls-add-form')).toBeNull()
-
-    await userEvent.click(tile(tileName))
-    expect(tile(tileName)).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('region', { name: heading })).toBeInTheDocument()
-    expect(fieldLabels()).toEqual(fields)
-
-    // A coluna da direita: Foto · Trocar foto, a prévia do pin (ou "Sem local") e Dar ênfase.
-    expect(screen.getByText('Foto')).toBeInTheDocument()
-    expect(screen.getByLabelText('Trocar foto')).toBeInTheDocument()
-    expect(screen.getByRole('switch', { name: 'Dar ênfase' })).toHaveAttribute('aria-checked', 'false')
-    expect(screen.getByText('Aparece em destaque')).toBeInTheDocument()
-
-    const media = category === 'filme' || category === 'serie'
-    if (media) {
-      expect(screen.getByText('Filmes e séries: sem local, com plataforma')).toBeInTheDocument()
-      expect(screen.getByText('Sem local')).toBeInTheDocument()
-      expect(
-        screen.getByText(
-          'Filmes e séries não aparecem no globo, só na lista e nas sugestões pras noites em que vocês estão longe.',
-        ),
-      ).toBeInTheDocument()
-      expect(screen.queryByText('Vai virar um pin no globo')).toBeNull()
-      expect(screen.queryByRole('combobox')).toBeNull()
-    } else {
-      expect(screen.getByText('Escolha a categoria primeiro. Os campos mudam conforme ela.')).toBeInTheDocument()
-      expect(screen.getByText('Vai virar um pin no globo')).toBeInTheDocument()
-      expect(screen.queryByText('Sem local')).toBeNull()
-      expect(screen.getByRole('combobox')).toBeInTheDocument()
-    }
-  })
-
-  it('os textos auxiliares do frame', async () => {
-    renderModal(fakeListApi())
-    await userEvent.click(tile('Países'))
-    expect(screen.getByText('Aparece como segunda linha do item na lista')).toBeInTheDocument()
-    expect(
-      screen.getByText('O pin fica no centro do país, não num endereço. As cidades acima não viram pins.'),
-    ).toBeInTheDocument()
-
-    await userEvent.click(tile('Cidades'))
-    expect(screen.getByText('Aparece como segunda linha do item na lista')).toBeInTheDocument()
-    expect(screen.getByLabelText('País')).toHaveAttribute('readonly')
-
-    await userEvent.click(tile('Comidas'))
-    expect(screen.getByText('Pode ficar vazio se for um prato, não um lugar')).toBeInTheDocument()
-
-    await userEvent.click(tile('Experiências'))
-    expect(screen.getByRole('combobox')).toHaveAttribute(
-      'placeholder',
-      'Busque cidade, região ou endereço (ex.: Capadócia)',
-    )
-  })
-
-  it('R12: Onde assistir tem as 6 plataformas e "Outra…", sem os números do frame', async () => {
-    renderModal(fakeListApi(), { mode: 'create', initialCategory: 'filme' })
-    const group = screen.getByRole('group', { name: 'Onde assistir' })
+    const group = screen.getByRole('group', { name: 'O que é' })
     expect(within(group).getAllByRole('button').map((b) => b.textContent)).toEqual([
-      'Netflix',
-      'Prime Video',
-      'Max',
-      'Disney+',
-      'Apple TV+',
-      'MUBI',
-      'Outra…',
+      'Países e cidades',
+      'Restaurantes e parques',
+      'Comidas',
+      'Filmes e séries',
+      'Experiências',
     ])
-    expect(group).not.toHaveTextContent(/\d/)
-    expect(screen.queryByLabelText('Outra plataforma')).toBeNull()
-    await userEvent.click(within(group).getByRole('button', { name: 'Outra…' }))
-    expect(screen.getByLabelText('Outra plataforma')).toHaveAttribute('maxLength', '30')
+    expect(document.querySelector('.ls-add-form')).toBeNull()
   })
 
-  it('rodapé: "Adicionando como Gabriel", sem "recebe um aviso"', () => {
-    const { dialog } = renderModal(fakeListApi(), { mode: 'create', initialCategory: 'restaurante' })
+  it.each([
+    ['Países e cidades', ['País', 'Nota · opcional']],
+    ['Restaurantes e parques', ['Busca', 'Nota · opcional']],
+    ['Comidas', ['O que comer', 'Onde', 'Nota · opcional']],
+    ['Filmes e séries', ['Nome', 'Onde assistir', 'Nota · opcional']],
+    ['Experiências', ['O que fazer', 'Onde', 'Nota · opcional']],
+  ])('%s: só estes campos, e nenhum Link', async (group, labels) => {
+    renderModal(fakeListApi())
+    await userEvent.click(tile(group))
+    expect(fieldLabels()).toEqual(labels)
+    expect(screen.queryByLabelText('Link')).toBeNull()
+  })
+
+  it('"Adicionar série" do estado vazio abre Filmes e séries com Série marcada', () => {
+    renderModal(fakeListApi(), { mode: 'create', initialCategory: 'serie' })
+    expect(tile('Filmes e séries')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Série' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('rodapé: "Adicionando como Gabriel"', () => {
+    renderModal(fakeListApi(), { mode: 'create', initialCategory: 'filme' })
     expect(screen.getByText('Adicionando como Gabriel')).toBeInTheDocument()
-    expect(dialog).not.toHaveTextContent('recebe um aviso')
-    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument()
-    expect(saveButton()).toHaveTextContent('Adicionar à lista')
   })
 })
 
 // ---------------------------------------------------------------------------
-// R13: a busca de lugar
+// Busca de lugar
 // ---------------------------------------------------------------------------
 
-describe('A14 — busca de lugar (R13)', () => {
+describe('Restaurantes e parques: uma busca preenche tudo', () => {
   beforeEach(() => {
-    vi.useFakeTimers()
+    vi.useFakeTimers({ shouldAdvanceTime: true })
   })
 
   async function wait(ms: number) {
@@ -252,212 +187,208 @@ describe('A14 — busca de lugar (R13)', () => {
 
   const type = (input: HTMLElement, value: string) => fireEvent.change(input, { target: { value } })
 
-  it('País busca com mode "country" e o viés da cidade-casa de quem busca', async () => {
-    const searchPlaces = vi.fn<ListApi['searchPlaces']>(async () => ok([JAPAO]))
-    renderModal(fakeListApi({ searchPlaces }), { mode: 'create', initialCategory: 'pais' })
-    const nome = screen.getByRole('combobox', { name: 'Nome' })
-    type(nome, 'Japão')
+  it('busca com mode "place" a partir de onde a pessoa está; escolher preenche o nome', async () => {
+    const searchPlaces = vi.fn<ListApi['searchPlaces']>(async () => ok([MOCOTO, MOCOTO_CAFE]))
+    renderModal(fakeListApi({ searchPlaces }), { mode: 'create', initialCategory: 'restaurante' }, { searchFrom: { lat: MARAU.lat, lng: MARAU.lng } })
+    const busca = screen.getByRole('combobox', { name: 'Busca' })
+    type(busca, 'Mocotó')
     await wait(350)
     expect(searchPlaces).toHaveBeenCalledTimes(1)
-    expect(searchPlaces.mock.calls[0][0]).toBe('Japão')
-    expect(searchPlaces.mock.calls[0][1]).toMatchObject({ mode: 'country', bias: { lat: SJC.lat, lng: SJC.lng } })
-
-    fireEvent.click(screen.getByRole('option', { name: /Japão/ }))
-    expect(nome).toHaveValue('Japão')
-    expect(document.querySelector('.ls-add-map-label')).toHaveTextContent('Japão')
-  })
-
-  it('a busca parte de `searchFrom` (onde a pessoa está hoje), não da cidade-casa', async () => {
-    const searchPlaces = vi.fn<ListApi['searchPlaces']>(async () => ok([]))
-    renderModal(
-      fakeListApi({ searchPlaces }),
-      { mode: 'create', initialCategory: 'restaurante' },
-      { searchFrom: { lat: MARAU.lat, lng: MARAU.lng } },
-    )
-    type(screen.getByRole('combobox', { name: 'Local' }), 'Bambina')
-    await wait(350)
-    expect(searchPlaces.mock.calls[0][1].bias).toEqual({ lat: MARAU.lat, lng: MARAU.lng })
-  })
-
-  it('Restaurante busca com mode "place" + viés; cada resultado tem nome e detalhe, e o crédito do OSM', async () => {
-    const searchPlaces = vi.fn<ListApi['searchPlaces']>(async () => ok([MOCOTO, MOCOTO_CAFE]))
-    renderModal(fakeListApi({ searchPlaces }), { mode: 'create', initialCategory: 'restaurante' })
-    const local = screen.getByRole('combobox', { name: 'Local' })
-    expect(local).toHaveAttribute('aria-expanded', 'false')
-    type(local, 'Mocotó')
-    await wait(350)
-    expect(searchPlaces.mock.calls[0][1]).toMatchObject({ mode: 'place', bias: { lat: SJC.lat, lng: SJC.lng } })
-    expect(searchPlaces.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal)
-
-    expect(local).toHaveAttribute('aria-expanded', 'true')
-    const listbox = screen.getByRole('listbox')
-    const options = within(listbox).getAllByRole('option')
+    expect(searchPlaces.mock.calls[0][1]).toMatchObject({ mode: 'place', bias: { lat: MARAU.lat, lng: MARAU.lng } })
+    const options = within(screen.getByRole('listbox')).getAllByRole('option')
     expect(options.map((o) => o.textContent)).toEqual([
       'Mocotó RestauranteAv. Nossa Senhora do Loreto, 1100 · São Paulo, SP',
       'Mocotó CaféMercado de Pinheiros · São Paulo, SP',
       'Não achei. Usar só a cidade',
     ])
-    expect(screen.getByText('© OpenStreetMap')).toBeInTheDocument()
-
-    // Setas + Enter escolhem.
-    fireEvent.keyDown(local, { key: 'ArrowDown' })
-    expect(local).toHaveAttribute('aria-activedescendant', options[0].id)
-    expect(options[0]).toHaveAttribute('aria-selected', 'true')
-    fireEvent.keyDown(local, { key: 'ArrowDown' })
-    fireEvent.keyDown(local, { key: 'ArrowUp' })
-    fireEvent.keyDown(local, { key: 'Enter' })
-    expect(local).toHaveAttribute('aria-expanded', 'false')
-    expect(local).toHaveValue('Mocotó Restaurante')
-    const chosen = document.querySelector('.ls-add-chosen') as HTMLElement
-    expect(chosen).toHaveTextContent('Mocotó Restaurante')
-    expect(chosen).toHaveTextContent('Av. Nossa Senhora do Loreto, 1100 · São Paulo, SP')
-    expect(within(chosen).getByRole('button', { name: 'Trocar' })).toBeInTheDocument()
-    expect(document.querySelector('.ls-add-map-label')).toHaveTextContent('Mocotó Restaurante')
+    fireEvent.click(options[0])
+    expect(screen.getByLabelText('Nome')).toHaveValue('Mocotó Restaurante')
+    expect(document.querySelector('.ls-add-chosen')).toHaveTextContent('Av. Nossa Senhora do Loreto, 1100 · São Paulo, SP')
   })
 
   it('menos de 3 caracteres não busca; 350 ms sem digitar, uma busca só com o texto final', async () => {
-    const searchPlaces = vi.fn<ListApi['searchPlaces']>(async () => ok([MOCOTO]))
+    const searchPlaces = vi.fn<ListApi['searchPlaces']>(async () => ok([]))
     renderModal(fakeListApi({ searchPlaces }), { mode: 'create', initialCategory: 'restaurante' })
-    const local = screen.getByRole('combobox', { name: 'Local' })
-
-    type(local, 'Mo')
-    await wait(2000)
+    const busca = screen.getByRole('combobox', { name: 'Busca' })
+    type(busca, 'Mo')
+    await wait(500)
     expect(searchPlaces).not.toHaveBeenCalled()
-
-    type(local, 'Moc')
+    type(busca, 'Moc')
     await wait(200)
-    type(local, 'Moco')
-    await wait(200)
-    type(local, 'Mocot')
-    await wait(349)
-    expect(searchPlaces).not.toHaveBeenCalled()
-    await wait(1)
+    type(busca, 'Moco')
+    await wait(350)
     expect(searchPlaces).toHaveBeenCalledTimes(1)
-    expect(searchPlaces.mock.calls[0][0]).toBe('Mocot')
+    expect(searchPlaces.mock.calls[0][0]).toBe('Moco')
   })
 
-  it('a resposta atrasada de uma consulta velha é descartada, e a anterior é abortada', async () => {
-    const pending: { resolve: (r: PlaceSearchResult) => void; signal?: AbortSignal }[] = []
-    const searchPlaces = vi.fn<ListApi['searchPlaces']>(
-      (_q, options) =>
-        new Promise((resolve) => {
-          pending.push({ resolve, signal: options.signal })
-        }),
-    )
-    renderModal(fakeListApi({ searchPlaces }), { mode: 'create', initialCategory: 'restaurante' })
-    const local = screen.getByRole('combobox', { name: 'Local' })
-
-    type(local, 'Moc')
-    await wait(350)
-    type(local, 'Mocotó Café')
-    await wait(350)
-    expect(searchPlaces).toHaveBeenCalledTimes(2)
-    expect(pending[0].signal?.aborted).toBe(true)
-    expect(pending[1].signal?.aborted).toBe(false)
-
-    await act(async () => pending[1].resolve(ok([MOCOTO_CAFE])))
-    await act(async () => pending[0].resolve(ok([MOCOTO])))
-    const labels = within(screen.getByRole('listbox')).getAllByRole('option').map((o) => o.textContent)
-    expect(labels[0]).toContain('Mocotó Café')
-    expect(labels.join()).not.toContain('Mocotó Restaurante')
-  })
-
-  it('"Não achei — usar só a cidade" troca para mode "city" e libera Endereço, que vai para place.address', async () => {
-    const searchPlaces = vi.fn<ListApi['searchPlaces']>(async (_q, options) =>
-      options.mode === 'city' ? ok([SAO_PAULO_CITY]) : ok([]),
-    )
+  it('endereço com número: o nome não vira "Rua Vilaça 500", fica para a pessoa escrever', async () => {
+    const searchPlaces = vi.fn<ListApi['searchPlaces']>(async () => ok([VILACA]))
     const createItem = vi.fn<ListApi['createItem']>(async (_c, draft) => ({ status: 'ok', value: createdFrom(draft) }))
-    const { onSaved } = renderModal(fakeListApi({ searchPlaces, createItem }), {
-      mode: 'create',
-      initialCategory: 'restaurante',
-    })
-    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Casa Amarela Bistrô' } })
-    const local = screen.getByRole('combobox', { name: 'Local' })
-    expect(screen.queryByLabelText('Endereço')).toBeNull()
-
-    type(local, 'Casa Amarela Bistrô')
-    await wait(350)
-    expect(screen.getByText('Nada encontrado para “Casa Amarela Bistrô”.')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('option', { name: 'Não achei. Usar só a cidade' }))
-
-    const endereco = screen.getByLabelText('Endereço')
-    expect(endereco).toHaveAttribute('maxLength', '160')
-
-    type(local, 'São Paulo')
-    await wait(350)
-    expect(searchPlaces.mock.lastCall?.[1].mode).toBe('city')
-    // Já na camada de cidade, não se oferece "Não achei" de novo.
-    expect(screen.queryByRole('option', { name: 'Não achei. Usar só a cidade' })).toBeNull()
-    fireEvent.click(screen.getByRole('option', { name: /São Paulo/ }))
-    type(endereco, 'Rua Tal, 12 · Vila Madalena')
-
-    fireEvent.click(saveButton())
-    await wait(0)
-    expect(createItem).toHaveBeenCalledTimes(1)
-    expect(draftOf(createItem).place).toEqual({
-      address: 'Rua Tal, 12 · Vila Madalena',
-      city: 'São Paulo',
-      state: 'São Paulo',
-      country: 'Brasil',
-      countryCode: 'BR',
-      lat: -23.55,
-      lng: -46.63,
-    })
-    expect(onSaved).toHaveBeenCalled()
-  })
-
-  it('fallback do IBGE: avisa "Busca mundial indisponível — mostrando cidades do Brasil", sem o crédito do OSM', async () => {
-    const searchPlaces = vi.fn<ListApi['searchPlaces']>(async () => ok([SAO_PAULO_CITY], true))
-    renderModal(fakeListApi({ searchPlaces }), { mode: 'create', initialCategory: 'comida' })
-    const local = screen.getByRole('combobox', { name: 'Local · cidade' })
-    type(local, 'São Paulo')
-    await wait(350)
-    expect(searchPlaces.mock.calls[0][1].mode).toBe('city')
-    expect(screen.getByText('A busca fora do Brasil não respondeu. Por enquanto, só cidades brasileiras.')).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: /São Paulo/ })).toBeInTheDocument()
-    expect(screen.queryByText('© OpenStreetMap')).toBeNull()
-  })
-
-  it('a busca fora do ar: a mensagem, e salvar fica desabilitado para item geográfico sem lugar', async () => {
-    const searchPlaces = vi.fn<ListApi['searchPlaces']>(async () => ({ status: 'error', cause: 'Photon respondeu 502' }))
-    const createItem = vi.fn<ListApi['createItem']>()
     renderModal(fakeListApi({ searchPlaces, createItem }), { mode: 'create', initialCategory: 'restaurante' })
-    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Mocotó' } })
-    expect(saveButton()).toBeEnabled()
-
-    type(screen.getByRole('combobox', { name: 'Local' }), 'Mocotó')
+    type(screen.getByRole('combobox', { name: 'Busca' }), 'Rua Vilaça 500')
     await wait(350)
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'A busca de lugares está fora do ar. Tente de novo daqui a pouco.',
-    )
-    expect(saveButton()).toBeDisabled()
-    fireEvent.click(saveButton())
+    fireEvent.click(screen.getByRole('option', { name: /Rua Vilaça 500/ }))
+    const nome = screen.getByLabelText('Nome')
+    expect(nome).toHaveValue('')
+    await userEvent.click(saveButton())
+    expect(screen.getByText('Dê um nome.')).toBeInTheDocument()
+    expect(nome).toHaveFocus()
+    await userEvent.type(nome, 'Casa Amarela Bistrô')
+    await userEvent.click(saveButton())
+    expect(draftOf(createItem)).toMatchObject({
+      category: 'restaurante',
+      name: 'Casa Amarela Bistrô',
+      link: null,
+      place: { address: 'Rua Vilaça, 500', city: 'São José dos Campos', countryCode: 'BR' },
+    })
+  })
+
+  it('parque do OSM marca Parque sozinho e grava como parque', async () => {
+    const searchPlaces = vi.fn<ListApi['searchPlaces']>(async () => ok([IBIRAPUERA]))
+    const createItem = vi.fn<ListApi['createItem']>(async (_c, draft) => ({ status: 'ok', value: createdFrom(draft) }))
+    renderModal(fakeListApi({ searchPlaces, createItem }))
+    await userEvent.click(tile('Restaurantes e parques'))
+    expect(screen.getByRole('button', { name: 'Restaurante' })).toHaveAttribute('aria-pressed', 'true')
+    type(screen.getByRole('combobox', { name: 'Busca' }), 'Ibirapuera')
+    await wait(350)
+    fireEvent.click(screen.getByRole('option', { name: /Parque Ibirapuera/ }))
+    expect(screen.getByRole('button', { name: 'Parque' })).toHaveAttribute('aria-pressed', 'true')
+    await userEvent.click(saveButton())
+    expect(draftOf(createItem)).toMatchObject({ category: 'parque', name: 'Parque Ibirapuera' })
+  })
+
+  it('sem escolher resultado, salvar aponta a busca, não o nome', async () => {
+    const createItem = vi.fn<ListApi['createItem']>()
+    renderModal(fakeListApi({ createItem }), { mode: 'create', initialCategory: 'restaurante' })
+    await userEvent.click(saveButton())
+    expect(screen.getByText('Busque e escolha um resultado.')).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Busca' })).toHaveFocus()
     expect(createItem).not.toHaveBeenCalled()
+  })
+
+  it('"Não achei. Usar só a cidade": o texto vira o nome, a busca vira de cidade e o endereço vai para place.address', async () => {
+    const searchPlaces = vi.fn<ListApi['searchPlaces']>(async (_q, o) => ok(o.mode === 'city' ? [SAO_PAULO_CITY] : [MOCOTO]))
+    const createItem = vi.fn<ListApi['createItem']>(async (_c, draft) => ({ status: 'ok', value: createdFrom(draft) }))
+    renderModal(fakeListApi({ searchPlaces, createItem }), { mode: 'create', initialCategory: 'restaurante' })
+    type(screen.getByRole('combobox', { name: 'Busca' }), 'Bar do Zé')
+    await wait(350)
+    fireEvent.click(screen.getByRole('option', { name: 'Não achei. Usar só a cidade' }))
+    expect(screen.getByLabelText('Nome')).toHaveValue('Bar do Zé')
+    type(screen.getByRole('combobox', { name: 'Busca' }), 'São Paulo')
+    await wait(350)
+    expect(searchPlaces.mock.calls.at(-1)![1].mode).toBe('city')
+    fireEvent.click(screen.getByRole('option', { name: /São Paulo/ }))
+    await userEvent.type(screen.getByLabelText('Endereço · opcional'), 'Rua Augusta, 10')
+    await userEvent.click(saveButton())
+    expect(draftOf(createItem)).toMatchObject({ name: 'Bar do Zé', place: { city: 'São Paulo', address: 'Rua Augusta, 10' } })
+  })
+
+  it('a busca fora do ar: a mensagem, e salvar fica desabilitado sem lugar', async () => {
+    const searchPlaces = vi.fn<ListApi['searchPlaces']>(async () => ({ status: 'error', cause: 'Photon 503' }))
+    renderModal(fakeListApi({ searchPlaces }), { mode: 'create', initialCategory: 'restaurante' })
+    type(screen.getByRole('combobox', { name: 'Busca' }), 'Mocotó')
+    await wait(350)
+    expect(screen.getByText('A busca de lugares está fora do ar. Tente de novo daqui a pouco.')).toBeInTheDocument()
+    expect(saveButton()).toBeDisabled()
+  })
+})
+
+describe('Países e cidades: a lista da Home, sem digitar o nome', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+  })
+
+  async function wait(ms: number) {
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(ms)
+    })
+  }
+
+  const CAPE_TOWN = { id: 'geo:3369157', name: 'Cidade do Cabo', stateCode: null, countryCode: 'ZA', region: 'Western Cape', lat: -33.93, lng: 18.42 }
+  const JOBURG = { id: 'geo:993800', name: 'Joanesburgo', stateCode: null, countryCode: 'ZA', region: 'Gauteng', lat: -26.2, lng: 28.04 }
+
+  it('só o país: vira `pais`, com o nome em português e o centro do país, sem rede', async () => {
+    const searchPlaces = vi.fn<ListApi['searchPlaces']>()
+    const createItem = vi.fn<ListApi['createItem']>(async (_c, draft) => ({ status: 'ok', value: createdFrom(draft) }))
+    renderModal(fakeListApi({ searchPlaces, createItem }), { mode: 'create', initialCategory: 'pais' })
+    await userEvent.type(screen.getByRole('combobox', { name: 'País' }), 'japa')
+    await userEvent.click(screen.getByRole('option', { name: 'Japão' }))
+    await userEvent.click(saveButton())
+    expect(searchPlaces).not.toHaveBeenCalled()
+    expect(draftOf(createItem)).toMatchObject({
+      category: 'pais',
+      name: 'Japão',
+      place: { city: null, country: 'Japão', countryCode: 'JP', lat: 36, lng: 138 },
+    })
+  })
+
+  it('África do Sul lista as cidades do país, e escolher uma grava `cidade`', async () => {
+    const countryCities = vi.fn<ListApi['countryCities']>(async () => ({ status: 'ok', rows: [JOBURG, CAPE_TOWN] }))
+    const createItem = vi.fn<ListApi['createItem']>(async (_c, draft) => ({ status: 'ok', value: createdFrom(draft) }))
+    renderModal(fakeListApi({ countryCities, createItem }))
+    await userEvent.click(tile('Países e cidades'))
+    await userEvent.type(screen.getByRole('combobox', { name: 'País' }), 'África do')
+    await userEvent.click(screen.getByRole('option', { name: 'África do Sul' }))
+    expect(countryCities).toHaveBeenCalledWith('ZA')
+    const cidade = screen.getByRole('combobox', { name: 'Cidade · opcional' })
+    await userEvent.click(cidade)
+    expect(within(screen.getAllByRole('listbox').at(-1)!).getAllByRole('option').map((o) => o.textContent)).toEqual([
+      'JoanesburgoGauteng',
+      'Cidade do CaboWestern Cape',
+    ])
+    await userEvent.type(cidade, 'cabo')
+    await userEvent.click(screen.getByRole('option', { name: /Cidade do Cabo/ }))
+    await userEvent.click(saveButton())
+    expect(draftOf(createItem)).toMatchObject({
+      category: 'cidade',
+      name: 'Cidade do Cabo',
+      place: { city: 'Cidade do Cabo', state: 'Western Cape', country: 'África do Sul', countryCode: 'ZA', lat: -33.93 },
+    })
+  })
+
+  it('no Brasil, a cidade vem do IBGE pela busca', async () => {
+    const searchCities = vi.fn<ListApi['searchCities']>(async () => ({
+      status: 'ok',
+      rows: [{ id: 'c-gramado', name: 'Gramado', stateCode: 'RS', lat: -29.37, lng: -50.87 }],
+    }))
+    const createItem = vi.fn<ListApi['createItem']>(async (_c, draft) => ({ status: 'ok', value: createdFrom(draft) }))
+    renderModal(fakeListApi({ searchCities, createItem }), { mode: 'create', initialCategory: 'cidade' })
+    await userEvent.type(screen.getByRole('combobox', { name: 'País' }), 'Brasil')
+    await userEvent.click(screen.getByRole('option', { name: 'Brasil' }))
+    await userEvent.type(screen.getByRole('combobox', { name: 'Cidade · opcional' }), 'Gram')
+    await wait(350)
+    expect(searchCities).toHaveBeenCalledWith('Gram')
+    await userEvent.click(screen.getByRole('option', { name: /Gramado/ }))
+    await userEvent.click(saveButton())
+    expect(draftOf(createItem)).toMatchObject({ category: 'cidade', name: 'Gramado', place: { city: 'Gramado', state: 'RS', countryCode: 'BR' } })
+  })
+
+  it('sem país, salvar aponta o país', async () => {
+    renderModal(fakeListApi(), { mode: 'create', initialCategory: 'pais' })
+    await userEvent.click(saveButton())
+    expect(screen.getByText('Escolha o país.')).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'País' })).toHaveFocus()
   })
 })
 
 // ---------------------------------------------------------------------------
-// Gravar: validação, normalização do link, falhas (R28), edição (R14), foto (R15)
+// Gravar
 // ---------------------------------------------------------------------------
 
 describe('A14 — gravar', () => {
-  it('filme: sem local, com plataforma; o link sem esquema vira https://', async () => {
+  it('filme: sem local, com plataforma, sem link', async () => {
     const createItem = vi.fn<ListApi['createItem']>(async (_c, draft) => ({ status: 'ok', value: createdFrom(draft) }))
     const { onSaved } = renderModal(fakeListApi({ createItem }), { mode: 'create', initialCategory: 'filme' })
     await userEvent.type(screen.getByLabelText('Nome'), 'Past Lives')
     await userEvent.click(screen.getByRole('button', { name: 'MUBI' }))
-    await userEvent.type(screen.getByLabelText('Link'), 'imdb.com/title/tt13238346')
-    await userEvent.click(screen.getByRole('switch', { name: 'Dar ênfase' }))
     await userEvent.click(saveButton())
-
-    expect(createItem).toHaveBeenCalledTimes(1)
-    expect(createItem.mock.calls[0][0]).toBe('couple-1')
+    expect(createItem).toHaveBeenCalledWith('couple-1', expect.anything())
     expect(draftOf(createItem)).toEqual({
       category: 'filme',
       name: 'Past Lives',
       note: null,
-      link: 'https://imdb.com/title/tt13238346',
-      featured: true,
+      link: null,
+      featured: false,
       place: null,
       region: null,
       venue: null,
@@ -468,63 +399,25 @@ describe('A14 — gravar', () => {
     expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ id: 'i-new', name: 'Past Lives' }))
   })
 
-  it('série com "Outra…" e temporadas; país com cidades que interessam', async () => {
+  it('série com "Outra…"', async () => {
     const createItem = vi.fn<ListApi['createItem']>(async (_c, draft) => ({ status: 'ok', value: createdFrom(draft) }))
-    renderModal(fakeListApi({ createItem }), { mode: 'create', initialCategory: 'serie' })
-    await userEvent.type(screen.getByLabelText('Nome'), 'The Bear')
+    renderModal(fakeListApi({ createItem }))
+    await userEvent.click(tile('Filmes e séries'))
+    await userEvent.click(screen.getByRole('button', { name: 'Série' }))
+    await userEvent.type(screen.getByLabelText('Nome'), 'Sintonia')
     await userEvent.click(screen.getByRole('button', { name: 'Outra…' }))
-    await userEvent.type(screen.getByLabelText('Outra plataforma'), 'Star+')
-    await userEvent.type(screen.getByLabelText('Temporadas'), '4')
+    await userEvent.type(screen.getByLabelText('Outra plataforma'), 'Globoplay')
     await userEvent.click(saveButton())
-    expect(draftOf(createItem)).toMatchObject({ platform: 'Star+', seasons: 4, place: null })
+    expect(draftOf(createItem)).toMatchObject({ category: 'serie', platform: 'Globoplay', seasons: null })
   })
 
-  it('país: as cidades entram como chips removíveis e vão em highlights', async () => {
-    const searchPlaces = vi.fn<ListApi['searchPlaces']>(async () => ok([JAPAO]))
-    const createItem = vi.fn<ListApi['createItem']>(async (_c, draft) => ({ status: 'ok', value: createdFrom(draft) }))
-    renderModal(fakeListApi({ searchPlaces, createItem }), { mode: 'create', initialCategory: 'pais' })
-    await userEvent.type(screen.getByRole('combobox', { name: 'Nome' }), 'Japão')
-    await userEvent.click(await screen.findByRole('option', { name: /Japão/ }))
-
-    const nova = screen.getByLabelText('Adicionar cidade')
-    await userEvent.type(nova, 'Tóquio{Enter}Kyoto{Enter}Osaka{Enter}')
-    expect(screen.getByRole('button', { name: 'Remover Kyoto' })).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Remover Kyoto' }))
-    await userEvent.click(saveButton())
-    expect(draftOf(createItem)).toMatchObject({
-      name: 'Japão',
-      highlights: ['Tóquio', 'Osaka'],
-      place: { city: null, country: 'Japão', countryCode: 'JP', lat: 36.2, lng: 138.25 },
-    })
-  })
-
-  it('a validação do domínio bloqueia: a mensagem junto do campo, o foco nele, nada gravado', async () => {
-    const createItem = vi.fn<ListApi['createItem']>()
-    renderModal(fakeListApi({ createItem }), { mode: 'create', initialCategory: 'restaurante' })
-
-    await userEvent.click(saveButton())
-    const nome = screen.getByLabelText('Nome')
-    expect(screen.getByText('Dê um nome.')).toBeInTheDocument()
-    expect(nome).toHaveFocus()
-    expect(nome).toHaveAttribute('aria-invalid', 'true')
-
-    await userEvent.type(nome, 'Mocotó')
-    await userEvent.click(saveButton())
-    expect(screen.queryByText('Dê um nome.')).toBeNull()
-    expect(screen.getByText('Escolha o local.')).toBeInTheDocument()
-    expect(screen.getByRole('combobox', { name: 'Local' })).toHaveFocus()
-    expect(createItem).not.toHaveBeenCalled()
-  })
-
-  it('link com esquema que não é http(s) é recusado no cliente', async () => {
+  it('sem plataforma: a mensagem junto do campo, o foco nele, nada gravado', async () => {
     const createItem = vi.fn<ListApi['createItem']>()
     renderModal(fakeListApi({ createItem }), { mode: 'create', initialCategory: 'filme' })
     await userEvent.type(screen.getByLabelText('Nome'), 'Aftersun')
-    await userEvent.click(screen.getByRole('button', { name: 'MUBI' }))
-    await userEvent.type(screen.getByLabelText('Link'), 'javascript:alert(1)')
     await userEvent.click(saveButton())
-    expect(screen.getByText('O link precisa começar com http:// ou https://.')).toBeInTheDocument()
-    expect(screen.getByLabelText('Link')).toHaveFocus()
+    expect(screen.getByText('Diga onde assistir.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Netflix' })).toHaveFocus()
     expect(createItem).not.toHaveBeenCalled()
   })
 
@@ -534,7 +427,7 @@ describe('A14 — gravar', () => {
     const { onSaved } = renderModal(fakeListApi({ createItem }), { mode: 'create', initialCategory: 'filme' })
     await userEvent.type(screen.getByLabelText('Nome'), 'Aftersun')
     await userEvent.click(screen.getByRole('button', { name: 'MUBI' }))
-    await userEvent.type(screen.getByLabelText('Nota'), 'Numa noite separados')
+    await userEvent.type(nota(), 'Numa noite separados')
     await userEvent.click(saveButton())
 
     expect(screen.getByRole('button', { name: 'Salvando…' })).toBeDisabled()
@@ -544,7 +437,7 @@ describe('A14 — gravar', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Failed to fetch')
     expect(screen.getByLabelText('Nome')).toHaveValue('Aftersun')
     expect(screen.getByLabelText('Nome')).toBeEnabled()
-    expect(screen.getByLabelText('Nota')).toHaveValue('Numa noite separados')
+    expect(nota()).toHaveValue('Numa noite separados')
     expect(screen.getByRole('button', { name: 'MUBI' })).toHaveAttribute('aria-pressed', 'true')
     expect(saveButton()).toBeEnabled()
     expect(onSaved).not.toHaveBeenCalled()
@@ -572,7 +465,7 @@ describe('A14 — gravar', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Sua sessão expirou. Entre de novo.')
   })
 
-  it('R14: editar abre preenchido, com a categoria travada, e chama updateItem', async () => {
+  it('R14: editar abre preenchido, sem o passo 1, e mantém o que o formulário não mostra mais', async () => {
     const mocoto = listItem({
       id: 'i-mocoto',
       name: 'Mocotó',
@@ -590,37 +483,48 @@ describe('A14 — gravar', () => {
         lng: -46.5794,
       },
     })
-    const updateItem = vi.fn<ListApi['updateItem']>(async (id, draft) => ({
-      status: 'ok',
-      value: { ...mocoto, ...draft, id },
-    }))
+    const updateItem = vi.fn<ListApi['updateItem']>(async (id, draft) => ({ status: 'ok', value: { ...mocoto, ...draft, id } }))
     const createItem = vi.fn<ListApi['createItem']>()
     const { onSaved } = renderModal(fakeListApi({ updateItem, createItem }), { mode: 'edit', item: mocoto })
 
     expect(screen.getByRole('heading', { name: 'Editar' })).toBeInTheDocument()
-    expect(tile('Restaurantes')).toHaveAttribute('aria-pressed', 'true')
-    for (const other of ['Países', 'Cidades', 'Parques', 'Comidas', 'Filmes', 'Séries', 'Experiências']) {
-      expect(tile(other)).toBeDisabled()
-    }
+    expect(screen.queryByRole('group', { name: 'O que é' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Parque' })).toBeDisabled()
     expect(screen.getByLabelText('Nome')).toHaveValue('Mocotó')
-    expect(screen.getByLabelText('Link')).toHaveValue('https://instagram.com/mocotorestaurante')
-    expect(screen.getByLabelText('Nota')).toHaveValue('Pedir o torresmo')
+    expect(nota()).toHaveValue('Pedir o torresmo')
     expect(screen.getByRole('switch', { name: 'Dar ênfase' })).toHaveAttribute('aria-checked', 'true')
     expect(document.querySelector('.ls-add-chosen')).toHaveTextContent('Av. Nossa Senhora do Loreto, 1100 · São Paulo, SP')
 
-    await userEvent.click(tile('Filmes'))
-    expect(tile('Restaurantes')).toHaveAttribute('aria-pressed', 'true')
-
-    await userEvent.clear(screen.getByLabelText('Nota'))
-    await userEvent.type(screen.getByLabelText('Nota'), 'Num sábado')
+    await userEvent.clear(nota())
+    await userEvent.type(nota(), 'Num sábado')
     expect(saveButton()).toHaveTextContent('Salvar')
     await userEvent.click(saveButton())
 
     expect(createItem).not.toHaveBeenCalled()
-    expect(updateItem).toHaveBeenCalledTimes(1)
     expect(updateItem.mock.calls[0][0]).toBe('i-mocoto')
-    expect(draftOf(updateItem)).toMatchObject({ category: 'restaurante', note: 'Num sábado', place: mocoto.place })
+    expect(draftOf(updateItem)).toMatchObject({
+      category: 'restaurante',
+      note: 'Num sábado',
+      place: mocoto.place,
+      link: 'https://instagram.com/mocotorestaurante',
+    })
     expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ id: 'i-mocoto', note: 'Num sábado' }))
+  })
+
+  it('editar um país mantém as cidades que interessam e não oferece cidade', async () => {
+    const japao = listItem({
+      id: 'i-japao',
+      name: 'Japão',
+      category: 'pais',
+      highlights: ['Tóquio', 'Kyoto'],
+      place: { address: null, city: null, state: null, country: 'Japão', countryCode: 'JP', lat: 36.2, lng: 138.25 },
+    })
+    const updateItem = vi.fn<ListApi['updateItem']>(async (id, draft) => ({ status: 'ok', value: { ...japao, ...draft, id } }))
+    renderModal(fakeListApi({ updateItem }), { mode: 'edit', item: japao })
+    expect(screen.getByRole('combobox', { name: 'País' })).toHaveValue('Japão')
+    expect(screen.queryByRole('combobox', { name: /Cidade/ })).toBeNull()
+    await userEvent.click(saveButton())
+    expect(draftOf(updateItem)).toMatchObject({ category: 'pais', name: 'Japão', highlights: ['Tóquio', 'Kyoto'], place: japao.place })
   })
 
   it('R15: criar com foto sobe a foto depois do item e devolve o item com a foto', async () => {

@@ -1,6 +1,7 @@
 // Busca de lugares — Photon (Komoot, sobre o OpenStreetMap), direto do
 // navegador, e, no modo `place`, os estabelecimentos do Overture perto da
-// cidade-casa (`places-nearby`, ADR 0027). O resultado é RESOLVIDO aqui e
+// cidade-casa (`places-nearby`, ADR 0027) e, se o texto tem número, o endereço
+// pelo Mapbox Geocoding permanente (`addresses.ts`, ADR 0030). O resultado é RESOLVIDO aqui e
 // guardado no item: nada fora deste arquivo sabe dos provedores, e trocar de
 // provedor mexe só aqui.
 //
@@ -11,6 +12,8 @@
 // pública): `credentials: 'omit'` e `referrerPolicy: 'no-referrer'` (seção 9).
 
 import type { GeoPlace } from '../domain/list'
+import { looksLikeAddress } from './addresses'
+import type { AddressCandidate, AddressSearchResult } from './addresses'
 import { distanceKmExact } from '../domain/onboarding'
 import type { LatLng } from '../domain/onboarding'
 import type { City } from './cities'
@@ -42,6 +45,27 @@ export interface PlaceCandidate extends GeoPlace {
    * não a grava (`placeColumns` escolhe as colunas uma a uma).
    */
   osmRef?: string
+  /**
+   * O que o resultado é, quando a fonte diz: a cidade inteira, um endereço
+   * (rua, número) ou um parque. O modal usa para escolher entre Restaurante e
+   * Parque e para não pôr "Rua Vilaça 500" como nome. Não é gravado.
+   */
+  kind?: PlaceKind
+}
+
+export type PlaceKind = 'city' | 'address' | 'park'
+
+const PARK_VALUES = new Set(['park', 'garden', 'nature_reserve', 'national_park', 'protected_area', 'botanical_garden'])
+/**
+ * Endereço é a rua (`highway`) ou o número solto (`place=house`). `type:
+ * 'house'` sozinho não basta: o Photon também dá `house` ao restaurante que
+ * ocupa um prédio com número (o Mocotó), e aí o nome dele sumiria.
+ */
+function photonKind(p: PhotonProperties): PlaceKind | undefined {
+  if (p.type === 'city') return 'city'
+  if (p.osm_value && PARK_VALUES.has(p.osm_value)) return 'park'
+  if (p.osm_key === 'highway' || (p.osm_key === 'place' && p.osm_value === 'house')) return 'address'
+  return undefined
 }
 
 /**
@@ -58,8 +82,8 @@ export type PlaceSearchResult =
 
 export interface PlaceSearchOptions {
   mode: PlaceMode
-  /** Viés de proximidade: a cidade-casa de quem busca. */
-  bias?: { lat: number; lng: number }
+  /** Viés de proximidade: de onde a pessoa busca (com o nome da cidade, quando se sabe). */
+  bias?: { lat: number; lng: number; name?: string }
   signal?: AbortSignal
   /** Injetável para o teste; o padrão é o `fetch` global. */
   fetchFn?: typeof fetch
@@ -72,6 +96,11 @@ export interface PlaceSearchOptions {
    * com o `db`). Só no modo `place` e com `bias`; sem ele, só o Photon.
    */
   searchNearby?: (query: string, near: { lat: number; lng: number }, signal?: AbortSignal) => Promise<NearbySearchResult>
+  /**
+   * Endereço com número pelo Mapbox (`searchAddresses`, já com o token). Só no
+   * modo `place`, com `bias` e com número no texto; sem ele, Photon e Overture.
+   */
+  searchAddresses?: (query: string, near: { lat: number; lng: number; name?: string }, signal?: AbortSignal) => Promise<AddressSearchResult>
 }
 
 // ---------------------------------------------------------------------------
@@ -175,6 +204,8 @@ interface PhotonProperties {
   countrycode?: string
   osm_type?: string
   osm_id?: number
+  osm_key?: string
+  osm_value?: string
 }
 
 interface PhotonFeature {
@@ -217,6 +248,8 @@ export function featureToCandidate(feature: PhotonFeature, mode: PlaceMode): Pla
   const candidate: PlaceCandidate = { ...place, label: name, detail: placeDetail(place, mode) }
   const ref = osmRef(p)
   if (ref) candidate.osmRef = ref
+  const kind = mode === 'place' ? photonKind(p) : undefined
+  if (kind) candidate.kind = kind
   return candidate
 }
 
@@ -287,6 +320,20 @@ export function nearbyToCandidate(p: NearbyPlace): PlaceCandidate {
     lng: p.lng,
   }
   return { ...place, label: p.name, detail: placeDetail(place, 'place') }
+}
+
+/** Endereço do Mapbox → candidato. O país em português pelo código, como os outros. */
+export function addressToCandidate(a: AddressCandidate): PlaceCandidate {
+  const place: GeoPlace = {
+    address: a.address,
+    city: a.city,
+    state: a.state,
+    country: countryNamePt(a.countryCode, a.country),
+    countryCode: a.countryCode,
+    lat: a.lat,
+    lng: a.lng,
+  }
+  return { ...place, label: a.label, detail: placeDetail(place, 'place'), kind: 'address' }
 }
 
 const comparable = (s: string) =>
@@ -394,6 +441,9 @@ export function mergeNearby(
   return all.filter((r) => kept.has(r))
 }
 
+/** Quantos endereços do Mapbox entram no topo: o resto da lista é dos lugares. */
+const ADDRESS_TOP = 3
+
 /** Com ordem por proximidade, o Photon traz mais para haver o que ordenar. */
 const PHOTON_RANKED_LIMIT = 10
 
@@ -419,19 +469,32 @@ export async function searchPlaces(query: string, options: PlaceSearchOptions): 
   const origin = options.mode === 'country' ? undefined : options.bias
   const near = options.mode === 'place' ? options.bias : undefined
   const photonLimit = origin ? Math.max(limit, PHOTON_RANKED_LIMIT) : limit
-  const [photon, nearby] = await Promise.all([
+  const [photon, nearby, addresses] = await Promise.all([
     searchPhoton(q, { ...options, limit: photonLimit }),
     near && options.searchNearby
       ? options.searchNearby(q, near, signal).catch(
           (error: unknown): NearbySearchResult => ({ status: 'error', cause: error instanceof Error ? error.message : String(error) }),
         )
       : null,
+    near && options.searchAddresses && looksLikeAddress(q)
+      ? options.searchAddresses(q, near, signal).catch(
+          (error: unknown): AddressSearchResult => ({ status: 'error', cause: error instanceof Error ? error.message : String(error) }),
+        )
+      : null,
   ])
-  if (signal?.aborted || photon.status === 'aborted' || nearby?.status === 'aborted') return { status: 'aborted' }
+  if (signal?.aborted || photon.status === 'aborted' || nearby?.status === 'aborted' || addresses?.status === 'aborted') {
+    return { status: 'aborted' }
+  }
 
+  // O endereço com número vai no topo, FORA dos anéis: a rua sem número do
+  // Photon a 1 km ganharia do número certo a 3 km. Mapbox fora do ar não
+  // aparece para quem busca.
+  const addressRows = addresses?.status === 'ok' ? addresses.rows.slice(0, ADDRESS_TOP).map(addressToCandidate) : []
   const nearbyRows = nearby?.status === 'ok' ? nearby.places.map(nearbyToCandidate) : []
-  if (photon.status === 'ok') return { status: 'ok', rows: mergeNearby(nearbyRows, photon.rows, limit, origin), fallback: false }
-  if (nearbyRows.length > 0) return { status: 'ok', rows: mergeNearby(nearbyRows, [], limit, origin), fallback: false }
+  const withAddresses = (rows: PlaceCandidate[]) =>
+    [...addressRows, ...rows.filter((r) => !addressRows.some((a) => sameSpot(a, r)))].slice(0, limit)
+  if (photon.status === 'ok') return { status: 'ok', rows: withAddresses(mergeNearby(nearbyRows, photon.rows, limit, origin)), fallback: false }
+  if (nearbyRows.length + addressRows.length > 0) return { status: 'ok', rows: withAddresses(mergeNearby(nearbyRows, [], limit, origin)), fallback: false }
   return fallbackToIbge(q, options, photon.cause)
 }
 

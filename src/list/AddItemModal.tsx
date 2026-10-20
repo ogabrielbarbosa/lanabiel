@@ -1,12 +1,12 @@
-// Adicionar / editar item (os 8 modais: `RvlR2`, `i160RR`, `PmKZ4`, `cX0DT`,
-// `UaQ1K`, `e3jts`, `wBKDf`, `NuAJ6`). Spec: R11–R15, seção 7, A14.
+// Adicionar / editar item. Spec da Fase 4: R11–R15, seção 7, A14; simplificado
+// pela pesquisa `.agent/Research/lista-adicionar-simples.md`.
 //
-// ── CONTRATO (T6) — preencha SEM mudar as props ─────────────────────────────
+// ── CONTRATO — as props não mudaram ─────────────────────────────────────────
 // Quem abre: a `ListScreen`, dentro do `ListContext` (use `useList()` para
 // `api`, `coupleId`, `me`, `members`, `today`, `urls`, `searchFrom`).
 //
 //   <AddItemModal mode="create" initialCategory?={cat} onClose onSaved />
-//     - "Adicionar" do cabeçalho → sem categoria (passo 1 aberto).
+//     - "Adicionar" do cabeçalho → sem grupo (passo 1 aberto).
 //     - "Adicionar {categoria}" do estado vazio (R9) → `initialCategory`.
 //   <AddItemModal mode="edit" item={item} onClose onSaved />
 //     - "Editar" do detalhe. A categoria NÃO muda na edição (R14).
@@ -19,40 +19,35 @@
 // aberto com o que foi digitado e a causa (R28).
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// Decisões onde o frame não decide:
-// - País não tem campo "Local" no frame: o próprio Nome é a busca de país
-//   (`layer=country`); escolher um resultado põe o nome em português no Nome.
-// - Foto que falha DEPOIS de o item ser gravado: o modal troca para o aviso
-//   ("O item foi adicionado, mas a foto não subiu: …") com _Entendi_, e só
-//   então chama `onSaved` — chamar na hora faria a tela fechar o modal e o
-//   aviso sumir. Fechar por Esc/× nesse estado também chama `onSaved` (o item
-//   existe; a lista precisa reler). Os campos ficam travados: salvar de novo
-//   criaria um segundo item.
+// Cinco GRUPOS na tela, oito categorias no banco (ADR 0003 intacto). O grupo é
+// o que a pessoa escolhe; a categoria sai do que ela preencheu:
+//   - Países e cidades: país sem cidade → `pais`; com cidade → `cidade`. Os
+//     países são os do seletor da Home; as cidades, as do IBGE (Brasil) ou do
+//     GeoNames (ADR 0029), e o Photon para a cidade pequena que não está lá.
+//   - Restaurantes e parques: uma busca só. Escolher o resultado preenche o
+//     nome; parque do OSM já marca _Parque_. Endereço com número vem do Mapbox
+//     (ADR 0030).
+//   - Comidas, Filmes e séries, Experiências: o nome e um campo cada.
+// Link, região, cidades que interessam e temporadas saíram do formulário. O que
+// o item já tinha nessas colunas é mantido na edição, não apagado.
+//
+// Foto que falha DEPOIS de o item ser gravado: o modal troca para o aviso
+// ("O item foi adicionado, mas a foto não subiu: …") com _Entendi_, e só então
+// chama `onSaved` — chamar na hora faria a tela fechar o modal e o aviso sumir.
 
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { FormEvent, KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react'
-import {
-  Camera,
-  Check,
-  Flag,
-  Layers,
-  Link2,
-  MapPin,
-  PenLine,
-  Plus,
-  Search,
-  Star,
-  StickyNote,
-  Store,
-  X,
-} from 'lucide-react'
+import { Camera, Check, Clapperboard, Flag, Globe, MapPin, PenLine, Plus, Search, Soup, Sparkles, Star, StickyNote, Utensils, X } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { MAX_INPUT_BYTES } from '../data/avatar'
-import { PLACE_MIN_QUERY, placeDetail } from '../data/places'
+import type { WorldCity } from '../data/cities'
+import { PLACE_MIN_QUERY, cityToCandidate, countryNamePt, placeDetail } from '../data/places'
 import type { PlaceCandidate, PlaceMode, PlaceSearchResult } from '../data/places'
-import { CATEGORY_LABELS, LIST_LIMITS, PLATFORMS, isMediaCategory, validateItem } from '../domain/list'
+import { COUNTRY_CENTERS, COUNTRY_CODES } from '../domain/countries'
+import { CATEGORY_LABELS, LIST_LIMITS, PLATFORMS, validateItem } from '../domain/list'
 import type { DraftField, GeoPlace, ItemDraft, ListCategory, ListItem } from '../domain/list'
+import { normalizeName } from '../domain/map'
 import type { ListApi } from './api'
-import { CATEGORY_ICONS, catClass } from './categories'
 import { failureMessage, useList } from './context'
 import { Avatar, ItemPhoto, ListDialog } from './parts'
 
@@ -64,65 +59,40 @@ export type AddItemModalProps = (
   onSaved: (item: ListItem) => void
 }
 
-/** A ordem dos chips no frame (não a de `LIST_CATEGORIES`). */
-const TILE_ORDER: readonly ListCategory[] = [
-  'pais',
-  'cidade',
-  'restaurante',
-  'parque',
-  'comida',
-  'filme',
-  'serie',
-  'experiencia',
+// ---------------------------------------------------------------------------
+// Os grupos
+// ---------------------------------------------------------------------------
+
+export type ItemGroup = 'mundo' | 'lugar' | 'comida' | 'tela' | 'experiencia'
+
+const GROUPS: readonly { key: ItemGroup; label: string; icon: LucideIcon; categories: readonly ListCategory[] }[] = [
+  { key: 'mundo', label: 'Países e cidades', icon: Globe, categories: ['pais', 'cidade'] },
+  { key: 'lugar', label: 'Restaurantes e parques', icon: Utensils, categories: ['restaurante', 'parque'] },
+  { key: 'comida', label: 'Comidas', icon: Soup, categories: ['comida'] },
+  { key: 'tela', label: 'Filmes e séries', icon: Clapperboard, categories: ['filme', 'serie'] },
+  { key: 'experiencia', label: 'Experiências', icon: Sparkles, categories: ['experiencia'] },
 ]
+
+function groupOf(category: ListCategory): ItemGroup {
+  return GROUPS.find((g) => g.categories.includes(category))!.key
+}
 
 const DEBOUNCE_MS = 350
 const SEARCH_DOWN = 'A busca de lugares está fora do ar. Tente de novo daqui a pouco.'
 const FALLBACK_NOTICE = 'A busca fora do Brasil não respondeu. Por enquanto, só cidades brasileiras.'
 const CITY_ONLY = 'Não achei. Usar só a cidade'
-
-/** Modo de busca por categoria (R13 / ADR 0016). Mídia não busca. */
-function searchModeOf(category: ListCategory): PlaceMode | null {
-  switch (category) {
-    case 'pais':
-      return 'country'
-    case 'cidade':
-    case 'comida':
-      return 'city'
-    case 'restaurante':
-    case 'parque':
-    case 'experiencia':
-      return 'place'
-    default:
-      return null
-  }
-}
-
-/** "instagram.com/x" → "https://instagram.com/x"; com esquema, fica como está (seção 9). */
-function normalizeLink(raw: string): string | null {
-  const link = raw.trim()
-  if (link === '') return null
-  if (/^[a-z][a-z0-9+.-]*:/i.test(link)) return link
-  return `https://${link.replace(/^\/+/, '')}`
-}
-
-function detailsLabel(category: ListCategory): string {
-  const label = CATEGORY_LABELS[category]
-  return `2 · Detalhes ${label.gender === 'm' ? 'do' : 'da'} ${label.one.toLowerCase()}`
-}
+/** Quantas cidades do país aparecem de uma vez (as maiores primeiro). */
+const CITY_OPTIONS = 40
 
 interface Chosen {
   label: string
   detail: string
 }
 
-/** O lugar já gravado, mostrado como resultado escolhido (edição). */
-function chosenFromItem(item: ListItem): Chosen | null {
-  const place = item.place
-  const mode = searchModeOf(item.category)
-  if (!place || !mode) return null
-  const label = mode === 'country' ? place.country : mode === 'city' ? (place.city ?? place.country) : item.name
-  return { label, detail: placeDetail(place, mode) }
+interface Option {
+  key: string
+  label: string
+  detail?: string
 }
 
 // ---------------------------------------------------------------------------
@@ -140,16 +110,10 @@ interface Landed {
  * `armed` = a pessoa digitou desde a última escolha; texto preenchido pela
  * edição ou pela escolha não dispara busca.
  */
-function usePlaceSearch(
-  api: ListApi,
-  mode: PlaceMode | null,
-  query: string,
-  armed: boolean,
-  bias: { lat: number; lng: number },
-) {
+function usePlaceSearch(api: ListApi, mode: PlaceMode | null, query: string, armed: boolean, bias: { lat: number; lng: number; name?: string }) {
   const [landed, setLanded] = useState<Landed | null>(null)
   const seq = useRef(0)
-  const { lat, lng } = bias
+  const { lat, lng, name } = bias
   const q = query.trim()
   const key = `${mode}|${q}`
 
@@ -158,7 +122,7 @@ function usePlaceSearch(
     const controller = new AbortController()
     const timer = setTimeout(() => {
       const id = ++seq.current
-      void api.searchPlaces(q, { mode, bias: { lat, lng }, signal: controller.signal }).then((result) => {
+      void api.searchPlaces(q, { mode, bias: name ? { lat, lng, name } : { lat, lng }, signal: controller.signal }).then((result) => {
         if (id !== seq.current || result.status === 'aborted') return
         setLanded({ key: `${mode}|${q}`, result })
       })
@@ -167,7 +131,7 @@ function usePlaceSearch(
       clearTimeout(timer)
       controller.abort()
     }
-  }, [api, mode, q, armed, lat, lng])
+  }, [api, mode, q, armed, lat, lng, name])
 
   const active = !!mode && armed && q.length >= PLACE_MIN_QUERY
   const current = active && landed?.key === key ? landed.result : null
@@ -176,61 +140,177 @@ function usePlaceSearch(
   return { active, current, down }
 }
 
-function PlaceCombobox({
+/** Os países do seletor da Home (ISO + `Intl`), em ordem alfabética. */
+function useCountries(): { code: string; name: string; norm: string }[] {
+  return useMemo(
+    () =>
+      COUNTRY_CODES.map((code) => {
+        const name = countryNamePt(code)
+        return { code, name, norm: normalizeName(name) }
+      }).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
+    [],
+  )
+}
+
+/** Quem começa com o texto vem antes de quem só o contém. */
+function filterByName<T>(rows: readonly T[], name: (row: T) => string, query: string): T[] {
+  const q = normalizeName(query)
+  if (q === '') return [...rows]
+  const starts: T[] = []
+  const contains: T[] = []
+  for (const row of rows) {
+    const n = normalizeName(name(row))
+    if (n.startsWith(q)) starts.push(row)
+    else if (n.includes(q)) contains.push(row)
+  }
+  return [...starts, ...contains]
+}
+
+interface CityOption extends Option {
+  place: GeoPlace
+}
+
+/**
+ * As cidades do país escolhido. Fora do Brasil, a lista do GeoNames (lida uma
+ * vez) filtrada aqui, e o Photon só quando ela não tem o nome (Göreme). No
+ * Brasil, o IBGE pelo `search_cities`, porque são 5.571.
+ */
+function useCityOptions(api: ListApi, countryCode: string | null, query: string, armed: boolean) {
+  const [world, setWorld] = useState<{ code: string; rows: WorldCity[] | null } | null>(null)
+  const [landed, setLanded] = useState<{ key: string; rows: CityOption[] } | null>(null)
+  const q = query.trim()
+  const br = countryCode === 'BR'
+
+  useEffect(() => {
+    if (!countryCode || countryCode === 'BR') return
+    let live = true
+    void api.countryCities(countryCode).then((result) => {
+      if (live) setWorld({ code: countryCode, rows: result.status === 'ok' ? result.rows : [] })
+    })
+    return () => {
+      live = false
+    }
+  }, [api, countryCode])
+
+  const worldRows = !br && world?.code === countryCode ? world.rows : null
+  const local = worldRows ? filterByName(worldRows, (c) => c.name, armed ? q : '').slice(0, CITY_OPTIONS) : []
+  const needRemote = !!countryCode && armed && (br ? q.length >= 2 : worldRows !== null && local.length === 0 && q.length >= PLACE_MIN_QUERY)
+  const key = `${countryCode}|${q}`
+
+  useEffect(() => {
+    if (!needRemote || !countryCode) return
+    const controller = new AbortController()
+    const timer = setTimeout(() => {
+      const done = (rows: CityOption[]) => {
+        if (!controller.signal.aborted) setLanded({ key: `${countryCode}|${q}`, rows })
+      }
+      if (countryCode === 'BR') {
+        void api.searchCities(q).then((r) =>
+          done(
+            r.status === 'ok'
+              ? r.rows.map((c) => {
+                  const { label, detail, ...place } = cityToCandidate(c)
+                  return { key: c.id, label, detail: c.stateCode ?? detail, place }
+                })
+              : [],
+          ),
+        )
+      } else {
+        void api.searchPlaces(q, { mode: 'city', signal: controller.signal }).then((r) =>
+          done(
+            r.status === 'ok'
+              ? r.rows
+                  .filter((c) => c.countryCode === countryCode)
+                  .map(({ label, detail, osmRef: _ref, kind: _kind, ...place }) => ({ key: `${label}|${place.lat}|${place.lng}`, label, detail, place }))
+              : [],
+          ),
+        )
+      }
+    }, DEBOUNCE_MS)
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
+    }
+  }, [api, needRemote, countryCode, q])
+
+  const remote = landed?.key === key ? landed.rows : null
+  const rows: CityOption[] =
+    !br && local.length > 0
+      ? local.map((c) => ({
+          key: c.id,
+          label: c.name,
+          detail: c.region ?? undefined,
+          place: { address: null, city: c.name, state: c.region, country: countryNamePt(c.countryCode), countryCode: c.countryCode, lat: c.lat, lng: c.lng },
+        }))
+      : (remote ?? [])
+  const loading = !!countryCode && ((!br && worldRows === null) || (needRemote && remote === null))
+  return { rows, loading }
+}
+
+// ---------------------------------------------------------------------------
+// Combobox (a busca e as listas de país e cidade)
+// ---------------------------------------------------------------------------
+
+function Combobox({
   id,
   value,
   onType,
   placeholder,
   icon,
-  search,
+  options,
+  shown,
+  loading,
+  down,
   onPick,
-  offerCityOnly,
-  onCityOnly,
+  extra,
+  notice,
+  credit,
   invalid,
   describedBy,
+  maxLength = LIST_LIMITS.name,
 }: {
   id: string
   value: string
   onType: (value: string) => void
   placeholder?: string
   icon: ReactNode
-  search: ReturnType<typeof usePlaceSearch>
-  onPick: (candidate: PlaceCandidate) => void
-  offerCityOnly: boolean
-  onCityOnly: () => void
+  options: readonly Option[]
+  /** Há uma lista para mostrar (busca respondeu, ou lista local pronta). */
+  shown: boolean
+  loading: boolean
+  down?: boolean
+  onPick: (index: number) => void
+  /** Uma última linha que não é resultado ("Não achei. Usar só a cidade"). */
+  extra?: { label: string; onPick: () => void } | null
+  notice?: string | null
+  credit?: string | null
   invalid: boolean
   describedBy?: string
+  maxLength?: number
 }) {
   const listId = useId()
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
-
-  const result = search.current
-  const rows = result?.status === 'ok' ? result.rows : []
-  const options: ({ kind: 'row'; row: PlaceCandidate } | { kind: 'city-only' })[] = [
-    ...rows.map((row) => ({ kind: 'row' as const, row })),
-    ...(offerCityOnly && result?.status === 'ok' ? [{ kind: 'city-only' as const }] : []),
-  ]
-  const expanded = open && search.active && result !== null && result.status === 'ok'
-  const loading = open && search.active && result === null
+  const total = options.length + (extra ? 1 : 0)
+  const expanded = open && shown
+  const optionId = (index: number) => `${listId}-opt-${index}`
 
   function choose(index: number) {
-    const option = options[index]
-    if (!option) return
+    if (index < 0 || index >= total) return
     setOpen(false)
     setActiveIndex(-1)
-    if (option.kind === 'city-only') onCityOnly()
-    else onPick(option.row)
+    if (index < options.length) onPick(index)
+    else extra?.onPick()
   }
 
   function onKeyDown(event: ReactKeyboardEvent<HTMLInputElement>) {
-    if (event.key === 'ArrowDown' && options.length > 0) {
+    if (event.key === 'ArrowDown' && total > 0) {
       event.preventDefault()
       setOpen(true)
-      setActiveIndex((i) => (i + 1) % options.length)
-    } else if (event.key === 'ArrowUp' && options.length > 0) {
+      setActiveIndex((i) => (i + 1) % total)
+    } else if (event.key === 'ArrowUp' && total > 0) {
       event.preventDefault()
-      setActiveIndex((i) => (i <= 0 ? options.length - 1 : i - 1))
+      setActiveIndex((i) => (i <= 0 ? total - 1 : i - 1))
     } else if (event.key === 'Enter') {
       // Enter nunca envia o formulário daqui: escolhe, ou não faz nada.
       event.preventDefault()
@@ -242,8 +322,6 @@ function PlaceCombobox({
       setOpen(false)
     }
   }
-
-  const optionId = (index: number) => `${listId}-opt-${index}`
 
   return (
     <div className="ls-add-combo">
@@ -262,7 +340,7 @@ function PlaceCombobox({
           aria-describedby={describedBy}
           placeholder={placeholder}
           value={value}
-          maxLength={LIST_LIMITS.name}
+          maxLength={maxLength}
           onChange={(e) => {
             onType(e.target.value)
             setOpen(true)
@@ -273,44 +351,48 @@ function PlaceCombobox({
           onKeyDown={onKeyDown}
         />
       </div>
-      {loading && <p className="ls-add-searching">Buscando…</p>}
-      {search.down && (
+      {open && loading && <p className="ls-add-searching">Buscando…</p>}
+      {down && (
         <p className="ls-add-error" role="alert">
           {SEARCH_DOWN}
         </p>
       )}
       <div className="ls-add-results lg" hidden={!expanded}>
-        {result?.status === 'ok' && result.fallback && <p className="ls-add-fallback">{FALLBACK_NOTICE}</p>}
+        {notice && <p className="ls-add-fallback">{notice}</p>}
         <ul id={listId} role="listbox" aria-label="Resultados da busca">
           {options.map((option, index) => (
             <li
-              key={option.kind === 'row' ? `${option.row.label}|${option.row.lat}|${option.row.lng}` : 'city-only'}
+              key={option.key}
               id={optionId(index)}
               role="option"
               aria-selected={index === activeIndex}
-              className={`ls-add-option ${option.kind === 'city-only' ? 'ls-add-option--city' : ''}`}
+              className="ls-add-option"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => choose(index)}
             >
-              {option.kind === 'row' ? (
-                <>
-                  <MapPin size={15} aria-hidden="true" />
-                  <span className="ls-add-option-text">
-                    <span className="ls-add-option-label">{option.row.label}</span>
-                    <span className="ls-add-option-detail">{option.row.detail}</span>
-                  </span>
-                </>
-              ) : (
-                <>
-                  <MapPin size={15} aria-hidden="true" />
-                  <span className="ls-add-option-label">{CITY_ONLY}</span>
-                </>
-              )}
+              <MapPin size={15} aria-hidden="true" />
+              <span className="ls-add-option-text">
+                <span className="ls-add-option-label">{option.label}</span>
+                {option.detail && <span className="ls-add-option-detail">{option.detail}</span>}
+              </span>
             </li>
           ))}
+          {extra && (
+            <li
+              id={optionId(options.length)}
+              role="option"
+              aria-selected={activeIndex === options.length}
+              className="ls-add-option ls-add-option--city"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => choose(options.length)}
+            >
+              <MapPin size={15} aria-hidden="true" />
+              <span className="ls-add-option-label">{extra.label}</span>
+            </li>
+          )}
         </ul>
-        {rows.length === 0 && <p className="ls-add-empty">Nada encontrado para “{value.trim()}”.</p>}
-        {result?.status === 'ok' && !result.fallback && <p className="ls-add-credit">© OpenStreetMap</p>}
+        {options.length === 0 && <p className="ls-add-empty">Nada encontrado para “{value.trim()}”.</p>}
+        {credit && <p className="ls-add-credit">{credit}</p>}
       </div>
     </div>
   )
@@ -327,7 +409,6 @@ function Field({
   error,
   errorId,
   children,
-  className = '',
 }: {
   label: string
   htmlFor?: string
@@ -335,10 +416,9 @@ function Field({
   error?: string | null
   errorId?: string
   children: ReactNode
-  className?: string
 }) {
   return (
-    <div className={`ls-add-field ${className}`}>
+    <div className="ls-add-field">
       {htmlFor ? (
         <label className="ls-add-label" htmlFor={htmlFor}>
           {label}
@@ -357,8 +437,61 @@ function Field({
   )
 }
 
+/** Dois ou mais botões de escolha única (Restaurante/Parque, Filme/Série, plataformas). */
+function Choice<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  disabled,
+  firstId,
+}: {
+  label: string
+  options: readonly { value: T; label: string }[]
+  value: T | null
+  onChange: (value: T) => void
+  disabled?: boolean
+  firstId?: string
+}) {
+  return (
+    <div className="ls-add-chips" role="group" aria-label={label}>
+      {options.map((o, i) => (
+        <button
+          key={o.value}
+          id={i === 0 ? firstId : undefined}
+          type="button"
+          className="ls-chip lg"
+          aria-pressed={value === o.value}
+          disabled={disabled && value !== o.value}
+          onClick={() => onChange(o.value)}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function photoRejection(reason: 'not_image' | 'too_large'): string {
   return reason === 'not_image' ? 'Esse arquivo não é uma imagem.' : 'A foto é grande demais (até 10 MB).'
+}
+
+function stripCandidate({ label, detail, osmRef: _ref, kind: _kind, ...place }: PlaceCandidate): { place: GeoPlace; chosen: Chosen } {
+  return { place, chosen: { label, detail } }
+}
+
+function countryPlace(code: string): GeoPlace {
+  const [lat, lng] = COUNTRY_CENTERS[code] ?? [0, 0]
+  return { address: null, city: null, state: null, country: countryNamePt(code), countryCode: code, lat, lng }
+}
+
+/** O lugar já gravado, mostrado como resultado escolhido (edição). */
+function chosenFromItem(item: ListItem): Chosen | null {
+  const place = item.place
+  if (!place) return null
+  if (item.category === 'pais') return { label: place.country, detail: 'País' }
+  const label = item.category === 'cidade' || item.category === 'comida' ? (item.venue ?? place.city ?? place.country) : item.name
+  return { label, detail: placeDetail(place, 'place') }
 }
 
 // ---------------------------------------------------------------------------
@@ -369,33 +502,36 @@ export function AddItemModal(props: AddItemModalProps) {
   const { api, coupleId, me, urls, searchFrom } = useList()
   const editing = props.mode === 'edit'
   const item = props.mode === 'edit' ? props.item : null
+  const initial = item?.category ?? (props.mode === 'create' ? props.initialCategory : undefined) ?? null
 
-  const [category, setCategory] = useState<ListCategory | null>(
-    item ? item.category : props.mode === 'create' ? (props.initialCategory ?? null) : null,
-  )
+  const [group, setGroup] = useState<ItemGroup | null>(initial ? groupOf(initial) : null)
+  /** O tipo dentro do grupo quando é a pessoa quem diz (Restaurante/Parque, Filme/Série). */
+  const [kindChoice, setKindChoice] = useState<ListCategory | null>(initial)
+
   const [name, setName] = useState(item?.name ?? '')
-  const [link, setLink] = useState(item?.link ?? '')
   const [note, setNote] = useState(item?.note ?? '')
   const [featured, setFeatured] = useState(item?.featured ?? false)
-  const [region, setRegion] = useState(item?.region ?? '')
-  const [venue, setVenue] = useState(item?.venue ?? '')
-  const [highlights, setHighlights] = useState<string[]>(item?.highlights ?? [])
-  const [highlightDraft, setHighlightDraft] = useState('')
+  const [venue, setVenue] = useState<string | null>(item?.venue ?? null)
   const [platform, setPlatform] = useState<string | null>(item?.platform ?? null)
-  const [otherPlatform, setOtherPlatform] = useState(
-    !!item?.platform && !(PLATFORMS as readonly string[]).includes(item.platform),
-  )
-  const [seasons, setSeasons] = useState(item?.seasons != null ? String(item.seasons) : '')
+  const [otherPlatform, setOtherPlatform] = useState(!!item?.platform && !(PLATFORMS as readonly string[]).includes(item.platform))
 
-  const [place, setPlace] = useState<GeoPlace | null>(item?.place ?? null)
-  const [chosen, setChosen] = useState<Chosen | null>(item ? chosenFromItem(item) : null)
-  const [placeQuery, setPlaceQuery] = useState(() => {
-    if (!item?.place || item.category === 'pais') return ''
-    return chosenFromItem(item)?.label ?? ''
-  })
+  // O lugar (todos os geográficos menos o "Países e cidades").
+  const [place, setPlace] = useState<GeoPlace | null>(item && item.category !== 'pais' && item.category !== 'cidade' ? item.place : null)
+  const [chosen, setChosen] = useState<Chosen | null>(item && item.category !== 'pais' && item.category !== 'cidade' ? chosenFromItem(item) : null)
+  const [placeQuery, setPlaceQuery] = useState('')
   const [armed, setArmed] = useState(false)
   const [cityOnly, setCityOnly] = useState(false)
   const [address, setAddress] = useState('')
+
+  // "Países e cidades".
+  const [countryCode, setCountryCode] = useState<string | null>(
+    item && (item.category === 'pais' || item.category === 'cidade') ? (item.place?.countryCode ?? null) : null,
+  )
+  const [countryQuery, setCountryQuery] = useState(countryCode ? countryNamePt(countryCode) : '')
+  const [countryArmed, setCountryArmed] = useState(false)
+  const [cityPlace, setCityPlace] = useState<GeoPlace | null>(item?.category === 'cidade' ? item.place : null)
+  const [cityQuery, setCityQuery] = useState(item?.category === 'cidade' ? (item.place?.city ?? '') : '')
+  const [cityArmed, setCityArmed] = useState(false)
 
   const [photo, setPhoto] = useState<{ file: File; url: string } | null>(null)
   const [photoError, setPhotoError] = useState<string | null>(null)
@@ -421,60 +557,92 @@ export function AddItemModal(props: AddItemModalProps) {
     [],
   )
 
-  const baseMode = category ? searchModeOf(category) : null
-  const mode: PlaceMode | null = baseMode === 'place' && cityOnly ? 'city' : baseMode
-  const query = category === 'pais' ? name : placeQuery
-  const search = usePlaceSearch(api, mode, query, armed, searchFrom)
+  const countries = useCountries()
+  const countryOptions = countryArmed ? filterByName(countries, (c) => c.name, countryQuery).slice(0, 8) : []
+  const cities = useCityOptions(api, countryCode, cityQuery, cityArmed)
+
+  const placeMode: PlaceMode | null = group === 'lugar' || group === 'comida' || group === 'experiencia' ? (cityOnly ? 'city' : 'place') : null
+  const search = usePlaceSearch(api, placeMode, placeQuery, armed, searchFrom)
+  const searchResult = search.current
+  const searchRows = searchResult?.status === 'ok' ? searchResult.rows : []
 
   // O foco vai ao campo que a validação apontou (a cada tentativa: `nonce`).
   useEffect(() => {
     if (fieldError) document.getElementById(fieldError.targetId)?.focus()
   }, [fieldError])
 
-  const media = category !== null && isMediaCategory(category)
-  const geo = category !== null && !media
   const locked = saving || partial !== null
+
+  /** A categoria que vai para o banco: travada na edição, derivada na criação. */
+  function categoryNow(): ListCategory | null {
+    if (item) return item.category
+    switch (group) {
+      case 'mundo':
+        return cityPlace ? 'cidade' : 'pais'
+      case 'lugar':
+        return kindChoice === 'parque' ? 'parque' : 'restaurante'
+      case 'comida':
+        return 'comida'
+      case 'tela':
+        return kindChoice === 'serie' ? 'serie' : 'filme'
+      case 'experiencia':
+        return 'experiencia'
+      default:
+        return null
+    }
+  }
+  const category = categoryNow()
 
   function errorFor(...fields: DraftField[]): string | null {
     return fieldError && fields.includes(fieldError.field) ? fieldError.message : null
   }
 
-  function pickCategory(next: ListCategory) {
-    if (editing || next === category) return
-    setCategory(next)
+  function pickGroup(next: ItemGroup) {
+    if (editing || next === group) return
+    setGroup(next)
+    setKindChoice(next === 'lugar' ? 'restaurante' : next === 'tela' ? 'filme' : null)
+    setName('')
+    setVenue(null)
     setPlace(null)
     setChosen(null)
     setPlaceQuery('')
     setArmed(false)
     setCityOnly(false)
     setAddress('')
-    setRegion('')
-    setVenue('')
-    setHighlights([])
-    setHighlightDraft('')
+    setCountryCode(null)
+    setCountryQuery('')
+    setCityPlace(null)
+    setCityQuery('')
     setPlatform(null)
     setOtherPlatform(false)
-    setSeasons('')
     setFieldError(null)
     setFailure(null)
   }
 
   function pickPlace(candidate: PlaceCandidate) {
-    const { label, detail, ...geoPlace } = candidate
-    setPlace(geoPlace)
-    setChosen({ label, detail })
+    const { place: geo, chosen: shown } = stripCandidate(candidate)
+    setPlace(geo)
+    setChosen(shown)
     setArmed(false)
-    if (category === 'pais') setName(label)
-    else setPlaceQuery(label)
+    setPlaceQuery('')
     setFieldError(null)
+    if (group === 'lugar') {
+      // O nome do lugar vem do resultado; endereço e cidade não são nome.
+      if (candidate.kind !== 'address' && candidate.kind !== 'city') setName(candidate.label)
+      if (!editing && candidate.kind === 'park') setKindChoice('parque')
+    } else if (group === 'comida') {
+      setVenue(candidate.kind === 'address' || candidate.kind === 'city' || cityOnly ? null : candidate.label)
+    }
   }
 
   function chooseCityOnly() {
+    // O que a pessoa digitou era o nome do lugar: ele fica, e a busca vira de cidade.
+    if (group === 'lugar' && name.trim() === '') setName(placeQuery.trim())
     setCityOnly(true)
     setPlace(null)
     setChosen(null)
-    // A mesma consulta roda de novo, agora na camada de cidade.
-    setArmed(true)
+    setPlaceQuery('')
+    setArmed(false)
   }
 
   function backToPlaceSearch() {
@@ -487,18 +655,23 @@ export function AddItemModal(props: AddItemModalProps) {
   function clearChosen() {
     setPlace(null)
     setChosen(null)
-    const input = document.getElementById(fid(category === 'pais' ? 'name' : 'place'))
-    input?.focus()
+    document.getElementById(fid('place'))?.focus()
   }
 
-  function addHighlight() {
-    const city = highlightDraft.trim()
-    if (city === '') return
-    if (highlights.length >= LIST_LIMITS.highlights) return
-    if (!highlights.some((h) => h.toLocaleLowerCase('pt-BR') === city.toLocaleLowerCase('pt-BR'))) {
-      setHighlights([...highlights, city])
-    }
-    setHighlightDraft('')
+  function pickCountry(code: string) {
+    setCountryCode(code)
+    setCountryQuery(countryNamePt(code))
+    setCountryArmed(false)
+    setCityPlace(null)
+    setCityQuery('')
+    setFieldError(null)
+  }
+
+  function pickCity(option: CityOption) {
+    setCityPlace(option.place)
+    setCityQuery(option.label)
+    setCityArmed(false)
+    setFieldError(null)
   }
 
   function onPhotoPicked(file: File | undefined) {
@@ -513,38 +686,61 @@ export function AddItemModal(props: AddItemModalProps) {
   }
 
   function buildDraft(cat: ListCategory): ItemDraft {
-    const isMedia = isMediaCategory(cat)
-    const typedAddress = address.trim()
-    const geoPlace = !isMedia && place ? (cityOnly && typedAddress ? { ...place, address: typedAddress } : place) : null
-    const seasonsText = seasons.trim()
-    return {
-      category: cat,
-      name: name.trim(),
-      note: note.trim() === '' ? null : note.trim(),
-      link: normalizeLink(link),
-      featured,
-      place: geoPlace,
-      region: cat === 'cidade' && region.trim() !== '' ? region.trim() : null,
-      venue: cat === 'comida' && venue.trim() !== '' ? venue.trim() : null,
-      highlights: cat === 'pais' ? highlights : [],
-      platform: isMedia ? (platform?.trim() ?? null) : null,
-      seasons: cat === 'serie' && seasonsText !== '' ? Number(seasonsText) : null,
+    const same = item?.category === cat
+    const kept = { region: same ? item!.region : null, highlights: same ? item!.highlights : [], seasons: same ? item!.seasons : null }
+    const base = { category: cat, note: note.trim() === '' ? null : note.trim(), link: item?.link ?? null, featured, venue: null, platform: null, ...kept }
+
+    if (group === 'mundo') {
+      if (cat === 'cidade') {
+        const city = cityPlace
+        // O nome é o da cidade; na edição sem trocar de cidade, o que já estava ("Gramado no Natal").
+        const unchanged = item && city === item.place
+        return { ...base, name: unchanged ? name.trim() : (city?.city ?? ''), place: city, highlights: [] }
+      }
+      const unchanged = item && countryCode === item.place?.countryCode
+      const country = countryCode ? (unchanged && item?.place ? item.place : countryPlace(countryCode)) : null
+      return { ...base, name: unchanged ? name.trim() : (country?.country ?? ''), place: country, region: null }
     }
+    if (group === 'tela') {
+      return { ...base, name: name.trim(), place: null, region: null, highlights: [], platform: platform?.trim() ?? null }
+    }
+    const typedAddress = address.trim()
+    const geo = place ? (cityOnly && typedAddress ? { ...place, address: typedAddress } : place) : null
+    return {
+      ...base,
+      name: name.trim(),
+      place: geo,
+      region: null,
+      highlights: [],
+      seasons: null,
+      venue: cat === 'comida' && venue && venue.trim() !== '' ? venue.trim().slice(0, LIST_LIMITS.venue) : null,
+    }
+  }
+
+  /** O que a tela sabe antes do domínio: sem lugar escolhido, aponte a busca, não o nome. */
+  function missingPlace(): { field: DraftField; message: string; target: string } | null {
+    if (group === 'mundo' && !countryCode) return { field: 'place', message: 'Escolha o país.', target: 'country' }
+    if ((group === 'lugar' || group === 'experiencia' || group === 'comida') && !place) {
+      return { field: 'place', message: cityOnly ? 'Escolha a cidade.' : 'Busque e escolha um resultado.', target: 'place' }
+    }
+    if (group === 'tela' && (!platform || platform.trim() === '')) {
+      return { field: 'platform', message: 'Diga onde assistir.', target: otherPlatform ? 'platform-other' : 'platform' }
+    }
+    return null
   }
 
   async function save(event?: FormEvent) {
     event?.preventDefault()
     if (!category || locked) return
+    const missing = missingPlace()
+    if (missing) {
+      setFieldError({ field: missing.field, message: missing.message, targetId: fid(missing.target), nonce: ++attempts.current })
+      return
+    }
     const draft = buildDraft(category)
-    if (draft.link !== null) setLink(draft.link)
     const verdict = validateItem(draft)
     if (!verdict.ok) {
-      setFieldError({
-        field: verdict.field,
-        message: verdict.reason,
-        targetId: fid(fieldTarget(verdict.field, category)),
-        nonce: ++attempts.current,
-      })
+      setFieldError({ field: verdict.field, message: verdict.reason, targetId: fid(fieldTarget(verdict.field, group, category)), nonce: ++attempts.current })
       return
     }
     setFieldError(null)
@@ -554,11 +750,7 @@ export function AddItemModal(props: AddItemModalProps) {
     const written = item ? await api.updateItem(item.id, draft) : await api.createItem(coupleId, draft)
     if (written.status !== 'ok') {
       setSaving(false)
-      setFailure(
-        written.status === 'invalid'
-          ? `O banco recusou (${written.constraint}): ${written.cause}`
-          : failureMessage(written),
-      )
+      setFailure(written.status === 'invalid' ? `O banco recusou (${written.constraint}): ${written.cause}` : failureMessage(written))
       return
     }
 
@@ -572,9 +764,7 @@ export function AddItemModal(props: AddItemModalProps) {
         setSaving(false)
         setPartial({
           item: saved,
-          message: item
-            ? `As alterações foram salvas, mas a foto não subiu: ${cause}`
-            : `O item foi adicionado, mas a foto não subiu: ${cause}`,
+          message: item ? `As alterações foram salvas, mas a foto não subiu: ${cause}` : `O item foi adicionado, mas a foto não subiu: ${cause}`,
         })
         return
       }
@@ -589,7 +779,7 @@ export function AddItemModal(props: AddItemModalProps) {
 
   const nameError = errorFor('name')
   const placeError = errorFor('place', 'place.city', 'place.countryCode', 'place.lat', 'place.lng')
-  const offline = search.down && geo && place === null
+  const offline = search.down && placeMode !== null && place === null
 
   const chosenCard = chosen && place && (
     <div className="ls-add-chosen lg">
@@ -604,124 +794,55 @@ export function AddItemModal(props: AddItemModalProps) {
     </div>
   )
 
-  const nameField =
-    category === 'pais' && mode ? (
-      <Field label="Nome" htmlFor={fid('name')} error={nameError ?? placeError} errorId={fid('name-error')}>
-        <PlaceCombobox
-          id={fid('name')}
-          value={name}
-          onType={(v) => {
-            setName(v)
-            setArmed(true)
-          }}
-          placeholder="Busque o país"
-          icon={<Flag size={15} aria-hidden="true" />}
-          search={search}
-          onPick={pickPlace}
-          offerCityOnly={false}
-          onCityOnly={chooseCityOnly}
-          invalid={!!(nameError ?? placeError)}
-          describedBy={nameError || placeError ? fid('name-error') : undefined}
-        />
-        {chosenCard}
-      </Field>
-    ) : (
-      <Field label="Nome" htmlFor={fid('name')} error={nameError} errorId={fid('name-error')}>
-        <div className={`ls-add-input ${nameError ? 'is-invalid' : ''} lg`}>
-          <PenLine size={15} aria-hidden="true" />
-          <input
-            id={fid('name')}
-            type="text"
-            value={name}
-            maxLength={LIST_LIMITS.name}
-            aria-invalid={!!nameError || undefined}
-            aria-describedby={nameError ? fid('name-error') : undefined}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </div>
-      </Field>
-    )
-
-  const textField = (
-    field: 'link' | 'note' | 'region' | 'venue' | 'address' | 'country',
-    label: string,
-    value: string,
-    onChange: ((v: string) => void) | null,
-    icon: ReactNode,
-    extra: { hint?: string; maxLength?: number; placeholder?: string; errorFields?: DraftField[] } = {},
-  ) => {
-    const error = extra.errorFields ? errorFor(...extra.errorFields) : null
-    return (
-      <Field label={label} htmlFor={fid(field)} hint={extra.hint} error={error} errorId={fid(`${field}-error`)}>
-        <div className={`ls-add-input ${error ? 'is-invalid' : ''} ${onChange ? '' : 'is-readonly'} lg`}>
-          {icon}
-          <input
-            id={fid(field)}
-            type={field === 'link' ? 'url' : 'text'}
-            inputMode={field === 'link' ? 'url' : undefined}
-            value={value}
-            readOnly={!onChange}
-            maxLength={extra.maxLength}
-            placeholder={extra.placeholder}
-            aria-invalid={!!error || undefined}
-            aria-describedby={error ? fid(`${field}-error`) : undefined}
-            onChange={onChange ? (e) => onChange(e.target.value) : undefined}
-          />
-        </div>
-      </Field>
-    )
-  }
-
-  const linkField = textField('link', 'Link', link, setLink, <Link2 size={15} aria-hidden="true" />, {
-    maxLength: LIST_LIMITS.link,
-    errorFields: ['link'],
-  })
-  const noteField = (
-    <Field label="Nota" htmlFor={fid('note')} error={errorFor('note')} errorId={fid('note-error')}>
-      <div className={`ls-add-input ls-add-input--area ${errorFor('note') ? 'is-invalid' : ''} lg`}>
-        <StickyNote size={15} aria-hidden="true" />
-        <textarea
-          id={fid('note')}
-          rows={2}
-          value={note}
-          maxLength={LIST_LIMITS.note}
-          aria-invalid={!!errorFor('note') || undefined}
-          onChange={(e) => setNote(e.target.value)}
+  const textInput = (field: string, label: string, value: string, onChange: (v: string) => void, icon: ReactNode, opts: { placeholder?: string; maxLength: number; error?: string | null; hint?: string }) => (
+    <Field label={label} htmlFor={fid(field)} hint={opts.hint} error={opts.error} errorId={fid(`${field}-error`)}>
+      <div className={`ls-add-input ${opts.error ? 'is-invalid' : ''} lg`}>
+        {icon}
+        <input
+          id={fid(field)}
+          type="text"
+          value={value}
+          maxLength={opts.maxLength}
+          placeholder={opts.placeholder}
+          aria-invalid={!!opts.error || undefined}
+          aria-describedby={opts.error ? fid(`${field}-error`) : undefined}
+          onChange={(e) => onChange(e.target.value)}
         />
       </div>
     </Field>
   )
 
-  const placeLabel = category === 'cidade' ? 'Local · busca de cidade' : category === 'comida' ? 'Local · cidade' : 'Local'
-  const localField = mode && category !== 'pais' && (
+  const nameField = (label: string, placeholder?: string) =>
+    textInput('name', label, name, setName, <PenLine size={15} aria-hidden="true" />, { placeholder, maxLength: LIST_LIMITS.name, error: nameError })
+
+  const placeSearch = (label: string, placeholder: string) => (
     <>
-      <Field label={placeLabel} htmlFor={fid('place')} error={placeError} errorId={fid('place-error')}>
-        <PlaceCombobox
-          id={fid('place')}
-          value={placeQuery}
-          onType={(v) => {
-            setPlaceQuery(v)
-            setArmed(true)
-          }}
-          placeholder={
-            category === 'experiencia'
-              ? 'Busque cidade, região ou endereço (ex.: Capadócia)'
-              : mode === 'city'
-                ? 'Busque a cidade'
-                : 'Busque o lugar ou o endereço'
-          }
-          icon={<Search size={15} aria-hidden="true" />}
-          search={search}
-          onPick={pickPlace}
-          offerCityOnly={baseMode === 'place' && !cityOnly}
-          onCityOnly={chooseCityOnly}
-          invalid={!!placeError}
-          describedBy={placeError ? fid('place-error') : undefined}
-        />
-        {chosenCard}
+      <Field label={label} htmlFor={fid('place')} error={placeError} errorId={fid('place-error')}>
+        {chosenCard || (
+          <Combobox
+            id={fid('place')}
+            value={placeQuery}
+            onType={(v) => {
+              setPlaceQuery(v)
+              setArmed(true)
+            }}
+            placeholder={cityOnly ? 'Busque a cidade' : placeholder}
+            icon={<Search size={15} aria-hidden="true" />}
+            options={searchRows.map((r) => ({ key: `${r.label}|${r.lat}|${r.lng}`, label: r.label, detail: r.detail }))}
+            shown={search.active && searchResult?.status === 'ok'}
+            loading={search.active && searchResult === null}
+            down={search.down}
+            onPick={(i) => pickPlace(searchRows[i])}
+            extra={!cityOnly && searchResult?.status === 'ok' ? { label: CITY_ONLY, onPick: chooseCityOnly } : null}
+            notice={searchResult?.status === 'ok' && searchResult.fallback ? FALLBACK_NOTICE : null}
+            credit={searchResult?.status === 'ok' && !searchResult.fallback ? '© OpenStreetMap · © Mapbox' : null}
+            invalid={!!placeError}
+            describedBy={placeError ? fid('place-error') : undefined}
+          />
+        )}
         {cityOnly && (
           <p className="ls-add-hint">
-            Buscando só a cidade. O pin fica no centro dela.{' '}
+            O pin fica no centro da cidade.{' '}
             <button type="button" className="ls-add-link-btn" onClick={backToPlaceSearch}>
               Buscar o lugar de novo
             </button>
@@ -729,12 +850,21 @@ export function AddItemModal(props: AddItemModalProps) {
         )}
       </Field>
       {cityOnly &&
-        textField('address', 'Endereço', address, setAddress, <MapPin size={15} aria-hidden="true" />, {
-          maxLength: LIST_LIMITS.address,
+        textInput('address', 'Endereço · opcional', address, setAddress, <MapPin size={15} aria-hidden="true" />, {
           placeholder: 'Rua, número, bairro',
-          errorFields: ['place.address'],
+          maxLength: LIST_LIMITS.address,
+          error: errorFor('place.address'),
         })}
     </>
+  )
+
+  const noteField = (
+    <Field label="Nota · opcional" htmlFor={fid('note')} error={errorFor('note')} errorId={fid('note-error')}>
+      <div className={`ls-add-input ls-add-input--area ${errorFor('note') ? 'is-invalid' : ''} lg`}>
+        <StickyNote size={15} aria-hidden="true" />
+        <textarea id={fid('note')} rows={2} value={note} maxLength={LIST_LIMITS.note} aria-invalid={!!errorFor('note') || undefined} onChange={(e) => setNote(e.target.value)} />
+      </div>
+    </Field>
   )
 
   const platformError = errorFor('platform')
@@ -786,138 +916,118 @@ export function AddItemModal(props: AddItemModalProps) {
     </Field>
   )
 
-  const seasonsError = errorFor('seasons')
-  const seasonsField = (
-    <Field label="Temporadas" htmlFor={fid('seasons')} error={seasonsError} errorId={fid('seasons-error')}>
-      <div className={`ls-add-input ls-add-input--short ${seasonsError ? 'is-invalid' : ''} lg`}>
-        <Layers size={15} aria-hidden="true" />
-        <input
-          id={fid('seasons')}
-          type="number"
-          inputMode="numeric"
-          min={LIST_LIMITS.seasonsMin}
-          max={LIST_LIMITS.seasonsMax}
-          step={1}
-          placeholder="Opcional"
-          value={seasons}
-          aria-invalid={!!seasonsError || undefined}
-          onChange={(e) => setSeasons(e.target.value)}
+  const countryError = group === 'mundo' ? placeError : null
+  const worldFields = (
+    <>
+      <Field label="País" htmlFor={fid('country')} error={category === 'pais' ? countryError : null} errorId={fid('country-error')}>
+        <Combobox
+          id={fid('country')}
+          value={countryQuery}
+          onType={(v) => {
+            setCountryQuery(v)
+            setCountryArmed(true)
+            setCountryCode(null)
+            setCityPlace(null)
+            setCityQuery('')
+          }}
+          placeholder="Busque o país"
+          icon={<Flag size={15} aria-hidden="true" />}
+          options={countryOptions.map((c) => ({ key: c.code, label: c.name }))}
+          shown={countryArmed && countryQuery.trim() !== ''}
+          loading={false}
+          onPick={(i) => pickCountry(countryOptions[i].code)}
+          invalid={category === 'pais' && !!countryError}
+          describedBy={countryError ? fid('country-error') : undefined}
         />
-      </div>
-    </Field>
-  )
-
-  const highlightsError = errorFor('highlights')
-  const highlightsField = (
-    <Field
-      label="Cidades que interessam"
-      htmlFor={fid('highlights')}
-      hint="Aparece como segunda linha do item na lista"
-      error={highlightsError}
-      errorId={fid('highlights-error')}
-    >
-      <div className="ls-add-chips">
-        {highlights.map((city) => (
-          <span key={city} className="ls-chip ls-add-highlight lg">
-            <span className="ls-dot ls-cat--cidade" aria-hidden="true" />
-            {city}
-            <button
-              type="button"
-              className="ls-add-remove"
-              aria-label={`Remover ${city}`}
-              onClick={() => setHighlights(highlights.filter((h) => h !== city))}
-            >
-              ×
-            </button>
-          </span>
-        ))}
-        <span className="ls-chip ls-add-highlight-new lg">
-          <Plus size={15} aria-hidden="true" />
-          <input
-            id={fid('highlights')}
-            type="text"
-            placeholder="Adicionar cidade"
-            aria-label="Adicionar cidade"
-            value={highlightDraft}
-            maxLength={LIST_LIMITS.highlight}
-            disabled={highlights.length >= LIST_LIMITS.highlights}
-            onChange={(e) => setHighlightDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ',') {
-                e.preventDefault()
-                addHighlight()
-              }
+      </Field>
+      {countryCode && !(editing && item?.category === 'pais') && (
+        <Field
+          label={editing ? 'Cidade' : 'Cidade · opcional'}
+          htmlFor={fid('city')}
+          hint={editing ? undefined : 'Sem cidade, o item é o país inteiro.'}
+          error={category === 'cidade' ? countryError : null}
+          errorId={fid('city-error')}
+        >
+          <Combobox
+            id={fid('city')}
+            value={cityQuery}
+            onType={(v) => {
+              setCityQuery(v)
+              setCityArmed(true)
+              setCityPlace(null)
             }}
-            onBlur={addHighlight}
+            placeholder={`Cidades em ${countryNamePt(countryCode)}`}
+            icon={<Search size={15} aria-hidden="true" />}
+            options={cities.rows}
+            shown={(cityArmed || (countryCode !== 'BR' && cityQuery === '')) && !cities.loading && (cities.rows.length > 0 || cityQuery.trim().length >= 2)}
+            loading={cities.loading}
+            onPick={(i) => pickCity(cities.rows[i])}
+            invalid={category === 'cidade' && !!countryError}
+            describedBy={countryError ? fid('city-error') : undefined}
           />
-        </span>
-      </div>
-    </Field>
+        </Field>
+      )}
+    </>
   )
 
-  function formFields(cat: ListCategory): ReactNode {
-    switch (cat) {
-      case 'pais':
+  function formFields(g: ItemGroup): ReactNode {
+    switch (g) {
+      case 'mundo':
         return (
           <>
-            {nameField}
-            {highlightsField}
-            {linkField}
+            {worldFields}
             {noteField}
           </>
         )
-      case 'cidade':
+      case 'lugar':
         return (
           <>
-            <div className="ls-add-row">
-              {nameField}
-              {textField('country', 'País', place?.country ?? '', null, <Flag size={15} aria-hidden="true" />, {
-                placeholder: 'Vem do local',
-              })}
-            </div>
-            {textField('region', 'Região', region, setRegion, <MapPin size={15} aria-hidden="true" />, {
-              hint: 'Aparece como segunda linha do item na lista',
-              maxLength: LIST_LIMITS.region,
-              errorFields: ['region'],
-            })}
-            {localField}
-            {linkField}
+            {placeSearch('Busca', 'Nome do lugar ou endereço com número')}
+            {(place || cityOnly || editing) && nameField('Nome', 'Como vocês chamam o lugar')}
+            <Choice
+              label="Tipo"
+              options={[
+                { value: 'restaurante', label: 'Restaurante' },
+                { value: 'parque', label: 'Parque' },
+              ]}
+              value={category as 'restaurante' | 'parque'}
+              onChange={(v) => setKindChoice(v)}
+              disabled={editing}
+            />
             {noteField}
           </>
         )
       case 'comida':
         return (
           <>
-            {nameField}
-            {textField('venue', 'Onde comer · opcional', venue, setVenue, <Store size={15} aria-hidden="true" />, {
-              hint: 'Pode ficar vazio se for um prato, não um lugar',
-              maxLength: LIST_LIMITS.venue,
-              errorFields: ['venue'],
-            })}
-            {localField}
-            {linkField}
+            {nameField('O que comer', 'Acarajé, pastel de feira…')}
+            {placeSearch('Onde', 'Restaurante, cidade ou endereço')}
             {noteField}
           </>
         )
-      case 'restaurante':
-      case 'parque':
+      case 'tela':
+        return (
+          <>
+            {nameField('Nome', 'Título do filme ou da série')}
+            <Choice
+              label="Tipo"
+              options={[
+                { value: 'filme', label: 'Filme' },
+                { value: 'serie', label: 'Série' },
+              ]}
+              value={category as 'filme' | 'serie'}
+              onChange={(v) => setKindChoice(v)}
+              disabled={editing}
+            />
+            {platformField}
+            {noteField}
+          </>
+        )
       case 'experiencia':
         return (
           <>
-            {nameField}
-            {linkField}
-            {localField}
-            {noteField}
-          </>
-        )
-      case 'filme':
-      case 'serie':
-        return (
-          <>
-            {nameField}
-            {platformField}
-            {cat === 'serie' && seasonsField}
-            {linkField}
+            {nameField('O que fazer', 'Mergulho, balão, show…')}
+            {placeSearch('Onde', 'Cidade, região ou lugar')}
             {noteField}
           </>
         )
@@ -926,15 +1036,14 @@ export function AddItemModal(props: AddItemModalProps) {
 
   const existingUrl = item?.photoPath ? (urls.get(item.photoPath) ?? null) : null
   const photoUrl = photo?.url ?? existingUrl
-  const CategoryIcon = category ? CATEGORY_ICONS[category] : null
 
   const side = category && (
     <div className="ls-add-side">
-      <Field label="Foto" error={photoError} errorId={fid('photo-error')}>
+      <Field label="Foto · opcional" error={photoError} errorId={fid('photo-error')}>
         <ItemPhoto category={category} url={photoUrl} className="ls-add-photo">
           <label className="ls-add-photo-change">
             <Camera size={13} aria-hidden="true" />
-            Trocar foto
+            {photoUrl ? 'Trocar foto' : 'Pôr foto'}
             <input
               type="file"
               accept="image/*"
@@ -949,33 +1058,6 @@ export function AddItemModal(props: AddItemModalProps) {
         </ItemPhoto>
       </Field>
 
-      {media ? (
-        <div className="ls-add-preview ls-add-preview--media lg">
-          <p className="ls-add-preview-head">Sem local</p>
-          <p className="ls-add-hint">
-            Filmes e séries não aparecem no globo, só na lista e nas sugestões pras noites em que vocês estão longe.
-          </p>
-        </div>
-      ) : (
-        <div className={`ls-add-preview ${catClass(category)}`}>
-          <p className="ls-add-preview-head">
-            Vai virar um pin no globo
-            <MapPin size={14} aria-hidden="true" />
-          </p>
-          <div className="ls-add-map lg">
-            <span className="ls-add-map-pin" aria-hidden="true">
-              {CategoryIcon && <CategoryIcon size={15} />}
-            </span>
-            <span className="ls-add-map-label">{chosen?.label ?? 'Escolha o local'}</span>
-          </div>
-          {category === 'pais' && (
-            <p className="ls-add-hint">
-              O pin fica no centro do país, não num endereço. As cidades acima não viram pins.
-            </p>
-          )}
-        </div>
-      )}
-
       <div className="ls-add-emphasis lg">
         <span className="ls-add-emphasis-icon" aria-hidden="true">
           <Star size={16} />
@@ -984,23 +1066,12 @@ export function AddItemModal(props: AddItemModalProps) {
           <span id={fid('featured-label')}>Dar ênfase</span>
           <span className="ls-add-emphasis-sub">Aparece em destaque</span>
         </span>
-        <button
-          type="button"
-          role="switch"
-          className="ls-add-switch"
-          aria-checked={featured}
-          aria-labelledby={fid('featured-label')}
-          onClick={() => setFeatured(!featured)}
-        >
+        <button type="button" role="switch" className="ls-add-switch" aria-checked={featured} aria-labelledby={fid('featured-label')} onClick={() => setFeatured(!featured)}>
           <span className="ls-add-switch-knob" aria-hidden="true" />
         </button>
       </div>
     </div>
   )
-
-  const subtitle = media
-    ? 'Filmes e séries: sem local, com plataforma'
-    : 'Escolha a categoria primeiro. Os campos mudam conforme ela.'
 
   const footer = (
     <div className="ls-add-foot">
@@ -1020,12 +1091,7 @@ export function AddItemModal(props: AddItemModalProps) {
               <X size={16} aria-hidden="true" />
               Cancelar
             </button>
-            <button
-              type="submit"
-              form={formId}
-              className="ls-btn ls-btn--primary"
-              disabled={!category || saving || offline}
-            >
+            <button type="submit" form={formId} className="ls-btn ls-btn--primary" disabled={!category || saving || offline}>
               {editing ? <Check size={17} aria-hidden="true" /> : <Plus size={17} aria-hidden="true" />}
               {saving ? 'Salvando…' : editing ? 'Salvar' : 'Adicionar à lista'}
             </button>
@@ -1035,45 +1101,39 @@ export function AddItemModal(props: AddItemModalProps) {
     </div>
   )
 
+  const subtitle = editing && category ? CATEGORY_LABELS[category].one : 'Escolha o que é, depois busque. O resto vem preenchido.'
+
   return (
     <ListDialog title={editing ? 'Editar' : 'Adicionar à lista'} subtitle={subtitle} onClose={close} footer={footer}>
       <form id={formId} className="ls-add" onSubmit={(e) => void save(e)} noValidate aria-busy={saving}>
         <fieldset className="ls-add-fieldset" disabled={locked}>
-          <section className="ls-add-step" aria-labelledby={fid('step1')}>
-            <p className="ls-add-step-label" id={fid('step1')}>
-              1 · Categoria
-            </p>
-            <div className="ls-add-tiles" role="group" aria-labelledby={fid('step1')}>
-              {TILE_ORDER.map((cat, index) => {
-                const Icon = CATEGORY_ICONS[cat]
+          {!editing && (
+            <div className="ls-add-tiles" role="group" aria-label="O que é">
+              {GROUPS.map((g, index) => {
+                const Icon = g.icon
                 return (
                   <button
-                    key={cat}
+                    key={g.key}
                     id={index === 0 ? fid('category') : undefined}
                     type="button"
-                    className={`ls-add-tile ${catClass(cat)} lg`}
-                    aria-pressed={category === cat}
-                    disabled={editing && category !== cat}
-                    onClick={() => pickCategory(cat)}
+                    className={`ls-add-tile ls-cat--${g.categories[0]} lg`}
+                    aria-pressed={group === g.key}
+                    onClick={() => pickGroup(g.key)}
                   >
                     <span className="ls-add-tile-icon" aria-hidden="true">
-                      <Icon size={17} />
+                      <Icon size={15} />
                     </span>
-                    {CATEGORY_LABELS[cat].many}
+                    {g.label}
                   </button>
                 )
               })}
             </div>
-            {editing && <p className="ls-add-hint">A categoria não muda na edição. Pra trocar, apague o item e adicione de novo.</p>}
-          </section>
+          )}
 
-          {category && (
+          {group && (
             <div className="ls-add-body">
-              <section className="ls-add-form" aria-labelledby={fid('step2')}>
-                <p className="ls-add-step-label" id={fid('step2')}>
-                  {detailsLabel(category)}
-                </p>
-                {formFields(category)}
+              <section className="ls-add-form" aria-label="Detalhes">
+                {formFields(group)}
               </section>
               {side}
             </div>
@@ -1096,14 +1156,15 @@ export function AddItemModal(props: AddItemModalProps) {
 }
 
 /** O `id` (sufixo) do controle que recebe o foco quando `validateItem` aponta `field`. */
-function fieldTarget(field: DraftField, category: ListCategory | null): string {
+function fieldTarget(field: DraftField, group: ItemGroup | null, category: ListCategory): string {
   switch (field) {
-    case 'place':
     case 'place.city':
+      return group === 'mundo' ? (category === 'cidade' ? 'city' : 'country') : 'place'
+    case 'place':
     case 'place.countryCode':
     case 'place.lat':
     case 'place.lng':
-      return category === 'pais' ? 'name' : 'place'
+      return group === 'mundo' ? 'country' : 'place'
     case 'place.address':
       return 'address'
     default:

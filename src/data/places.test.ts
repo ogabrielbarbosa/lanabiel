@@ -16,6 +16,7 @@ import type { NearbyPlace } from './nearbyPlaces'
 import {
   PHOTON_URL,
   PLACE_LIMIT,
+  featureToCandidate,
   formatCoordinate,
   mergeNearby,
   nearbyToCandidate,
@@ -476,5 +477,24 @@ describe('ordem por proximidade', () => {
     const photon = [at('Rua Vaca Preta', -23.19, -45.89), bahia]
     const merged = mergeNearby(overture, photon, 5, SJC)
     expect(merged.map((r) => r.label)).toEqual(['Overture 0', 'Overture 1', 'Overture 2', 'Rua Vaca Preta', bahia.label])
+  })
+})
+
+describe('o tipo do resultado (o modal escolhe Parque e não põe rua como nome)', () => {
+  type Fc = { features: Parameters<typeof featureToCandidate>[0][] }
+  const kinds = (fixture: unknown) => (fixture as Fc).features.map((f) => featureToCandidate(f, 'place')?.kind ?? null)
+
+  it('restaurante num prédio com número (type "house") não é endereço; a rua é', () => {
+    expect(kinds(mocoto).slice(0, 4)).toEqual([null, null, null, 'address'])
+  })
+
+  it('leisure=park é parque; a vila Göreme é cidade', () => {
+    expect(kinds(vicentina)[0]).toBe('park')
+    expect(kinds(goreme)[0]).toBe('city')
+  })
+
+  it('fora do modo place não há tipo', () => {
+    const [first] = (vicentina as unknown as Fc).features
+    expect(featureToCandidate(first, 'city')?.kind).toBeUndefined()
   })
 })

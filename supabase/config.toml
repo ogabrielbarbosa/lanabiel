@@ -161,16 +161,17 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-# Origem do Vite (5173), não 3000: é para cá que o OAuth volta. Um valor
-# errado aqui manda o retorno para um lugar sem app, sem erro nosso.
-site_url = "http://127.0.0.1:5173"
+# A origem de produção: é para cá que o OAuth volta sem `redirectTo`, que os
+# links de e-mail apontam e onde abre o consentimento do MCP (ADR 0031). Um
+# valor errado aqui manda o retorno para um lugar sem app, sem erro nosso.
+site_url = "https://lanabiel.ogabarbosa.com"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
 # Controle de segurança, não conveniência: é o que impede o retorno do OAuth
 # de ser desviado para um domínio de terceiro levando o code junto. Sem
-# curinga, nunca. A origem de produção entra aqui quando existir.
-additional_redirect_urls = ["http://localhost:5173"]
+# curinga, nunca. O dev (Vite, 5173) e o domínio da Vercel.
+additional_redirect_urls = ["http://localhost:5173", "http://127.0.0.1:5173", "https://lanabiel.vercel.app"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.

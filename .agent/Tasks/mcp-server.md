@@ -87,6 +87,10 @@ e agendar um evento simples.
 | `list_events` | Eventos do Calendário num intervalo (com os anuais repetidos) | não |
 | `create_event` | Cria evento `date`, `data_especial`, `compromisso` ou `lembrete` pela RPC `create_event`, sem pintar estadia | sim |
 | `list_trips` | Viagens do casal (destino, datas, estado derivado) | não |
+| `find_city` | Cidade para período, visita e viagem: IBGE, as de fora já usadas pelo casal e o Photon (`layer=city`, sem o Brasil). Devolve `city_ref` | não |
+| `record_period` | "Fulano esteve em C de X a Y" pela RPC `paint_stays` (em aberto só com `open_ended`) | sim, destrutivo |
+| `create_visit` | Visita pela RPC `create_event` com `p_paint`; `record_period: false` cria só o evento | sim, destrutivo |
+| `create_trip` | Viagem pela RPC `create_trip` (evento, pintura e `trips`), com hospedagem opcional | sim, destrutivo |
 
 - **R6** — `add_list_item` recusa com `possible_duplicate` (e os itens
   parecidos) quando já existe item da mesma categoria com nome normalizado
@@ -104,7 +108,12 @@ e agendar um evento simples.
   a 5) e `instructions` no `initialize`, dizendo que o texto vindo de link é
   conteúdo de terceiros e não instrução.
 - **R10** — Toda ferramenta de leitura é anotada `readOnlyHint`; `delete_list_item`
-  é `destructiveHint`.
+  e as três que pintam estadia são `destructiveHint`.
+- **R11** — `record_period`, `create_visit` e `create_trip` sem `confirm`
+  devolvem a prévia (`will_record` e `replaces`: as estadias que deixam de
+  valer no intervalo, cortadas a ele) e não gravam nada. Com `confirm: true`,
+  gravam. Cidade de fora vira linha do casal em `cities` só na escrita
+  (ADR 0017).
 
 ## 4. Invariantes
 
@@ -222,7 +231,7 @@ Entrada de `add_list_item` (o `ItemDraft` do app, em snake_case):
 
 - **A1** — Sem token: 401 com `WWW-Authenticate` contendo `resource_metadata`.
   Documento de recurso protegido responde 200 com `authorization_servers`.
-- **A2** — `tools/list` com token válido lista as treze ferramentas.
+- **A2** — `tools/list` com token válido lista as dezessete ferramentas.
 - **A3** — `add_list_item` de um restaurante grava; o outro integrante o vê
   pelo app (`select` com a sessão dele). Casal alheio não vê.
 - **A4** — Os casos de `listValidationCases.ts` dão o mesmo veredito no espelho.
@@ -235,12 +244,14 @@ Entrada de `add_list_item` (o `ItemDraft` do app, em snake_case):
 - **A9** — A tela `/oauth/consent` mostra o cliente e chama `approve`/`deny`
   (jsdom).
 - **A10** — `create_event` de um `date` com `list_item_id` grava o vínculo.
+- **A11** — `record_period` sem `confirm` não muda a estadia; com `confirm`, o
+  dia passa a ser da cidade pedida e o dia seguinte ao fim fica como estava.
+  `create_visit` da outra pessoa grava `visita` solo e a pinta;
+  `create_trip` para Lisboa grava a cidade do casal (`osm_ref`), a linha de
+  `trips` com a hospedagem e pinta os dois.
 
 ## 11. Fora do escopo
 
-- Criar viagem, visita ou período (pinta estadias; a regra da pintura fica no
-  app por enquanto).
+- Editar ou apagar período, visita e viagem pelo MCP (editar o evento não
+  repinta, ADR 0018; isso fica no app).
 - Subir fotos do feito e da viagem pelo MCP.
-- Aba de conexões nas Configurações para ver e revogar clientes OAuth (não
-  está no `.pen`).
-- `site_url` de produção: muda quando o front com `/oauth/consent` estiver no ar.

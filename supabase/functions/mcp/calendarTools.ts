@@ -1,8 +1,7 @@
 // Agenda e viagens. Leitura de `calendar_events` e `trips`, e criação dos
 // eventos que NÃO pintam estadia (date, data especial, compromisso, lembrete)
-// pela RPC `create_event` com `p_paint = false`. Viagem e visita ficam no app:
-// elas pintam o período (ADR 0018) e a pintura tem regra demais para chegar
-// pela conversa sem a prévia (spec seção 11).
+// pela RPC `create_event` com `p_paint = false`. Viagem, visita e período
+// pintam estadias e moram em `stayTools.ts`, com prévia antes de gravar.
 
 import { ToolFailure, loadCouple } from './context.ts'
 import type { Ctx } from './context.ts'
@@ -128,7 +127,7 @@ export interface CreateEventInput {
 /** O espelho do `calendar_events_format` para os quatro tipos que o MCP cria. */
 export function validateEvent(input: CreateEventInput): { field: string; reason: string } | null {
   if (!(CREATABLE_KINDS as readonly string[]).includes(input.kind)) {
-    return { field: 'kind', reason: 'Pelo MCP: date, data_especial, compromisso ou lembrete. Viagem e visita se criam no app.' }
+    return { field: 'kind', reason: 'Aqui: date, data_especial, compromisso ou lembrete. Viagem e visita: create_trip e create_visit.' }
   }
   const title = input.title.trim()
   if (title.length === 0 || title.length > EVENT_LIMITS.title) return { field: 'title', reason: `De 1 a ${EVENT_LIMITS.title} caracteres.` }

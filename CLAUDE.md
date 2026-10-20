@@ -256,7 +256,7 @@ adaptador o recusa. Harness: `/?preview`.
 
 O **servidor MCP** (`supabase/functions/mcp/`, ADR 0031/0032) deixa um agente
 usar o app como a pessoa: login pelo OAuth 2.1 do Supabase Auth (consentimento
-em `/oauth/consent`), treze ferramentas sobre a Lista, a agenda e as viagens, e
+em `/oauth/consent`), dezessete ferramentas sobre a Lista, a agenda, os períodos e as viagens (as que pintam estadia têm prévia e só gravam com `confirm: true`), e
 `analyze_link`, que lê Reels, TikTok, YouTube, Google Maps e páginas. URL do
 conector: `https://lanabiel.ogabarbosa.com/mcp` — rewrite do `vercel.json` para a
 função, que com `?via=public` se anuncia pelo `MCP_PUBLIC_URL` (o cliente confere

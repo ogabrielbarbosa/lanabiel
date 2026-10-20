@@ -11,7 +11,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { disconnectAssistant, listAssistants } from '../../src/data/assistants'
 import { consentApi } from '../../src/auth/consentApi'
-import { ANON_KEY, URL as SUPABASE_URL, admin, coupleOfTwo, userFactory } from './harness'
+import { ANON_KEY, CITY, URL as SUPABASE_URL, admin, coupleOfTwo, userFactory } from './harness'
 import type { SignedUser } from './harness'
 
 // `MCP_URL=https://lanabiel.ogabarbosa.com/mcp` prova o endereço público (rewrite da Vercel).
@@ -78,9 +78,9 @@ describe('MCP publicado', () => {
     expect(bad.status).toBe(401)
   })
 
-  it('A2: tools/list traz as treze ferramentas', async () => {
+  it('A2: tools/list traz as dezessete ferramentas', async () => {
     const { tools } = await clientA.listTools()
-    expect(tools).toHaveLength(13)
+    expect(tools).toHaveLength(17)
   })
 
   it('get_context diz quem é quem', async () => {
@@ -292,6 +292,70 @@ describe('MCP publicado', () => {
     } finally {
       await admin.auth.admin.oauth.deleteClient(client.client_id)
     }
+  })
+
+  /** A cidade onde a pessoa está naquele dia, lida pelo app (RLS da outra pessoa). */
+  async function cityOn(profileId: string, day: string): Promise<string | null> {
+    const { data, error } = await b.db
+      .from('stays')
+      .select('city_id')
+      .eq('profile_id', profileId)
+      .lte('starts_on', day)
+      .or(`ends_on.gte.${day},ends_on.is.null`)
+    expect(error).toBeNull()
+    return data?.[0]?.city_id ?? null
+  }
+
+  it('find_city traz a cidade do IBGE e a de fora com city_ref', async () => {
+    const marau = await call(clientA, 'find_city', { query: 'Marau' })
+    expect(marau.body.cities).toEqual(expect.arrayContaining([{ city_ref: `city:${CITY.marau}`, label: 'Marau, RS', source: 'ibge' }]))
+    const lisboa = await call(clientA, 'find_city', { query: 'Lisboa' })
+    expect(lisboa.body.cities.find((c: { source: string; label: string }) => c.source === 'mundo' && c.label.endsWith('Portugal'))).toBeTruthy()
+  })
+
+  it('record_period: a prévia não grava; com confirm, pinta', async () => {
+    const before = await cityOn(a.id, '2027-03-03')
+    const preview = await call(clientA, 'record_period', { who: 'me', city_ref: `city:${CITY.marau}`, from: '2027-03-01', to: '2027-03-05' })
+    expect(preview.body).toMatchObject({ status: 'preview', will_record: [{ who: 'mcp-a', city: 'Marau, RS', from: '2027-03-01', to: '2027-03-05' }] })
+    expect(await cityOn(a.id, '2027-03-03')).toBe(before)
+
+    const done = await call(clientA, 'record_period', { who: 'me', city_ref: `city:${CITY.marau}`, from: '2027-03-01', to: '2027-03-05', confirm: true })
+    expect(done.body.status).toBe('ok')
+    expect(await cityOn(a.id, '2027-03-03')).toBe(CITY.marau)
+    expect(await cityOn(a.id, '2027-03-06')).toBe(before)
+  })
+
+  it('record_period em aberto só com open_ended', async () => {
+    const refused = await call(clientA, 'record_period', { who: 'me', city_ref: `city:${CITY.marau}`, from: '2027-08-01', confirm: true })
+    expect(refused).toMatchObject({ isError: true, body: { status: 'invalid' } })
+  })
+
+  it('create_visit da outra pessoa: o evento e o período dela', async () => {
+    const done = await call(clientA, 'create_visit', { who: 'partner', city_ref: `city:${CITY.sjc}`, starts_on: '2027-04-10', ends_on: '2027-04-12', confirm: true })
+    expect(done.body).toMatchObject({ status: 'ok', title: 'Visita a São José dos Campos', period_recorded: true })
+    const { data } = await b.db.from('calendar_events').select('kind, travelers, traveler_id, city_id').eq('id', done.body.id).single()
+    expect(data).toEqual({ kind: 'visita', travelers: 'solo', traveler_id: b.id, city_id: CITY.sjc })
+    expect(await cityOn(b.id, '2027-04-11')).toBe(CITY.sjc)
+  })
+
+  it('create_trip para fora: a cidade vira do casal, a viagem aparece e os dois são pintados', async () => {
+    const lisboa = (await call(clientA, 'find_city', { query: 'Lisboa' })).body.cities.find(
+      (c: { source: string; label: string }) => c.source === 'mundo' && c.label.endsWith('Portugal'),
+    )
+    const preview = await call(clientA, 'create_trip', { who: 'both', city_ref: lisboa.city_ref, starts_on: '2027-05-01', ends_on: '2027-05-05' })
+    expect(preview.body).toMatchObject({ status: 'preview', trip: { title: 'Lisboa', who: ['mcp-a', 'mcp-b'] } })
+    expect((await b.db.from('calendar_events').select('id').eq('kind', 'viagem')).data).toEqual([])
+
+    const done = await call(clientA, 'create_trip', { who: 'both', city_ref: lisboa.city_ref, starts_on: '2027-05-01', ends_on: '2027-05-05', lodging_name: 'Hotel Teste', confirm: true })
+    expect(done.body).toMatchObject({ status: 'ok', title: 'Lisboa', destination: 'Lisboa · Portugal' })
+    const trip = await b.db.from('trips').select('lodging_name').eq('event_id', done.body.id).single()
+    expect(trip.data).toEqual({ lodging_name: 'Hotel Teste' })
+    const city = await cityOn(a.id, '2027-05-03')
+    expect(city).toBe(await cityOn(b.id, '2027-05-03'))
+    const { data: row } = await b.db.from('cities').select('country_code, osm_ref').eq('id', city!).single()
+    expect(row).toMatchObject({ country_code: 'PT', osm_ref: expect.stringMatching(/^[NWR]\d+$/) })
+    const trips = await call(clientA, 'list_trips', {})
+    expect(trips.body.trips).toEqual([expect.objectContaining({ id: done.body.id, destination: 'Lisboa, PT', who: 'os dois', lodging: 'Hotel Teste' })])
   })
 
   it('delete_list_item apaga para os dois', async () => {

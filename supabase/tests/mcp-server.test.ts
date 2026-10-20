@@ -45,20 +45,24 @@ const TOOLS = [
   'add_list_item',
   'analyze_link',
   'create_event',
+  'create_trip',
+  'create_visit',
   'delete_list_item',
+  'find_city',
   'find_place',
   'get_context',
   'get_list_item',
   'list_events',
   'list_trips',
   'mark_list_item_done',
+  'record_period',
   'save_list_memory',
   'search_list',
   'update_list_item',
 ]
 
 describe('servidor MCP', () => {
-  it('lista as treze ferramentas, com instruções (A2, R9)', async () => {
+  it('lista as dezessete ferramentas, com instruções (A2, R9)', async () => {
     const client = await connect(ctx())
     const { tools } = await client.listTools()
     expect(tools.map((t) => t.name).sort()).toEqual(TOOLS)
@@ -68,10 +72,13 @@ describe('servidor MCP', () => {
   it('leitura é readOnly e apagar é destrutivo (R10)', async () => {
     const { tools } = await (await connect(ctx())).listTools()
     const byName = new Map(tools.map((t) => [t.name, t]))
-    for (const name of ['get_context', 'search_list', 'get_list_item', 'find_place', 'analyze_link', 'list_events', 'list_trips']) {
+    for (const name of ['get_context', 'search_list', 'get_list_item', 'find_place', 'find_city', 'analyze_link', 'list_events', 'list_trips']) {
       expect(byName.get(name)?.annotations?.readOnlyHint).toBe(true)
     }
-    expect(byName.get('delete_list_item')?.annotations?.destructiveHint).toBe(true)
+    // Pintar sobrescreve estadias: o cliente deve pedir confirmação.
+    for (const name of ['delete_list_item', 'record_period', 'create_visit', 'create_trip']) {
+      expect(byName.get(name)?.annotations?.destructiveHint).toBe(true)
+    }
     expect(byName.get('add_list_item')?.annotations?.readOnlyHint).toBe(false)
   })
 

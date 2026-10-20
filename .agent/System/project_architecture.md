@@ -408,11 +408,15 @@ a RLS decide, como no app (ADR 0031). Login pelo servidor OAuth 2.1 do Supabase
 Auth com registro dinâmico; o consentimento é `/oauth/consent` do app
 (`src/auth/OAuthConsent.tsx`, fora da casca, atrás do `AuthGate`).
 
-Treze ferramentas: contexto, Lista (buscar, ler, criar, editar, marcar feito,
-memória, apagar), `find_place` (Photon + Overture + IBGE, o mesmo resolvedor
-da Lista), `analyze_link` (Instagram/TikTok pelo Apify, vídeo pelo Gemini,
-página por HTML/JSON-LD, Google Maps pelo redirecionamento; ADR 0032), agenda
-(ler, criar os quatro tipos que não pintam estadia) e viagens (ler).
+Dezessete ferramentas: contexto, Lista (buscar, ler, criar, editar, marcar
+feito, memória, apagar), `find_place` (Photon + Overture + IBGE, o mesmo
+resolvedor da Lista), `analyze_link` (Instagram/TikTok pelo Apify, vídeo pelo
+Gemini, página por HTML/JSON-LD, Google Maps pelo redirecionamento; ADR 0032),
+agenda (ler, criar os quatro tipos que não pintam estadia), viagens (ler) e
+as escritas que pintam estadia (`mcp/stayTools.ts`): `find_city`,
+`record_period` (`paint_stays`), `create_visit` (`create_event` com
+`p_paint`) e `create_trip`. Essas três devolvem a prévia sem `confirm` e só
+gravam com `confirm: true`; a regra da pintura continua só nas RPCs.
 
 As regras do item têm espelho em `mcp/list.ts` (Deno não resolve os imports de
 `src/`); `supabase/tests/mcp-list.test.ts` roda os casos de

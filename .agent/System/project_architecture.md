@@ -399,6 +399,27 @@ qualquer token que não seja `pk.` (a tela mostra _"O mapa não carregou."_ e o
 resto segue). Receita visual em `src/map/style.ts`; em DEV, `?receita=custom`
 troca o Standard Satellite pelo estilo próprio.
 
+## Servidor MCP (agentes)
+
+`supabase/functions/mcp/` é um servidor MCP remoto (Streamable HTTP, sem
+estado) que deixa um agente (Claude no celular, desktop, Claude Code) ler e
+escrever o acervo **como a pessoa**: o token de cada pedido vai em toda query e
+a RLS decide, como no app (ADR 0031). Login pelo servidor OAuth 2.1 do Supabase
+Auth com registro dinâmico; o consentimento é `/oauth/consent` do app
+(`src/auth/OAuthConsent.tsx`, fora da casca, atrás do `AuthGate`).
+
+Treze ferramentas: contexto, Lista (buscar, ler, criar, editar, marcar feito,
+memória, apagar), `find_place` (Photon + Overture + IBGE, o mesmo resolvedor
+da Lista), `analyze_link` (Instagram/TikTok pelo Apify, vídeo pelo Gemini,
+página por HTML/JSON-LD, Google Maps pelo redirecionamento; ADR 0032), agenda
+(ler, criar os quatro tipos que não pintam estadia) e viagens (ler).
+
+As regras do item têm espelho em `mcp/list.ts` (Deno não resolve os imports de
+`src/`); `supabase/tests/mcp-list.test.ts` roda os casos de
+`listValidationCases.ts` contra os dois, e `mcp-places.test.ts` compara o
+resolvedor de lugar. `mcp.test.ts` prova a função publicada, inclusive o OAuth
+de ponta a ponta. Spec: `.agent/Tasks/mcp-server.md`.
+
 ## Fronteiras
 
 | Fronteira | Onde | Regra |

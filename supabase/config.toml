@@ -384,13 +384,17 @@ enabled = false
 # domain = "example.clerk.accounts.dev"
 
 # OAuth server configuration
+# Ligado para o servidor MCP (ADR 0031): o Claude e outros clientes pedem
+# acesso em nome da pessoa, que consente em `/oauth/consent` do app (relativo
+# ao `site_url`). Registro dinâmico: o cliente MCP se registra sozinho; nada
+# acontece sem login e consentimento de um integrante.
 [auth.oauth_server]
 # Enable OAuth server functionality
-enabled = false
+enabled = true
 # Path for OAuth consent flow UI
 authorization_url_path = "/oauth/consent"
 # Allow dynamic client registration
-allow_dynamic_registration = false
+allow_dynamic_registration = true
 
 [edge_runtime]
 enabled = true
@@ -413,6 +417,12 @@ verify_jwt = true
 
 [functions.places-nearby]
 verify_jwt = true
+
+# O MCP confere o token ele mesmo: o 401 do gateway não traz o
+# `WWW-Authenticate` que o cliente precisa para achar o OAuth (ADR 0031).
+[functions.mcp]
+verify_jwt = false
+import_map = "./functions/mcp/deno.json"
 
 [analytics]
 enabled = true

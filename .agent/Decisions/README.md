@@ -62,6 +62,8 @@ Use `/adr <título>`. Template: [`0000-template.md`](./0000-template.md).
 | [0026](./0026-kit-de-tela-cabecalho-fora-da-leitura.md) | Kit de tela em `src/ui` (área, cabeçalho, chips, esqueleto, tokens de espaço); o cabeçalho aparece antes da leitura (revisa o A17 da Fase 6 no título) | cliente, todas as telas | 2026-10-06 |
 | [0027](./0027-estabelecimentos-pelo-overture-perto-de-casa.md) | Estabelecimentos pelo Overture (Open Places API) e ordem por proximidade a partir de onde a pessoa está, junto do Photon (revisa em parte o 0016) | dependência externa, busca da Lista | 2026-10-09 |
 | [0028](./0028-foto-da-outra-pessoa.md) | Cada um troca a foto da outra pessoa do casal: sobe na pasta dela, `set_partner_avatar` grava (estende o 0009) | Storage, autorização, Configurações | 2026-10-10 |
+| [0031](./0031-mcp-remoto-em-edge-function-com-oauth-do-supabase.md) | Servidor MCP remoto numa edge function, autenticado pelo OAuth 2.1 do Supabase Auth (registro dinâmico, consentimento no app) | integração com agentes, autenticação | 2026-10-19 |
+| [0032](./0032-leitura-de-link-por-apify-gemini-e-pagina.md) | Leitura de link: Apify para Instagram e TikTok, Gemini para o vídeo, página pelo HTML (Firecrawl opcional) | dependência externa, servidor MCP | 2026-10-19 |
 
 ## Backlog — discutido, sem código
 

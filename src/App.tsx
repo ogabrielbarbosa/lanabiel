@@ -5,6 +5,8 @@
 //       .agent/Tasks/fase-5-calendario.md (R1, R2) · .agent/Tasks/fase-6-viagens.md (R1)
 
 import { AuthGate } from './auth/AuthGate'
+import { OAuthConsent } from './auth/OAuthConsent'
+import { CONSENT_PATH, consentApi } from './auth/consentApi'
 import { supabase } from './lib/supabase'
 import { Shell } from './app/Shell'
 import { Splash } from './app/Splash'
@@ -30,6 +32,15 @@ try {
 }
 
 export default function App() {
+  // O consentimento do OAuth (ADR 0031) fica fora da casca: é uma tela só,
+  // e quem chega do Claude não deve cair na barra lateral.
+  if (window.location.pathname.replace(/\/+$/, '') === CONSENT_PATH) {
+    return (
+      <AuthGate db={supabase}>
+        <OAuthConsent api={consentApi(supabase, (url) => window.location.assign(url))} />
+      </AuthGate>
+    )
+  }
   return (
     <>
       <AuthGate db={supabase}>

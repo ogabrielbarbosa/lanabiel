@@ -254,6 +254,19 @@ cima do mapa (`handle.project`), nunca camada do provedor. O token é
 `VITE_MAPBOX_TOKEN`, **público** (`pk.`): o build para com um `sk.`, e o
 adaptador o recusa. Harness: `/?preview`.
 
+O **servidor MCP** (`supabase/functions/mcp/`, ADR 0031/0032) deixa um agente
+usar o app como a pessoa: login pelo OAuth 2.1 do Supabase Auth (consentimento
+em `/oauth/consent`), treze ferramentas sobre a Lista, a agenda e as viagens, e
+`analyze_link`, que lê Reels, TikTok, YouTube, Google Maps e páginas. URL do
+conector: `https://lanabiel.ogabarbosa.com/mcp` — rewrite do `vercel.json` para a
+função, que com `?via=public` se anuncia pelo `MCP_PUBLIC_URL` (o cliente confere
+o `resource`). A URL direta da função continua valendo. As
+regras do item têm espelho em `mcp/list.ts`: **mudou `validateItem` ou
+`LIST_LIMITS`, mude lá** (o `mcp-list.test.ts` acusa). Deploy:
+`npx supabase functions deploy mcp --use-api`. O `deno check` acusa só
+inferência dos callbacks do SDK (TS7006); a checagem que vale é o `tsc` do
+repositório, que alcança a função pelos testes.
+
 As preferências de telas que ainda não existem (Notificações) já estão gravadas: **cada fase lê a coluna que a Fase 3 criou** e
 a refina, em vez de inventar a sua.
 
